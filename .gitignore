@@ -1,0 +1,8 @@
+# LaTeX stuff:
+*.aux
+
+# Generic logfiles:
+*.log
+
+# Maybe don't want to accidentally commit documents:
+*.pdf
