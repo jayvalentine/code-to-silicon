@@ -6,3 +6,12 @@
 
 # Maybe don't want to accidentally commit documents:
 *.pdf
+
+# Pychache
+__pycache__/
+
+# Compilation artefacts
+*.out
+*.o
+*.asm
+*.elf
