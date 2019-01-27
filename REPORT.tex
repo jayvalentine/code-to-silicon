@@ -8,23 +8,71 @@
 \maketitle
 
 \begin{abstract}
-This report attempts to show how the efficiency of a system-on-chip implementation can be increased by offloading
-the computation of common expressions to hardware accelerator cores, and gives a method for generating VHDL descriptions
-of these cores from the original assembly code of a program.
 \end{abstract}
 
-\section{Introduction}
-This is the introduction.
+\chapter*{Introduction}
 
-\begin{equation}
-    \label{simple_equation}
-    \alpha = \sqrt{ \beta }
-\end{equation}
+\chapter*{Literature Review}
 
-\subsection{Motivation}
-We are motivated!
+\section{Dark Silicon}
 
-\section{Conclusion}
-We have concluded that this is a conclusion.
+Dark silicon is a phenomenon which has been observed as transistor density in microprocessors has increased.
+It occurs as issues relating to energy efficiency and transistor utilization lead to a gap between the observed speedup and that
+predicted by extrapolating from historic performance gains. In \cite{darksilicon}, it is predicted that with 22nm transistors,
+21\% of the chip will be dark silicon, with this rising to 50\% at 8nm. This prediction shows that dark silicon will become a
+serious limitation as transistor density grows, especially in areas where energy efficiency is a primary concern.
+
+Dark silicon also becomes a limiting factor with manycore devices. Even when energy consumption is not a concern, the limited
+parallelism of most applications results in a dark silicon gap when running with manycore devices. Again, \cite{darksilicon} shows
+that beyond a certain number of cores the speedup achieved is negligible. This is another kind of dark silicon - the
+underutilization in this case is not a result of energy concerns but is caused by the limited parallelism of the application being
+unable to exploit all of the cores of a device.
+
+\section{Energy Efficiency}
+
+Many attempts at managing dark silicon for energy efficiency have been made. One approach, outlined in the GreenDroid project
+\cite{greendroid}, is to replace areas of a chip that cannot be utilized due to dark silicon with specialized cores, designed
+to perform common computations. In the GreenDroid architecture, these cores account for over 90\% of execution time,
+leading to a significant reduction in energy consumption. This was aided by profiling of the Android platform, allowing the
+identification of 'hot' (frequently-executed) portions of code to be offloaded to specialized logic. It was found that Android,
+due to the organization of its components, was an ideal candidate for this approach.
+
+Other attempts have been made at managing dark silicon in less specific domains. In \cite{arnone-thesis}, Arnone outlines a
+method of generating accelerator cores for a stack architecture, resulting in both timing and power improvements. Two architectures
+for generated cores are described: composite and wave-core. Composite cores are simple state machines with instructions mapped to
+states. Composite cores attempt to optimise for logic area by reusing existing logic between states. Conversely, the wave-core
+architecture avoids the reuse of logic between states, reducing power density at the cost of increased logic area (due to
+potentially duplicated functionality). In both cases the resulting accelerator core is more energy-efficient than the
+general-purpose processor is at the same task.
+
+\section{Performance}
+
+In \cite{high-performance-microarchitecture}, Razdan and Smith attempt to simplify the state machine model to reduce
+synchronization complexities. They developed a toolchain which was able to extract instruction streams that could be 'outsourced'
+to an accelerator core after code generation. These cores are not state machines but are instead streams of instructions translated into hardware, such that a previously multi-cycle operation can be executed in a single cycle. The instruction
+stream that existed in the original application can then be replaced by a single instruction, \textit{expfu}, which triggers
+the respective accelerator core and retrieves the result. As SoCs (as opposed to discrete units) become more prevelant,
+this work shows that there may be a place for FPGAs in such a system.
+
+\section{Architectural Support}
+
+If accelerator-rich architectures are to surpass conventional single- or multi-core devices, the overheads associated with
+the communication between accelerators and the general purpose CPUs need to be alleviated. In \cite{accelerator-rich-cmp},
+an approach to this is outlined in which a hardware architecture and a lightweight interrupt system are developed.
+
+\begin{thebibliography}{9}
+\bibitem{darksilicon}
+H. Esmaeilzadeh, E. Blem, R. St. Amant, K. Sankaralingam, D. Burger, "Dark Silicon and the End of Multicore Scaling", IEEE Micro, vol. 32, pp. 122-134, May-June 2012.
+
+\bibitem{greendroid}
+S. Swanson, M. B. Taylor, "Greendroid: Exploring the Next Evolution in Smartphone Application Processors", IEEE Communications Magazine, vol. 49, pp 112-119, April 2011.
+
+\bibitem{arnone-thesis}
+A. Arnone, "Feasibility of Accelerator Generation to Alleviate Dark Silicon in a Novel Architecture", Ph.D. thesis, Dept. Computer Science, University of York, York, June 2017.
+
+\bibitem{high-performance-microarchitecture}
+R. Razdan, M. D. Smith, "A High-Performance Microarchitecture with Hardware-Programmable Functional Units", Proceedings of MICRO-27 (The 27th Annual IEEE/ACM International Symposium on Microarchitecture), pp 172-180, Nov 1994.
+
+\end{thebibliography}
 
 \end{document}
