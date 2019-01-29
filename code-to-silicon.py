@@ -1,7 +1,14 @@
-import compile
+from parsing import parser
+from toolchain import compiler
 
-compile.gcc_compile(["c/main.c"], "main.o")
+compiler.compile(["c/main.c"], "main.s")
 
-compile.gcc_link(["main.o"], "main.elf")
+instructionList = [
+  "add r1, r2, r3"
+]
 
-compile.objdump("main.elf", ["-d"], "main.asm")
+instructionListParsed = parser.parse(instructionList)
+
+while instructionListParsed != None:
+  print(instructionListParsed)
+  instructionListParsed = instructionListParsed.getNext()
