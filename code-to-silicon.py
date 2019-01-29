@@ -1,6 +1,8 @@
 from parsing import parser
 from toolchain import compiler
 
+import analysis
+
 compiler.compile(["c/main.c"], "main.s")
 
 with open("main.s", 'r') as stream:
@@ -17,10 +19,9 @@ with open("main.s", 'r') as stream:
 
 #print(instructionList)
 
-instructionListParsed = parser.parse(instructionList)
+head = parser.parse(instructionList)
 
-for label in instructionListParsed:
-  print(label)
+parser.prettyPrint(head)
 
 #while instructionListParsed != None:
 #  print(instructionListParsed)

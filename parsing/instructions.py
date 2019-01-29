@@ -2,6 +2,8 @@ import yaml
 import os
 import re
 
+from . import streams
+
 INSTRUCTION_MAPPING = {}
 
 CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
@@ -35,7 +37,7 @@ Attributes:
   - rD        - destination register
   - imm       - immediate value (if applicable)
 """
-class Instruction:
+class Instruction(streams.StreamItem):
   """
   Constructor.
 
@@ -54,7 +56,7 @@ class Instruction:
     self._imm = imm
     self._label = label
 
-    self._next = None
+    super(Instruction, self).__init__()
 
   """
   Returns string representation of instruction.
@@ -100,19 +102,8 @@ class Instruction:
 
     return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, params, flags)
 
-  """
-  Sets next instruction. This is the next instruction in a textual sense,
-  not in the sense of control flow (i.e. the next instruction on from a jump
-  is 1 word after it in memory, not the jump target).
-  """
-  def setNext(self, instruction):
-    self._next = instruction
-
-  """
-  Gets the next instruction. See setNext for an explanation of what this means.
-  """
-  def getNext(self):
-    return self._next
+  def isInstruction(self):
+    return True
 
   """
   Returns true if this instruction can be translated to VHDL, false otherwise.
