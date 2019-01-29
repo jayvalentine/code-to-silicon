@@ -1,4 +1,4 @@
-import common
+from . import common
 
 GCC = common.XILINX_GNU_PREFIX + "gcc"
 
