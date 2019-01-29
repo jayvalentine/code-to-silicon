@@ -12,9 +12,6 @@ with open("main.s", 'r') as stream:
   # Filter out directives, which begin with '.'
   instructionList = list(filter(lambda l: l.lstrip()[0] != '.', instructionList))
 
-  # Filter out subroutine names, which end in ':'
-  instructionList = list(filter(lambda l: l.strip()[-1] != ':', instructionList))
-
   # Filter out comment lines (but NOT instructions with comments on the end)
   instructionList = list(filter(lambda l: l.lstrip()[0] != '#', instructionList))
 
@@ -22,6 +19,9 @@ with open("main.s", 'r') as stream:
 
 instructionListParsed = parser.parse(instructionList)
 
-while instructionListParsed != None:
-  print(instructionListParsed)
-  instructionListParsed = instructionListParsed.getNext()
+for label in instructionListParsed:
+  print(label)
+
+#while instructionListParsed != None:
+#  print(instructionListParsed)
+#  instructionListParsed = instructionListParsed.getNext()

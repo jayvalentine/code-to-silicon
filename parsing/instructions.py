@@ -8,7 +8,9 @@ CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
 
 REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
 IMMEDIATE_FORMAT_RE = re.compile("(-?\d+)")
-LABEL_FORMAT_RE = re.compile("(\$\w)")
+LABEL_FORMAT_RE = re.compile("(\$\w+)")
+
+INSTRUCTION_STRING_TEMPLATE = "{:10}{:15}{:5}"
 
 # We need to catagorise instructions. We do this in a YAML file
 # that we then read in and convert into a dictionary mapping instruction
@@ -58,51 +60,45 @@ class Instruction:
   Returns string representation of instruction.
   """
   def __str__(self):
-    tabCount = 1
 
-    s = ""
-    s += self._mnemonic
-    s += "\t"
+    params = ""
 
     if self._rD != None:
-      s += "r" + str(self._rD)
-      s += ", "
-    else:
-      tabCount = 2
+      params += "r" + str(self._rD)
+      params += ", "
 
     if self._rA != None:
-      s += "r" + str(self._rA)
-      s += ", "
+      params += "r" + str(self._rA)
+      params += ", "
 
     # If imm is None, we assume this is format A (2 source registers).
     # The last element of the string in this case is rB.
     # Otherwise it is the immediate or label.
     if self._imm == None and self._rB != None:
-      s += "r" + str(self._rB)
+      params += "r" + str(self._rB)
     elif self._imm != None:
-      s += str(self._imm)
+      params += str(self._imm)
     elif self._label != None:
-      s += str(self._label)
+      params += str(self._label)
 
-    # Now append some flags for the metadata (is translatable, is memory access, etc)
-    s += "\t" * tabCount
+    flags = ""
 
     if self.canTranslate():
-      s += "T"
+      flags += "T"
     else:
-      s += "-"
+      flags += "-"
 
     if self.isBasicBlockBoundary():
-      s += "B"
+      flags += "B"
     else:
-      s += "-"
+      flags += "-"
 
     if self.isMemoryAccess():
-      s += "M"
+      flags += "M"
     else:
-      s += "-"
+      flags += "-"
 
-    return s
+    return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, params, flags)
 
   """
   Sets next instruction. This is the next instruction in a textual sense,
