@@ -1,9 +1,13 @@
 import yaml
 import os
+import re
 
 INSTRUCTION_MAPPING = {}
 
 CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
+
+REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
+IMMEDIATE_FORMAT_RE = re.compile("(\d+)")
 
 # We need to catagorise instructions. We do this in a YAML file
 # that we then read in and convert into a dictionary mapping instruction
@@ -75,16 +79,13 @@ class Instruction:
   not in the sense of control flow (i.e. the next instruction on from a jump
   is 1 word after it in memory, not the jump target).
   """
-  def setNext(instruction):
+  def setNext(self, instruction):
     self._next = instruction
 
   """
   Gets the next instruction. See setNext for an explanation of what this means.
   """
-  def getNext(instruction):
-    if self._next == None:
-      raise ValueError("Instruction has no next.")
-
+  def getNext(self):
     return self._next
 
   """
@@ -284,4 +285,78 @@ class SystemInstruction(Instruction):
     return False
 
 def parseInstruction(instructionString):
-  return None
+  # First get the mnemonic. This is the first token in the string and
+  # ends with the first space.
+  mnemonic = instructionString[:instructionString.index(' ')]
+
+  # Find the category of the instruction and get the relevant class.
+  category = INSTRUCTION_MAPPING[mnemonic]
+
+  if category == "IntegerArith":
+    instructionClass = IntegerArithmeticInstruction
+  elif category == "FloatArith":
+    instructionClass = FloatArithmeticInstruction
+  elif category == "ControlFlow":
+    instructionClass = ControlFlowInstruction
+  elif category == "InputOutput":
+    instructionClass = InputOutputInstruction
+  elif category == "FSL":
+    instructionClass = FSLInputOutputInstruction
+  elif category == "Immediate":
+    instructionClass = ImmediateInstruction
+  elif category == "System":
+    instructionClass = SystemInstruction
+  else:
+    raise ValueError("Invalid category: " + str(category))
+
+  # Now we have one or more whitespaces. 
+  instructionString = instructionString[instructionString.index(' '):].lstrip()
+
+  # The first token should be the destination register in the form rD,
+  # where D is the register number.
+  destinationRegister = parseRegister(instructionString[:instructionString.index(',')])
+
+  if destinationRegister == None:
+    raise ValueError("Destination register " + instructionString[:instructionString.index(',')] + " is not in the right format.")
+
+  instructionString = instructionString[instructionString.index(',')+1:].lstrip()
+
+  sourceRegisterA = parseRegister(instructionString[:instructionString.index(',')])
+
+  if sourceRegisterA == None:
+    raise ValueError("Source register A " + instructionString[:instructionString.index(',')] + "is not in the right format.")
+
+  instructionString = instructionString[instructionString.index(',')+1:].lstrip()
+
+  sourceRegisterB = parseRegister(instructionString.lstrip())
+
+  # If there isn't a second source register, this must be an immediate value. Attempt to parse it as that instead.
+  # If that fails too, raise an exception.
+  if sourceRegisterB == None:
+    immediate = parseImmediate(instructionString[:instructionString.index(',')])
+
+    if immediate == None:
+      raise ValueError("Token " + instructionString[:instructionString.index(',')] + " is neither a register or an immediate value.")
+
+  else:
+    immediate = None
+
+  i = instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate)
+
+  return i
+
+def parseRegister(s):
+  m = REGISTER_FORMAT_RE.match(s)
+
+  if m == None:
+    return None
+
+  return int(m.groups()[0])
+
+def parseImmediate(s):
+  m = IMMEDIATE_FORMAT_RE.match(s)
+
+  if m == None:
+    return None
+
+  return int(m.groups()[0])

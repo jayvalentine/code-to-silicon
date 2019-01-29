@@ -9,19 +9,20 @@ Parameters:
 Raises:
   - ValueError if instruction list is of length 0.
 """
-def parse(instructions):
+def parse(instructionList):
   # Check the list is the right length.
-  if len(instructions) < 1:
+  if len(instructionList) < 1:
     raise ValueError("Must provide at least one instruction for parsing.")
 
   # Get the first instruction, and convert into internal representation.
-  instructionString = instructions[0]
+  instructionString = instructionList[0]
   firstInstruction = instructions.parseInstruction(instructionString)
 
   # Get the rest of the instructions.
-  otherInstructions = instructions[1:-1]
+  otherInstructions = instructionList[1:-1]
 
-  # Parse the next instruction recursively, setting up the linked list as we go.
-  firstInstruction.setNext(parse(otherInstructions))
+  if len(otherInstructions) > 0:
+    # Parse the next instruction recursively, setting up the linked list as we go.
+    firstInstruction.setNext(parse(otherInstructions))
 
   return firstInstruction
