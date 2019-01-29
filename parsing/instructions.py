@@ -1,3 +1,22 @@
+import yaml
+import os
+
+INSTRUCTION_MAPPING = {}
+
+CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
+
+# We need to catagorise instructions. We do this in a YAML file
+# that we then read in and convert into a dictionary mapping instruction
+# mnemonics to categories.
+with open(CONFIG_FILENAME, 'r') as stream:
+  y = yaml.load(stream)
+
+  for category in y.keys():
+    mnemonics = y[category]
+
+    for m in mnemonics:
+      INSTRUCTION_MAPPING[m] = category
+
 """
 Base instruction class. Actual instructions shouldn't use this directly,
 but should instead inherit from this to create a custom subclass.
@@ -263,3 +282,6 @@ class SystemInstruction(Instruction):
 
   def isMemoryAccess():
     return False
+
+def parseInstruction(instructionString):
+  return None

@@ -1,0 +1,92 @@
+---
+IntegerArith:
+  - add
+  - addi
+  - rsub
+  - rsubi
+  - idiv
+  - mul
+  - mulh
+  - mulhu
+  - mulhsu
+  - muli
+  - and
+  - andi
+  - andn
+  - andni
+  - or
+  - ori
+  - xor
+  - xori
+  - bs
+  - bsi
+  - sra
+  - src
+  - srl
+  - cmp
+  - sext16
+  - sext8
+  - pcmpbf
+  - pcmpeq
+  - pcmpne
+
+FloatArith:
+  - fadd
+  - frsub
+  - fmul
+  - fdiv
+  - fcmp
+  - flt
+  - fint
+  - fsqrt
+
+ControlFlow:
+  - beq
+  - beqi
+  - bge
+  - bgei
+  - bgt
+  - bgti
+  - ble
+  - blei
+  - blt
+  - blti
+  - bne
+  - bnei
+  - br
+  - bri
+  - brk
+  - brki
+  - rtbd
+  - rtid
+  - rted
+  - rtsd
+
+InputOutput:
+  - lbu
+  - lbui
+  - lhu
+  - lhui
+  - lw
+  - lwi
+  - sb
+  - sbi
+  - sh
+  - shi
+  - sw
+  - swi
+
+FSL:
+  - get
+  - getd
+  - put
+  - putd
+
+Immediate:
+  - imm
+
+System:
+  - mfs
+  - mts
+  - msrclr
+  - msrset
