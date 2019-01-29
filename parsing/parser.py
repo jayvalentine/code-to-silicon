@@ -1,4 +1,4 @@
-from instruction import *
+from . import instructions
 
 """
 Gets a list of instructions (as strings) and parses them into internal representation.
@@ -16,7 +16,7 @@ def parse(instructions):
 
   # Get the first instruction, and convert into internal representation.
   instructionString = instructions[0]
-  firstInstruction = parseInstruction(instructionString)
+  firstInstruction = instructions.parseInstruction(instructionString)
 
   # Get the rest of the instructions.
   otherInstructions = instructions[1:-1]
