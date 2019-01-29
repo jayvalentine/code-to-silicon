@@ -27,6 +27,8 @@ class Instruction:
     self._rD = rD
     self._imm = imm
 
+    self._next = None
+
   """
   Returns string representation of instruction.
   """
@@ -48,6 +50,23 @@ class Instruction:
       s += "0x{:04x}".format(self._imm)
 
     return s
+
+  """
+  Sets next instruction. This is the next instruction in a textual sense,
+  not in the sense of control flow (i.e. the next instruction on from a jump
+  is 1 word after it in memory, not the jump target).
+  """
+  def setNext(instruction):
+    self._next = instruction
+
+  """
+  Gets the next instruction. See setNext for an explanation of what this means.
+  """
+  def getNext(instruction):
+    if self._next == None:
+      raise ValueError("Instruction has no next.")
+
+    return self._next
 
   """
   Returns true if this instruction can be translated to VHDL, false otherwise.
