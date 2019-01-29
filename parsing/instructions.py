@@ -7,7 +7,8 @@ INSTRUCTION_MAPPING = {}
 CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
 
 REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
-IMMEDIATE_FORMAT_RE = re.compile("(\d+)")
+IMMEDIATE_FORMAT_RE = re.compile("(-?\d+)")
+LABEL_FORMAT_RE = re.compile("(\$\w)")
 
 # We need to catagorise instructions. We do this in a YAML file
 # that we then read in and convert into a dictionary mapping instruction
@@ -43,12 +44,13 @@ class Instruction:
     - rD - number of destination register
     - imm - immediate value. None if no immediate.
   """
-  def __init__(self, mnemonic, rA, rB, rD, imm):
+  def __init__(self, mnemonic, rA, rB, rD, imm, label):
     self._mnemonic = mnemonic
     self._rA = rA
     self._rB = rB
     self._rD = rD
     self._imm = imm
+    self._label = label
 
     self._next = None
 
@@ -56,21 +58,49 @@ class Instruction:
   Returns string representation of instruction.
   """
   def __str__(self):
+    tabCount = 1
+
     s = ""
     s += self._mnemonic
-    s += " "
-    s += "r" + str(self._rD)
-    s += ", "
-    s += "r" + str(self._rA)
-    s += ", "
+    s += "\t"
+
+    if self._rD != None:
+      s += "r" + str(self._rD)
+      s += ", "
+    else:
+      tabCount = 2
+
+    if self._rA != None:
+      s += "r" + str(self._rA)
+      s += ", "
 
     # If imm is None, we assume this is format A (2 source registers).
     # The last element of the string in this case is rB.
-    # Otherwise it is the immediate as a hex string.
-    if self._imm == None:
+    # Otherwise it is the immediate or label.
+    if self._imm == None and self._rB != None:
       s += "r" + str(self._rB)
+    elif self._imm != None:
+      s += str(self._imm)
+    elif self._label != None:
+      s += str(self._label)
+
+    # Now append some flags for the metadata (is translatable, is memory access, etc)
+    s += "\t" * tabCount
+
+    if self.canTranslate():
+      s += "T"
     else:
-      s += "0x{:04x}".format(self._imm)
+      s += "-"
+
+    if self.isBasicBlockBoundary():
+      s += "B"
+    else:
+      s += "-"
+
+    if self.isMemoryAccess():
+      s += "M"
+    else:
+      s += "-"
 
     return s
 
@@ -91,19 +121,19 @@ class Instruction:
   """
   Returns true if this instruction can be translated to VHDL, false otherwise.
   """
-  def canTranslate():
+  def canTranslate(self):
     raise NotImplementedError("Abstract method. Must be overriden by subclasses.")
 
   """
   Returns true if this instruction forms the boundary of a basic block, false otherwise.
   """
-  def isBasicBlockBoundary():
+  def isBasicBlockBoundary(self):
     raise NotImplementedError("Abstract method. Must be overriden by subclasses.")
 
   """
   Returns true if this instruction is a memory access, false otherwise.
   """
-  def isMemoryAccess():
+  def isMemoryAccess(self):
     raise NotImplementedError("Abstract method. Must be overriden by subclasses.")
 
 """
@@ -111,10 +141,10 @@ Base arithmetic/logic instructions. Both integer and float arithmetic/logic
 instructions inherit from this.
 """
 class ArithmeticInstruction(Instruction):
-  def isBasicBlockBoundary():
+  def isBasicBlockBoundary(self):
     return False
 
-  def isMemoryAccess():
+  def isMemoryAccess(self):
     return False
 
 """
@@ -151,7 +181,7 @@ pcmpeq
 pcmpne
 """
 class IntegerArithmeticInstruction(ArithmeticInstruction):
-  def canTranslate():
+  def canTranslate(self):
     return True
 
 """
@@ -167,7 +197,7 @@ fint
 fsqrt
 """
 class FloatArithmeticInstruction(ArithmeticInstruction):
-  def canTranslate():
+  def canTranslate(self):
     return False
 
 """
@@ -195,13 +225,18 @@ rted
 rtsd
 """
 class ControlFlowInstruction(Instruction):
-  def canTranslate():
+  def __init__(self, mnemonic, rA, rB, rD, imm, label):
+    # For a control flow instruction, there is no rD, so what is passed as rD becomes rA, and rA becomes
+    # rB.
+    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label)
+
+  def canTranslate(self):
     return False
 
-  def isBasicBlockBoundary():
+  def isBasicBlockBoundary(self):
     return True
 
-  def isMemoryAccess():
+  def isMemoryAccess(self):
     return False
 
 """
@@ -222,13 +257,13 @@ sw
 swi
 """
 class InputOutputInstruction(Instruction):
-  def canTranslate():
+  def canTranslate(self):
     return True
 
-  def isBasicBlockBoundary():
+  def isBasicBlockBoundary(self):
     return False
 
-  def isMemoryAccess():
+  def isMemoryAccess(self):
     return True
 
 """
@@ -242,7 +277,7 @@ put
 putd
 """
 class FSLInputOutputInstruction(InputOutputInstruction):
-  def canTranslate():
+  def canTranslate(self):
     return False
 
 """
@@ -255,13 +290,13 @@ There is only one such instruction:
 imm
 """
 class ImmediateInstruction(Instruction):
-  def canTranslate():
+  def canTranslate(self):
     return True
 
-  def isBasicBlockBoundary():
+  def isBasicBlockBoundary(self):
     return False
 
-  def isMemoryAccess():
+  def isMemoryAccess(self):
     return False
 
 """
@@ -275,22 +310,61 @@ msrclr
 msrset
 """
 class SystemInstruction(Instruction):
-  def canTranslate():
+  def canTranslate(self):
     return False
 
-  def isBasicBlockBoundary():
+  def isBasicBlockBoundary(self):
     return False
 
-  def isMemoryAccess():
+  def isMemoryAccess(self):
+    return False
+
+"""
+These are nop instructions. They are not translatable as there isn't really any point.
+They will probably only occur in the case of unused delay slots in rtxd instructions.
+
+nop
+"""
+class NOPInstruction(Instruction):
+  def canTranslate(self):
+    return False
+
+  def isBasicBlockBoundary(self):
+    return False
+
+  def isMemoryAccess(self):
     return False
 
 def parseInstruction(instructionString):
-  # First get the mnemonic. This is the first token in the string and
-  # ends with the first space.
-  mnemonic = instructionString[:instructionString.index(' ')]
+  # Sanitise the input slightly. We don't care about comments.
+  # These begin with a '#' and start after the end of the instruction.
+  if '#' in instructionString:
+    instructionString = instructionString[:instructionString.index('#')]
+
+  # Strip any leading and trailing whitespace.
+  instructionString = instructionString.strip()
+
+  originalInstructionString = instructionString
+
+  if ' ' in instructionString or '\t' in instructionString:
+    # First get the mnemonic. This is the first token in the string and
+    # ends with the first space.
+    try:
+      mnemonic = instructionString[:instructionString.index(' ')]
+    except ValueError:
+      # Maybe its a tab?
+      try:
+        mnemonic = instructionString[:instructionString.index('\t')]
+      except ValueError:
+        raise ValueError("Error parsing mnemonic from instruction: " + originalInstructionString)
+  else:
+    mnemonic = instructionString
 
   # Find the category of the instruction and get the relevant class.
-  category = INSTRUCTION_MAPPING[mnemonic]
+  try:
+    category = INSTRUCTION_MAPPING[mnemonic]
+  except KeyError:
+    raise ValueError("Unknown mnemonic: " + mnemonic + " in instruction: " + originalInstructionString)
 
   if category == "IntegerArith":
     instructionClass = IntegerArithmeticInstruction
@@ -306,44 +380,68 @@ def parseInstruction(instructionString):
     instructionClass = ImmediateInstruction
   elif category == "System":
     instructionClass = SystemInstruction
+  elif category == "NOP":
+    instructionClass = NOPInstruction
   else:
     raise ValueError("Invalid category: " + str(category))
 
-  # Now we have one or more whitespaces. 
-  instructionString = instructionString[instructionString.index(' '):].lstrip()
+  # If there are no delimiters now, just return a blank instruction.
+  if ' ' not in instructionString and '\t' not in instructionString:
+    return instructionClass(mnemonic, None, None, None, None, None)
 
-  # The first token should be the destination register in the form rD,
-  # where D is the register number.
-  destinationRegister = parseRegister(instructionString[:instructionString.index(',')])
+  # Now we have one or more whitespaces.
+  try:
+    instructionString = instructionString[instructionString.index(' '):]
+  except ValueError:
+    try:
+      instructionString = instructionString[instructionString.index('\t'):]
+    except ValueError:
+      raise ValueError("Unknown delimiter in instruction: " + originalInstructionString)
 
+  instructionString = instructionString.strip()
+
+  instructionParameters = instructionString.split(',')
+  instructionParameters = list(map(lambda p: p.strip(), instructionParameters))
+
+  # Initialise all the parameters.
+  sourceRegisterA = None
+  sourceRegisterB = None
+  destinationRegister = None
+  immediate = None
+  label = None
+
+  if len(instructionParameters) < 1:
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label)
+
+  # The first parameter is the destination register or a label.
+  destinationRegister = parseRegister(instructionParameters[0])
   if destinationRegister == None:
-    raise ValueError("Destination register " + instructionString[:instructionString.index(',')] + " is not in the right format.")
+    label = parseLabel(instructionParameters[0])
+    if label == None:
+      raise ValueError("Error parsing first parameter in instruction: " + originalInstructionString)
 
-  instructionString = instructionString[instructionString.index(',')+1:].lstrip()
+  if len(instructionParameters) < 2:
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label)
 
-  sourceRegisterA = parseRegister(instructionString[:instructionString.index(',')])
-
+  # The second parameter is source register A, an immediate, or a label.
+  sourceRegisterA = parseRegister(instructionParameters[1])
   if sourceRegisterA == None:
-    raise ValueError("Source register A " + instructionString[:instructionString.index(',')] + "is not in the right format.")
-
-  instructionString = instructionString[instructionString.index(',')+1:].lstrip()
-
-  sourceRegisterB = parseRegister(instructionString.lstrip())
-
-  # If there isn't a second source register, this must be an immediate value. Attempt to parse it as that instead.
-  # If that fails too, raise an exception.
-  if sourceRegisterB == None:
-    immediate = parseImmediate(instructionString[:instructionString.index(',')])
-
+    immediate = parseImmediate(instructionParameters[1])
     if immediate == None:
-      raise ValueError("Token " + instructionString[:instructionString.index(',')] + " is neither a register or an immediate value.")
+      label = parseLabel(instructionParameters[1])
+      if label == None:
+        raise ValueError("Error parsing second parameter in instruction: " + originalInstructionString)
 
-  else:
-    immediate = None
+  if len(instructionParameters) < 3:
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label)
 
-  i = instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate)
+  sourceRegisterB = parseRegister(instructionParameters[2])
+  if sourceRegisterB == None:
+    immediate = parseImmediate(instructionParameters[2])
+    if immediate == None:
+      raise ValueError("Error parsing third parameter in instruction: " + originalInstructionString)
 
-  return i
+  return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label)
 
 def parseRegister(s):
   m = REGISTER_FORMAT_RE.match(s)
@@ -360,3 +458,11 @@ def parseImmediate(s):
     return None
 
   return int(m.groups()[0])
+
+def parseLabel(s):
+  m = LABEL_FORMAT_RE.match(s)
+
+  if m == None:
+    return None
+
+  return str(m.groups()[0])

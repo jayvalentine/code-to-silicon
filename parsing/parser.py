@@ -19,7 +19,7 @@ def parse(instructionList):
   firstInstruction = instructions.parseInstruction(instructionString)
 
   # Get the rest of the instructions.
-  otherInstructions = instructionList[1:-1]
+  otherInstructions = instructionList[1:]
 
   if len(otherInstructions) > 0:
     # Parse the next instruction recursively, setting up the linked list as we go.

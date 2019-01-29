@@ -1,7 +1,13 @@
 ---
 IntegerArith:
   - add
+  - addk
+  - addc
+  - addkc
   - addi
+  - addic
+  - addik
+  - addikc
   - rsub
   - rsubi
   - idiv
@@ -90,3 +96,6 @@ System:
   - mts
   - msrclr
   - msrset
+
+NOP:
+  - nop
