@@ -21,6 +21,32 @@
 
 \chapter{Literature Review}
 
+\section{Moore's Law and Dennard Scaling}
+
+In 1965, Gordon Moore predicted that the number of transistors in an integrated circuit will double
+approximately every two years  \cite{moore}. Similarly, Dennard scaling describes the way in which transistor power density
+remains constant as the transistors themselves shrink in size \cite{dennard}. These phenomena combined allow for exponential
+transistor-density increases, and this has been exploited to produce exponentially higher performance in
+microprocessors year on year.
+
+\begin{figure}[h]
+\center{\includegraphics[width=\textwidth]
+{figures/moore.png}}
+\caption{Moore's 1965 prediction. \cite{moore}}
+\end{figure}
+
+However, in more recent times, a breakdown in this scaling has been observed. In the past, Dennard scaling has allowed
+microprocessor manufacturers to offset the increased energy cost of faster transistor switching, resulting in higher
+and higher clock speeds. However, more recently, microprocessor clock speeds have remained relatively static. This is
+due to a breakdown in Dennard scaling for very small transistors, and has caused microprocessor manufacturers to instead
+pursue increased performance by the use of multicore designs.
+
+\begin{figure}[h]
+\center{\includegraphics[width=\textwidth]
+{figures/cpu-speed.png}}
+\caption{Trends in microprocessors since 1970. \cite{karlrupp}}
+\end{figure}
+
 \section{Dark Silicon}
 
 Dark silicon is a phenomenon which has been observed as transistor density in microprocessors has increased.
@@ -37,6 +63,7 @@ is negligible. This is another kind of dark silicon - the underutilization in th
 energy concerns but is caused by the limited parallelism of the application being unable to exploit all of
 the cores of a device.
 
+There have been several broad responses to this phenomenon.
 In \cite{four-horsemen}, Taylor gives two pessimistic predictions regarding the future of silicon
 utilization. The first, the 'shrinking horseman', predicts that chips will begin to shrink as a result of
 the utilization wall. This would lead to an increase in cost per mm\textsuperscript{2} of silicon, as
