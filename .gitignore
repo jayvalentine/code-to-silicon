@@ -4,6 +4,7 @@
 *.run.xml
 *.toc
 *.bbl
+*.blg
 
 # Generic logfiles:
 *.log
