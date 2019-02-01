@@ -1,4 +1,5 @@
 \documentclass{UoYCSproject}
+\addbibresource{REFERENCES.bib}
 
 \BEng
 
@@ -14,11 +15,11 @@
 \begin{abstract}
 \end{abstract}
 
-\chapter*{Introduction}
+\chapter{Introduction}
 
 \section{Motivation}
 
-\chapter*{Literature Review}
+\chapter{Literature Review}
 
 \section{Dark Silicon}
 
@@ -103,31 +104,6 @@ limitation by the use of a hybrid architecture, and by providing mechanisms by w
 hardware can be used by applications to speed up repeated blocks functionality, with the rest of the
 application executing on the MIPS core.
 
-\section{Architectural Support}
-
-If accelerator-rich architectures are to surpass conventional single- or multi-core devices, the overheads associated with
-the communication between accelerators and the general purpose CPUs need to be alleviated. In \cite{accelerator-rich-cmp},
-an approach to this is outlined in which a hardware architecture and a lightweight interrupt system are developed.
-
-\begin{thebibliography}{9}
-\bibitem{darksilicon}
-H. Esmaeilzadeh, E. Blem, R. St. Amant, K. Sankaralingam, D. Burger, "Dark Silicon and the End of Multicore Scaling", IEEE Micro, vol. 32, pp. 122-134, May-Jun 2012.
-
-\bibitem{four-horsemen}
-M. B. Taylor, "Is Dark Silicon Useful? Harnessing the Four Horsemen of the Coming Dark Silicon Apocalypse", in Design Automation Conference 2012, San Francisco, CA, USA, 2012, pp. 1131-1136.
-
-\bibitem{greendroid}
-S. Swanson, M. B. Taylor, "Greendroid: Exploring the Next Evolution in Smartphone Application Processors", IEEE Communications Magazine, vol. 49, pp 112-119, Apr 2011.
-
-\bibitem{arnone-thesis}
-A. Arnone, "Feasibility of Accelerator Generation to Alleviate Dark Silicon in a Novel Architecture", Ph.D. thesis, Dept. Computer Science, University of York, York, Jun 2017.
-
-\bibitem{high-performance-microarchitecture}
-R. Razdan, M. D. Smith, "A High-Performance Microarchitecture with Hardware-Programmable Functional Units", Proceedings of MICRO-27 (The 27th Annual IEEE/ACM International Symposium on Microarchitecture), pp 172-180, Nov 1994.
-
-\bibitem{garp}
-J. R. Hauser, J. Wawrzynek, "Garp: A MIPS Processor with a Reconfigurable Coprocessor", Proceedings of the IEEE Symposium on FPGAs for Custom Computing Machines, pp. 12-21, Apr 1997.
-
-\end{thebibliography}
+\printbibliography
 
 \end{document}
