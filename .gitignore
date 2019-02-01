@@ -3,6 +3,7 @@
 *.bcf
 *.run.xml
 *.toc
+*.bbl
 
 # Generic logfiles:
 *.log
