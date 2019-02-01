@@ -1,5 +1,8 @@
 # LaTeX stuff:
 *.aux
+*.bcf
+*.run.xml
+*.toc
 
 # Generic logfiles:
 *.log
