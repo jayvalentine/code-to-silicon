@@ -110,13 +110,38 @@ not for general-purpose computing, but for a large number of specialized cores, 
 more energy efficient than a general-purpose core, allowing for increased energy efficiency at the
 cost of silicon area.
 
+\section{Heterogeneous Architectures}
+
+One such 'specialized horseman' approach is the use of heterogeneous architectures.
+These are computer architectures in which one or more general-purpose cores are coupled with special-purpose coprocessors,
+also known as hardware accelerators. A hardware accelerator is a specialised hardware circuit intended to perform a
+specific task more efficiently than a general-purpose processor. While historically hardware accelerators have been designed by
+hand for a specific application (e.g. encryption), this is infeasible when considering architectures
+with large numbers of accelerators. Thus an automated approach to generating hardware accelerators is required.
+
+This is the approach taken in \cite{high-performance-microarchitecture}. Here Razdan and Smith propose a simple
+hardware accelerator architecture which avoids the need for memory synchronization and reduces the overheads involved in
+invoking a hardware accelerator. They describe a toolchain which is able to extract instruction streams to be 'outsourced' to an
+accelerator core (called a \textit{programmable functional unit}, or \textit{PFU}) after code generation.
+
+\begin{figure}[hbt]
+\center{\includegraphics[width=0.75\textwidth]
+{figures/pfu.png}}
+\caption{Two PFU optimization examples. Both sequences of operations can be evaluated in a single cycle, while the same sequences in MIPS R2000 instructions would take multiple cycles. \cite{high-performance-microarchitecture}}
+\end{figure}
+
+The PFU model is a simplification from the general model of a hardware accelerator, which is as a multi-cycle state machine.
+Instead each PFU has at most two input operands and at most one output operand. In addition, the PFU-logic instructions (MIPS
+instructions that are candidates for translation into a PFU) cannot be memory-access or flow control instructions. This means
+that each PFU has an identical interface, and can be executed in a single cycle. This allows PFUs to be executed with a single
+instruction, \textit{expfu}, in a single cycle, maintaining the fixed-format and single-cycle instructions of the MIPS
+processor's RISC instruction set.
+
 \section{Conservation Cores}
 
-One such 'specialized horseman' approach is the use of hardware accelerators. A hardware accelerator is a
-specialised hardware circuit intended to perform a specific task more efficiently than a general-purpose processor.
-Such hardware accelerators have existed for certain applications, such as graphics processing or cryptography, for many years.
-While traditionally hardware accelerators have been used to speed up certain computations, they can also be used
-to achieve the same computational performance as a general-purpose processor at a fraction of the energy cost.
+While traditionally hardware accelerators have been used to speed up certain computations, they can also be used to achieve the
+same computational performance as a general-purpose processor at a fraction of the energy cost, thus alleviating the dark silicon
+problem.
 
 \cite{c-cores} introduces \textit{conservation cores} (\textit{c-cores}), which are hardware accelerators
 designed for this purpose. The paper outlines a method for generating c-cores for a given application.
@@ -169,7 +194,7 @@ architecture avoids the reuse of logic between states, reducing power density at
 logic area (due to potentially duplicated functionality). In both cases the resulting accelerator core is
 more energy-efficient than the general-purpose processor is at the same task.
 
-Each core in Arnone's work is a finite state machine generated from a basic block in the stack architecure's
+Here each core is a finite state machine generated from a basic block in the stack architecure's
 assembly code. States are divided between computation states and memory-access states. Each computation state
 is formed of a series of HDL (VHDL is used, but this could just as easily be Verilog) statements which are direct
 translations of instructions in the stack architecture's instruction set. Between each computation state are one
@@ -180,37 +205,6 @@ data-flow system with no need for synchronization, they can be completed within 
 These cores differ from conservation cores in that there is no control flow - while c-cores can encode loops, Arnone's
 work focuses solely on basic blocks. This means that less use can be made of the cores (as the main processor must still
 perform flow control), but also that the implementation of state machines is less complex - they are linear.
-
-\section{Reconfigurable Computing}
-
-Reconfigurable computing is an area of computer architecture that seeks to exploit reconfigurable hardware
-to provide performance or energy efficiency increases. As the hardware can be reconfigured any number of times,
-its configuration can be tailored to a particular application, and even reconfigured between different applications
-running on the same processor.
-
-The c-core architecture (and derivatives) described in the previous chapter are a perfect fit for such an architecture.
-With an FPGA on the same die as a general-purpose processor (or even the processor itself being programmed into the FPGA)
-it becomes easy to change the configuration of hardware accelerator cores between applications.
-
-This is the approach taken in \cite{high-performance-microarchitecture}. Here Razdan and Smith propose a simplified
-hardware accelerator architecture to avoid the need for memory synchronization and to reduce the time taken to configure an
-individual accelerator. They describe a toolchain which is able to extract instruction streams to be 'outsourced' to an
-accelerator core (called a \textit{programmable functional unit}, or \textit{PFU}) after code generation.
-
-\begin{figure}[hbt]
-\center{\includegraphics[width=0.75\textwidth]
-{figures/pfu.png}}
-\caption{Two PFU optimization examples. Both sequences of operations can be evaluated in a single cycle, while the same sequences in MIPS R2000 instructions would take multiple cycles. \cite{high-performance-microarchitecture}}
-\end{figure}
-
-The PFU model is far simpler than the c-core model described in \cite{c-cores}. A c-core could have any number of inputs and
-outputs, and may include memory accesses or flow control as well. In contrast, each PFU has at most two input operands
-and at most one output operand. In addition, the PFU-logic instructions (MIPS instructions that are candidates for translation
-into a PFU) cannot be memory-access or flow control instructions. This means that each PFU has an identical interface,
-and can be executed in a single cycle. This allows PFUs to be executed with a single instruction, \textit{expfu}, in a single
-cycle, maintaining the fixed-format and single-cycle instructions of the MIPS processor's RISC instruction set. The simpler
-architecture also allows PFUs to be configured much faster than c-cores, raising the potential of PFU configuration at run-time,
-an approach that is not really viable with c-cores.
 
 \printbibliography
 
