@@ -7,3 +7,6 @@ def help():
 
 def compile(files, output):
   common.run_command(GCC, ["-S"] + files + ["-o " + output])
+
+def assemble(files, output):
+  common.run_command(GCC, files + ["-o " + output])

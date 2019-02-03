@@ -19,10 +19,23 @@ with open("main.s", 'r') as stream:
 
 #print(instructionList)
 
-head = parser.parse(instructionList)
+instructionListParsed = parser.parse(instructionList)
 
-parser.prettyPrint(head)
+#parser.prettyPrint(head)
 
-#while instructionListParsed != None:
-#  print(instructionListParsed)
-#  instructionListParsed = instructionListParsed.getNext()
+blocks = analysis.extractBlocks(instructionListParsed)
+
+for block in blocks:
+  r = analysis.analyseBlock(block)
+
+  if r != None:
+    for instruction in block:
+      print(instruction)
+
+    print("Inputs: ")
+    print(r[0])
+    print("Outputs: ")
+    print(r[1])
+    print("")
+
+compiler.assemble(["main.s"], "main.o")

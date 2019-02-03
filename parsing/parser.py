@@ -15,35 +15,24 @@ def parse(stream):
 
   return parseStreamItems(stream)
 
-def prettyPrint(streamItem):
-  if streamItem == None:
-    return
-
-  if streamItem.isInstruction():
-    print("\t" + str(streamItem))
-  else:
-    print(streamItem)
-
-  prettyPrint(streamItem.getNext())
-
+def prettyPrint(stream):
+  for s in stream:
+    if s.isInstruction():
+      print("\t" + str(s))
+    else:
+      print(s)
 
 def parseStreamItems(stream):
   # Check the list is the right length.
   if len(stream) < 1:
     raise ValueError("Must provide at least one instruction for parsing.")
 
-  # Get the first instruction, and convert into internal representation.
-  instructionString = stream[0]
-  firstStreamItem = parseStreamItem(instructionString)
+  streamItems = []
 
-  # Get the rest of the instructions.
-  otherStreamItems = stream[1:]
+  for line in stream:
+    streamItems.append(parseStreamItem(line))
 
-  if len(otherStreamItems) > 0:
-    # Parse the next instruction recursively, setting up the linked list as we go.
-    firstStreamItem.setNext(parseStreamItems(otherStreamItems))
-
-  return firstStreamItem
+  return streamItems
 
 def parseStreamItem(streamItem):
   # Is this a label? If so, parse as a label.
