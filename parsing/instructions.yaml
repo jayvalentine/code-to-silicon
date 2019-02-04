@@ -9,6 +9,7 @@ IntegerArith:
   - addik
   - addikc
   - rsub
+  - rsubk
   - rsubi
   - idiv
   - mul
@@ -57,10 +58,13 @@ ControlFlow:
   - blei
   - blt
   - blti
+  - bltid
   - bne
   - bnei
   - br
   - bri
+  - brid
+  - brlid
   - brk
   - brki
   - rtbd

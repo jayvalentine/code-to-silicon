@@ -1,7 +1,7 @@
 from parsing import parser
 from toolchain import compiler
 
-import analysis
+from analysis import basicblocks
 
 compiler.compile(["c/main.c"], "main.s")
 
@@ -23,19 +23,9 @@ instructionListParsed = parser.parse(instructionList)
 
 #parser.prettyPrint(head)
 
-blocks = analysis.extractBlocks(instructionListParsed)
+blocks = basicblocks.extractBasicBlocks(instructionListParsed)
 
 for block in blocks:
-  r = analysis.analyseBlock(block)
-
-  if r != None:
-    for instruction in block:
-      print(instruction)
-
-    print("Inputs: ")
-    print(r[0])
-    print("Outputs: ")
-    print(r[1])
-    print("")
+  print(block)
 
 compiler.assemble(["main.s"], "main.o")
