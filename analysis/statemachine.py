@@ -48,6 +48,9 @@ class ComputationState(State):
 
     return s
 
+  def instructions(self):
+    return self._instructions
+
 class WaitState(State):
   def __init__(self, name, instruction):
     super(WaitState, self).__init__(name)
@@ -62,6 +65,9 @@ class WaitState(State):
 
   def isWaitState(self):
     return True
+
+  def instruction(self):
+    return self._instruction
 
 class StartState(State):
   def __init__(self, name, inputs):

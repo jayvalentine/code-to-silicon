@@ -102,6 +102,9 @@ class Instruction(streams.StreamItem):
 
     return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, params, flags)
 
+  def mnemonic(self):
+    return self._mnemonic
+
   def rD(self):
     return self._rD
 
@@ -110,6 +113,9 @@ class Instruction(streams.StreamItem):
 
   def rB(self):
     return self._rB
+
+  def imm(self):
+    return self._imm
 
   def isInstruction(self):
     return True

@@ -4,6 +4,8 @@ from toolchain import compiler
 from analysis import basicblocks
 from analysis import statemachine
 
+from translation import translator
+
 compiler.compile(["c/main.c"], "main.s")
 
 with open("main.s", 'r') as stream:
@@ -56,5 +58,18 @@ selectedBlocks = list(filter(lambda b: (len(b.inputs()) + len(b.outputs())) < le
 #  print(block)
 
 states = statemachine.getStateMachine(blocks[0])
+
+for state in states:
+  if state.isWaitState():
+    print("Wait:")
+    print(translator.translateMemoryAccess(state.instruction()))
+  elif state.isStartState():
+    print("Start:")
+  elif state.isEndState():
+    print("End:")
+  else:
+    print("Computation:")
+    for i in state.instructions():
+      print(translator.translateArithmetic(i))
 
 compiler.assemble(["main.s"], "main.o")
