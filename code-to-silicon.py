@@ -26,11 +26,13 @@ instructionListParsed = parser.parse(instructionList)
 
 blocks = basicblocks.extractBasicBlocks(instructionListParsed)
 
-for block in blocks:
+selectedBlocks = list(filter(lambda b: b.memoryAccessDensity() <= 0.5, blocks))
+selectedBlocks = list(filter(lambda b: (len(b.inputs()) + len(b.outputs())) < len(b), selectedBlocks))
+selectedBlocks = list(filter(lambda b: len(b) > 1, selectedBlocks))
+
+for block in selectedBlocks:
   print(block)
 
-  #states = statemachine.getStates(block)
-  #for state in states:
-  #  print(state)
+states = statemachine.getStateMachine(blocks[0])
 
 compiler.assemble(["main.s"], "main.o")
