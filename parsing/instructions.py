@@ -435,7 +435,9 @@ def parseInstruction(instructionString):
   if sourceRegisterB == None:
     immediate = parseImmediate(instructionParameters[2])
     if immediate == None:
-      raise ValueError("Error parsing third parameter in instruction: " + originalInstructionString)
+      label = parseLabel(instructionParameters[2])
+      if label == None:
+        raise ValueError("Error parsing third parameter in instruction: " + originalInstructionString)
 
   return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label)
 

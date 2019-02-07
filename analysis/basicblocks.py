@@ -13,6 +13,8 @@ class BasicBlock:
       lambda i: "r" + str(i),
       self.outputs()))) + "\n"
 
+    s += "\tMemory-access Density: " + str(round(self.memoryAccessDensity(), 2)) + "\n"
+
     s += "Instructions:\n"
     for i in self._instructions:
       s += "\t" + str(i) + "\n"
@@ -21,6 +23,20 @@ class BasicBlock:
 
   def __len__(self):
     return len(self._instructions)
+
+  def instructions(self):
+    return self._instructions
+
+  def memoryAccessDensity(self):
+    numInstructions = 0
+    numMemoryAccess = 0
+
+    for i in self._instructions:
+      numInstructions += 1
+      if i.isMemoryAccess():
+        numMemoryAccess += 1
+
+    return (float(numMemoryAccess)/float(numInstructions))
 
   def outputs(self):
     outputs = []

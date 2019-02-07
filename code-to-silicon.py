@@ -2,6 +2,7 @@ from parsing import parser
 from toolchain import compiler
 
 from analysis import basicblocks
+from analysis import statemachine
 
 compiler.compile(["c/main.c"], "main.s")
 
@@ -27,5 +28,9 @@ blocks = basicblocks.extractBasicBlocks(instructionListParsed)
 
 for block in blocks:
   print(block)
+
+  #states = statemachine.getStates(block)
+  #for state in states:
+  #  print(state)
 
 compiler.assemble(["main.s"], "main.o")
