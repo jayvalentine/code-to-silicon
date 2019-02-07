@@ -26,12 +26,34 @@ instructionListParsed = parser.parse(instructionList)
 
 blocks = basicblocks.extractBasicBlocks(instructionListParsed)
 
+# Filter blocks with a length of 1. We don't really care about them so we don't
+# want to include them in the analysis.
+blocks = list(filter(lambda b: len(b) > 1, blocks))
+
+# Get some statistics about the blocks.
+memoryDensities = []
+inputSizes = []
+outputSizes = []
+
+for block in blocks:
+  memoryDensities.append(block.memoryAccessDensity())
+  inputSizes.append(len(block.inputs()))
+  outputSizes.append(len(block.outputs()))
+
+averageMemoryDensity = sum(memoryDensities) / len(memoryDensities)
+averageInputSize = sum(inputSizes) / len(inputSizes)
+averageOutputSize = sum(outputSizes) / len(outputSizes)
+
+print("Mean memory density: " + str(round(averageMemoryDensity, 2)))
+print("Mean input size: " + str(averageInputSize))
+print("Mean output size: " + str(averageOutputSize))
+
 selectedBlocks = list(filter(lambda b: b.memoryAccessDensity() <= 0.5, blocks))
 selectedBlocks = list(filter(lambda b: (len(b.inputs()) + len(b.outputs())) < len(b), selectedBlocks))
-selectedBlocks = list(filter(lambda b: len(b) > 1, selectedBlocks))
 
-for block in selectedBlocks:
-  print(block)
+
+#for block in selectedBlocks:
+#  print(block)
 
 states = statemachine.getStateMachine(blocks[0])
 
