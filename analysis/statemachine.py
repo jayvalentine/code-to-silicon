@@ -32,6 +32,15 @@ class State:
 
     self._transitions[trigger] = state
 
+  def getTransition(self, trigger):
+    if trigger not in self._transitions.keys():
+      raise KeyError("Trigger " + str(trigger) + " is not a trigger in this state.")
+
+    return self._transitions[trigger]
+
+  def triggers(self):
+    return self._transitions.keys()
+
 class ComputationState(State):
   def __init__(self, name, instructions):
     super(ComputationState, self).__init__(name)
@@ -105,6 +114,59 @@ def getStateMachine(basicBlock):
 
   return states
 
+def outputTikzDefinition(states):
+  nodes = ""
+
+  edges = ""
+
+  previousState = None
+
+  for state in states:
+    options = ["state"]
+
+    if state.isStartState():
+      options.append("initial")
+
+    if previousState != None:
+      if state.isWaitState():
+        if previousState.isWaitState():
+          options.append("below of=" + previousState.name())
+        else:
+          options.append("below right of=" + previousState.name())
+      else:
+        if previousState.isWaitState():
+          options.append("left of=" + previousState.name())
+        else:
+          options.append("below of=" + previousState.name())
+
+    nodes += "  \\node[" + ", ".join(options) + "] (" + state.name() + ") {" + escapeUnderscore(state.name()) + "};\n"
+
+    for trigger in state.triggers():
+      destinationState = state.getTransition(trigger)
+
+      if destinationState == state:
+        option = "loop right"
+      else:
+        if destinationState.isWaitState() and state.isWaitState():
+          option = "right"
+        elif state.isWaitState():
+          option = "above"
+        elif destinationState.isWaitState():
+          option = "above right"
+        else:
+          option = "left"
+
+      edges += "  \\draw (" + state.name() + ") edge[" + option + "] node{" + escapeUnderscore(trigger) + "} (" + destinationState.name() + ");\n"
+
+    previousState = state
+
+  definition = "\\begin{tikzpicture}\n" + nodes + "\n" + edges + "\\end{tikzpicture}\n"
+
+  return definition
+
+def escapeUnderscore(s):
+  return s.replace("_", "\\_")
+
 def getStates(basicBlock):
   states = []
 
@@ -138,13 +200,13 @@ def linkStates(states):
 
   while i >= 0:
     if states[i].isWaitState():
-      states[i].addTransition("rising(CLK)", states[i])
+      states[i].addTransition("CLK", states[i])
 
     if (i+1) < len(states):
       if states[i].isWaitState():
-        trigger = "rising(M_RDY)"
+        trigger = "M_RDY"
       else:
-        trigger = "rising(CLK)"
+        trigger = "CLK"
 
       states[i].addTransition(trigger, states[i+1])
 

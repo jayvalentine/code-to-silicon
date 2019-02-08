@@ -1,3 +1,5 @@
+import os
+
 from parsing import parser
 from toolchain import compiler
 
@@ -59,17 +61,16 @@ selectedBlocks = list(filter(lambda b: (len(b.inputs()) + len(b.outputs())) < le
 
 states = statemachine.getStateMachine(blocks[0])
 
-for state in states:
-  if state.isWaitState():
-    print("Wait:")
-    print(translator.translateMemoryAccess(state.instruction()))
-  elif state.isStartState():
-    print("Start:")
-  elif state.isEndState():
-    print("End:")
-  else:
-    print("Computation:")
-    for i in state.instructions():
-      print(translator.translateArithmetic(i))
+with open(os.path.join("figures", "autogen", "statemachine.tex"), "w") as stream:
+  stream.write(statemachine.outputTikzDefinition(states))
 
 compiler.assemble(["main.s"], "main.o")
+
+# Now build the report!
+
+os.system("pdflatex REPORT")
+os.system("biber REPORT")
+os.system("pdflatex REPORT")
+
+
+print("States: " + str(len(states)))

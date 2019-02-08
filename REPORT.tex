@@ -1,6 +1,16 @@
 \documentclass{UoYCSproject}
 \addbibresource{REFERENCES.bib}
 
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows}
+
+\tikzset{
+  ->, % makes the edges directed
+  node distance=4cm, % specifies the minimum distance between two nodes. Change if necessary.
+  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+  initial text=$ $, % sets the text that appears on the start arrow
+}
+
 \BEng
 \supervisor{Dr. Christopher Crispin-Bailey}
 
@@ -205,6 +215,16 @@ data-flow system with no need for synchronization, they can be completed within 
 These cores differ from conservation cores in that there is no control flow - while c-cores can encode loops, Arnone's
 work focuses solely on basic blocks. This means that less use can be made of the cores (as the main processor must still
 perform flow control), but also that the implementation of state machines is less complex - they are linear.
+
+\chapter{Methodology and Design}
+
+\section{Translation into State Machines}
+
+\begin{figure}[ht]
+  \centering
+  \input{figures/autogen/statemachine.tex}
+  \caption{An example hardware accelerator model.}
+\end{figure}
 
 \printbibliography
 
