@@ -5,12 +5,16 @@ class StateMachine:
     self._name = name
     self._inputRegisters = basicBlock.inputs()
     self._outputRegisters = basicBlock.outputs()
+    self._usedRegisters = basicBlock.used()
 
     self._states = getStates(basicBlock)
     linkStates(self._states)
 
   def __len__(self):
     return len(self._states)
+
+  def __getitem__(self, index):
+    return self._states[index]
 
   def name(self):
     return self._name
@@ -20,6 +24,9 @@ class StateMachine:
 
   def outputRegisters(self):
     return self._outputRegisters
+
+  def usedRegisters(self):
+    return self._usedRegisters
 
   def toTikzDef(self):
     nodes = ""
@@ -112,6 +119,9 @@ class State:
   def triggers(self):
     return self._transitions.keys()
 
+  def locals(self):
+    return []
+
 class ComputationState(State):
   def __init__(self, name, instructions):
     super(ComputationState, self).__init__(name)
@@ -130,6 +140,19 @@ class ComputationState(State):
 
   def instructions(self):
     return self._instructions
+
+  def locals(self):
+    l = []
+
+    for i in self._instructions:
+      if i.rA() != None and i.rA() not in l:
+        l.append(i.rA())
+      if i.rB() != None and i.rB() not in l:
+        l.append(i.rB())
+      if i.rD() != None and i.rD() not in l:
+        l.append(i.rD())
+
+    return l
 
 class WaitState(State):
   def __init__(self, name, instruction):

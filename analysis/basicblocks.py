@@ -13,6 +13,10 @@ class BasicBlock:
       lambda i: "r" + str(i),
       self.outputs()))) + "\n"
 
+    s += "\tUsed: " + ", ".join(list(map(
+      lambda i: "r" + str(i),
+      self.used()))) + "\n"
+
     s += "\tMemory-access Density: " + str(round(self.memoryAccessDensity(), 2)) + "\n"
 
     s += "Instructions:\n"
@@ -66,6 +70,19 @@ class BasicBlock:
         outputs.append(i.rD())
 
     return inputs
+
+  def used(self):
+    used = []
+
+    for i in self._instructions:
+      if i.rA() != None and i.rA() not in used:
+        used.append(i.rA())
+      if i.rB() != None and i.rB() not in used:
+        used.append(i.rB())
+      if i.rD() != None and i.rD() not in used:
+        used.append(i.rD())
+
+    return used
 
 def extractBasicBlocks(stream):
   blocks = []

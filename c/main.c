@@ -1,21 +1,27 @@
 
-#define APPROX_E_TO_X(x) ((x+1) + ((x*x)/2) + ((x*x*x)/6) + ((x*x*x*x)/24))
+#define SQUARE(x) ((x) * (x))
 
-void matrix_e_to_x(int* M, int* R)
+int sum_squares_8(int* A)
 {
-  int M_0 = M[0];
-  int M_1 = M[1];
+  int sum = 0;
 
-  R[0] = APPROX_E_TO_X(M_0);
-  R[1] = APPROX_E_TO_X(M_1);
+  sum += SQUARE(A[0]);
+  sum += SQUARE(A[1]);
+  sum += SQUARE(A[2]);
+  sum += SQUARE(A[3]);
+  sum += SQUARE(A[4]);
+  sum += SQUARE(A[5]);
+  sum += SQUARE(A[6]);
+  sum += SQUARE(A[7]);
+
+  return sum;
 }
 
 int main()
 {
-  int M[2] = {1, 2};
-  int R[2];
+  int A[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 
-  matrix_e_to_x(M, R);
+  int sum = sum_squares_8(A);
 
   return 0;
 }

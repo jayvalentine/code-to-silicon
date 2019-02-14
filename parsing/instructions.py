@@ -243,20 +243,7 @@ class ControlFlowInstruction(Instruction):
 
 """
 Input/output instructions. These do not include the FSL-access instructions
-as these are their own subclass. These are:
-
-lbu
-lbui
-lhu
-lhui
-lw
-lwi
-sb
-sbi
-sh
-shi
-sw
-swi
+as these are their own subclass.
 """
 class InputOutputInstruction(Instruction):
   def canTranslate(self):
@@ -266,6 +253,20 @@ class InputOutputInstruction(Instruction):
     return False
 
   def isMemoryAccess(self):
+    return True
+
+  def isRead(self):
+    return False
+
+  def isWrite(self):
+    return False
+
+class InputInstruction(InputOutputInstruction):
+  def isRead(self):
+    return True
+
+class OutputInstruction(InputOutputInstruction):
+  def isWrite(self):
     return True
 
 """
@@ -374,8 +375,10 @@ def parseInstruction(instructionString):
     instructionClass = FloatArithmeticInstruction
   elif category == "ControlFlow":
     instructionClass = ControlFlowInstruction
-  elif category == "InputOutput":
-    instructionClass = InputOutputInstruction
+  elif category == "Input":
+    instructionClass = InputInstruction
+  elif category == "Output":
+    instructionClass = OutputInstruction
   elif category == "FSL":
     instructionClass = FSLInputOutputInstruction
   elif category == "Immediate":

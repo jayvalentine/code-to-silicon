@@ -73,13 +73,15 @@ ControlFlow:
   - rted
   - rtsd
 
-InputOutput:
+Input:
   - lbu
   - lbui
   - lhu
   - lhui
   - lw
   - lwi
+
+Output:
   - sb
   - sbi
   - sh
