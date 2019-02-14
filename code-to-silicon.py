@@ -44,9 +44,20 @@ for block in blocks:
   inputSizes.append(len(block.inputs()))
   outputSizes.append(len(block.outputs()))
 
-averageMemoryDensity = sum(memoryDensities) / len(memoryDensities)
-averageInputSize = sum(inputSizes) / len(inputSizes)
-averageOutputSize = sum(outputSizes) / len(outputSizes)
+if len(memoryDensities) > 0:
+  averageMemoryDensity = sum(memoryDensities) / len(memoryDensities)
+else:
+  averageMemoryDensity = 0
+
+if len(inputSizes) > 0:
+  averageInputSize = sum(inputSizes) / len(inputSizes)
+else:
+  averageInputSize = 0
+
+if len(outputSizes) > 0:
+  averageOutputSize = sum(outputSizes) / len(outputSizes)
+else:
+  averageOutputSize = 0
 
 print("Mean memory density: " + str(round(averageMemoryDensity, 2)))
 print("Mean input size: " + str(averageInputSize))
@@ -59,18 +70,21 @@ selectedBlocks = list(filter(lambda b: (len(b.inputs()) + len(b.outputs())) < le
 #for block in selectedBlocks:
 #  print(block)
 
-states = statemachine.getStateMachine(blocks[0])
+sm = statemachine.getStateMachine(blocks[0])
 
 with open(os.path.join("figures", "autogen", "statemachine.tex"), "w") as stream:
-  stream.write(statemachine.outputTikzDefinition(states))
+  stream.write(sm.toTikzDef())
+
+with open("test.vhd", "w") as stream:
+  stream.write(translator.translateStateMachine(sm))
 
 compiler.assemble(["main.s"], "main.o")
 
 # Now build the report!
 
-os.system("pdflatex REPORT")
-os.system("biber REPORT")
-os.system("pdflatex REPORT")
+os.system("pdflatex REPORT > texbuild.log")
+os.system("biber REPORT > texbuild.log")
+os.system("pdflatex REPORT > texbuild.log")
 
 
-print("States: " + str(len(states)))
+print("States: " + str(len(sm)))

@@ -1,5 +1,76 @@
 STATE_NAME_FORMAT = "S_{:03d}"
 
+class StateMachine:
+  def __init__(self, name, basicBlock):
+    self._name = name
+    self._inputRegisters = basicBlock.inputs()
+    self._outputRegisters = basicBlock.outputs()
+
+    self._states = getStates(basicBlock)
+    linkStates(self._states)
+
+  def __len__(self):
+    return len(self._states)
+
+  def name(self):
+    return self._name
+
+  def inputRegisters(self):
+    return self._inputRegisters
+
+  def outputRegisters(self):
+    return self._outputRegisters
+
+  def toTikzDef(self):
+    nodes = ""
+
+    edges = ""
+
+    previousState = None
+
+    for state in self._states:
+      options = ["state"]
+
+      if state.isStartState():
+        options.append("initial")
+
+      if previousState != None:
+        if state.isWaitState():
+          if previousState.isWaitState():
+            options.append("below of=" + previousState.name())
+          else:
+            options.append("below right of=" + previousState.name())
+        else:
+          if previousState.isWaitState():
+            options.append("left of=" + previousState.name())
+          else:
+            options.append("below of=" + previousState.name())
+
+      nodes += "  \\node[" + ", ".join(options) + "] (" + state.name() + ") {" + escapeUnderscore(state.name()) + "};\n"
+
+      for trigger in state.triggers():
+        destinationState = state.getTransition(trigger)
+
+        if destinationState == state:
+          option = "loop right"
+        else:
+          if destinationState.isWaitState() and state.isWaitState():
+            option = "right"
+          elif state.isWaitState():
+            option = "above"
+          elif destinationState.isWaitState():
+            option = "above right"
+          else:
+            option = "left"
+
+        edges += "  \\draw (" + state.name() + ") edge[" + option + "] node{" + escapeUnderscore(trigger) + "} (" + destinationState.name() + ");\n"
+
+      previousState = state
+
+    definition = "\\begin{tikzpicture}\n" + nodes + "\n" + edges + "\\end{tikzpicture}\n"
+
+    return definition
+
 class State:
   def __init__(self, name):
     self._name = name
@@ -109,60 +180,7 @@ class EndState(State):
     return True
 
 def getStateMachine(basicBlock):
-  states = getStates(basicBlock)
-  linkStates(states)
-
-  return states
-
-def outputTikzDefinition(states):
-  nodes = ""
-
-  edges = ""
-
-  previousState = None
-
-  for state in states:
-    options = ["state"]
-
-    if state.isStartState():
-      options.append("initial")
-
-    if previousState != None:
-      if state.isWaitState():
-        if previousState.isWaitState():
-          options.append("below of=" + previousState.name())
-        else:
-          options.append("below right of=" + previousState.name())
-      else:
-        if previousState.isWaitState():
-          options.append("left of=" + previousState.name())
-        else:
-          options.append("below of=" + previousState.name())
-
-    nodes += "  \\node[" + ", ".join(options) + "] (" + state.name() + ") {" + escapeUnderscore(state.name()) + "};\n"
-
-    for trigger in state.triggers():
-      destinationState = state.getTransition(trigger)
-
-      if destinationState == state:
-        option = "loop right"
-      else:
-        if destinationState.isWaitState() and state.isWaitState():
-          option = "right"
-        elif state.isWaitState():
-          option = "above"
-        elif destinationState.isWaitState():
-          option = "above right"
-        else:
-          option = "left"
-
-      edges += "  \\draw (" + state.name() + ") edge[" + option + "] node{" + escapeUnderscore(trigger) + "} (" + destinationState.name() + ");\n"
-
-    previousState = state
-
-  definition = "\\begin{tikzpicture}\n" + nodes + "\n" + edges + "\\end{tikzpicture}\n"
-
-  return definition
+  return StateMachine("test", basicBlock)
 
 def escapeUnderscore(s):
   return s.replace("_", "\\_")
