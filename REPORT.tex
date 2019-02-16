@@ -11,6 +11,8 @@
   initial text=$ $, % sets the text that appears on the start arrow
 }
 
+\newenvironment{monospace}{\ttfamily}{\par}
+
 \BEng
 \supervisor{Dr. Christopher Crispin-Bailey}
 
@@ -218,12 +220,98 @@ perform flow control), but also that the implementation of state machines is les
 
 \chapter{Methodology and Design}
 
+\section{The Hardware Accelerator Model}
+
+
+
+\section{Code Analysis}
+
+In order to identify the best candidates for extraction into hardware accelerators, some analysis needs to be performed.
+The first step in this analysis is to break the instruction stream up into basic blocks. A basic block is a linear portion of
+code, bounded at both ends by flow control instructions (e.g. branch or call instructions). These blocks can then be linked
+together into a data-flow graph, in which all nodes are basic blocks, and all edges links between those blocks.
+
+\subsection{Inputs and Outputs}
+
+From this representation, some information about the individual blocks can be extracted. It is possible to know what the inputs
+and outputs from a block are in isolation (with an input being any register that is read before being written to in the block,
+and an output being any register written to at any point in the block). However, this leads to very conservative results, as
+highlighted by figure ~\ref{fig:analysisNaiveApproach}. In the example, \texttt{r6} is used as a temporary register, and
+according to the MicroBlaze ABI \cite{microblaze-ref} is discarded on returning from the function. If we take the naive approach
+to identifying a block's outputs, we ignore this fact and assume that because \texttt{r6} is written to, it must be an output of
+the block. In a real block, there may be many more temporary registers used, resulting in the analysis reporting a large number
+of 'false outputs'.
+
+\begin{figure}[h]
+  \begin{center}
+    \begin{minipage}{0.5\linewidth}
+      \begin{monospace}
+      \input{figures/inputs-outputs-conservative.s}
+      \end{monospace}
+    \end{minipage}
+  \end{center}
+
+  \caption{A naive approach to basic block analysis.}
+  \label{fig:analysisNaiveApproach}
+\end{figure}
+
+In order to solve this problem, the analysis needs to take into account both how the registers are used (as defined by the
+ABI) and the context in which the block exists (i.e. what blocks come before and after it).
+
+\subsection{Input/Output Overheads}
+
+For every input or output register to a block which is to be converted to an accelerator, the data contained within that register
+must be transferred between the processor and the hardware accelerator core. The cycles of overhead for a particular core are
+given by:
+
+\begin{center}
+\[ (\#inputs \times cycles_w) + (\#outputs \times cycles_r) \]
+\end{center}
+
+Where \(cycles_w\) and \(cycles_r\) are the number of cycles taken for a read from or write to the hardware accelerator,
+respectively.
+
+This means that as the number of inputs or outputs of a block increase, the benefits of converting that block to a hardware
+accelerator will diminish.
+
+\subsection{Memory-Access Density}
+
+The simple hardware accelerator model being used is that of a state machine which alternates between 'wait' states,
+in which the hardware accelerator is waiting on memory for a read or write operation, and 'computation' states,
+in which the hardware accelerator is calculating some values based off its internal registers. While computation states
+can be completed in a single clock cycle, the hardware accelerator may spend several cycles in a wait state, depending
+on the memory latency. Even in the best case, the accelerator will spend at least a single cycle in each wait state.
+
+Because of this, if the translated block contains a large amount of memory-access instructions, and a small amount of computation,
+the accelerator may not provide much of an increase in execution speed over the general purpose processor. Consider the block
+shown in figure ~\ref{fig:highMemoryDensity}: the generated accelerator will alternate between wait and computation states,
+with each computation state containing at most a single instruction. The accelerator will consume the same number of cycles
+executing this operation as the general-purpose processor.
+
+\begin{figure}[h]
+  \begin{center}
+    \begin{minipage}{0.5\linewidth}
+      \begin{monospace}
+      \input{figures/high-memory-density.s}
+      \end{monospace}
+    \end{minipage}
+  \end{center}
+
+  \caption{A block with high memory-access density.}
+  \label{fig:highMemoryDensity}
+\end{figure}
+
+Some of these issues can be overcome by compiler optimisation. A compiler could ensure that all the memory access in the example
+is done 'up front', resulting in 3 wait states and 1 computation state. However, if there are dependencies between
+the memory accesses, such an optimization may not be possible.
+
 \section{Translation into State Machines}
 
 \begin{figure}[ht]
   \centering
   \input{figures/autogen/statemachine.tex}
   \caption{An example hardware accelerator model.}
+  \label{fig:exampleStateMachine}
 \end{figure}
 
 \printbibliography
