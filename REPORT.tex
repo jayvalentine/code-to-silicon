@@ -222,8 +222,9 @@ perform flow control), but also that the implementation of state machines is les
 
 \section{System Architecture}
 
-MicroBlaze \cite{microblaze} is a 32-bit RISC architecture. It is highly configurable, as certain features (e.g. FPU, multiplier, barrel shifter)
-can be disabled if not required. This allows the architecture to be as minimal as is required by the application.
+MicroBlaze \cite{microblaze} is a 32-bit RISC architecture. It is highly configurable, as certain features
+(e.g. FPU, multiplier, barrel shifter) can be disabled if not required. This allows the architecture to be as minimal as is
+required by the application.
 
 The system used in this project consists of one MicroBlaze core, connected to local instruction and data block RAM (BRAM)
 via the local memory bus (LMB). The processor's AXI bus is used to connect to one or more hardware accelerator cores.
@@ -243,7 +244,28 @@ with these memories being connected in turn (via some kind of cache interface) t
 this is beyond the scope of this project, which focuses on a single MicroBlaze core with associated accelerators,
 and a single BRAM, with no main flash or DRAM.
 
-\section{Hardware Accelerator Model}
+\section{Hardware Accelerator Architecture}
+
+Each hardware accelerator is modelled as a sequential state machine, with a sequence of states determined by the structure
+of the code that the hardware accelerator is intended to replace. Each state machine block has a similar interface, as defined in table ~\ref{table:acceleratorSignals}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ |p{2cm}|p{2cm}|p{8cm}| }
+\textbf{Signal} & \textbf{Direction} & \multicolumn{1}{c}{\textbf{Description}} \\
+CLK             & I                  & Clock signal. \\[0.1cm]
+RST             & I                  & Reset signal. \\[0.1cm]
+SELECT          & I                  & Block-select signal. Block is active when this is HIGH, and inactive when this is LOW. \\[0.1cm]
+DONE            & O                  & Done signal. This goes HIGH once the state machine has finished its computation, and goes LOW when the state machine is reset. \\[0.1cm]
+M\_RDY          & I                  & Memory-ready signal. Signals to the state machine that a memory transaction has completed. \\[0.1cm]
+M\_ADDR         & O                  & Memory address. Address of word being accessed in memory. \\[0.1cm]
+M\_DATA         & I/O                & Data in/out. Data accessed in memory is written to or read from this line. \\[0.1cm]
+IN\_Rxx         & I                  & One or more input register lines. Inputs to the state machine are written to these lines from the MicroBlaze core. \\[0.1cm]
+OUT\_Rxx        & O                  & One or more output register lines. Outputs from the state machine are written to these lines from the state machine once it has finished computation.
+\end{tabular}
+\caption{Hardware accelerator input/output signals.}
+\label{table:acceleratorSignals}
+\end{table}
 
 \section{Code Analysis}
 
