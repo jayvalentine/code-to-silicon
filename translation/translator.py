@@ -59,7 +59,7 @@ def getEntityDeclaration(stateMachine):
   # Outputs for each register.
   tw.writeBlankLine()
   for r in stateMachine.outputRegisters():
-    tw.writeLine("out_" + "r{:02d}".format(r) + "     : in std_logic_vector(31 downto 0);")
+    tw.writeLine("out_" + "r{:02d}".format(r) + "     : out std_logic_vector(31 downto 0);")
 
   # Done signal.
   tw.writeBlankLine()
@@ -110,7 +110,7 @@ def getArchitecturalDefinition(stateMachine):
 
   # Begin process.
   tw.increaseIndent()
-  tw.writeLine("process(clk, m_rdy, rst")
+  tw.writeLine("process(clk, m_rdy, rst)")
   tw.increaseIndent()
 
   # Output local variables for each state.
@@ -142,7 +142,7 @@ def getArchitecturalDefinition(stateMachine):
   # Reset condition. If rst = 1 then reset internal values.
   tw.writeLine("if rst = '1' then")
   tw.increaseIndent()
-  tw.writeLine("int_state <= S_STATE;")
+  tw.writeLine("int_state <= S_RESET;")
   tw.writeLine("m_data    <= (others => '0');")
   tw.writeLine("m_addr    <= (others => '0');")
   tw.writeLine("m_rd      <= '0';")
@@ -176,13 +176,13 @@ def getArchitecturalDefinition(stateMachine):
     # If this is a start state, get inputs into the state machine's internal registers.
     if s.isStartState():
       for r in stateMachine.inputRegisters():
-        tw.writeLine("r{reg:02d} <= in_r{reg:02d};".format(reg=r))
+        tw.writeLine("r{reg:02d} <= signed(in_r{reg:02d});".format(reg=r))
 
     # If this is an end state, put outputs from the state machine's internal registers.
     # Also set the done flag.
     elif s.isEndState():
       for r in stateMachine.outputRegisters():
-        tw.writeLine("out_r{reg:02d} <= r{reg:02d};".format(reg=r))
+        tw.writeLine("out_r{reg:02d} <= std_logic_vector(r{reg:02d});".format(reg=r))
       tw.writeLine("done <= '1';")
 
     # If this is a wait state, set up the memory transaction (either a read or a write).
