@@ -245,7 +245,62 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("null;")
   tw.writeBlankLine()
   tw.decreaseIndent()
+  tw.writeLine("end if;")
 
+  tw.decreaseIndent()
+
+  # Now do M_RDY rising edge transitions (i.e. memory accesses.)
+  tw.writeLine("elsif rising_edge(m_rdy) then")
+
+  tw.increaseIndent()
+  tw.writeLine("m_wr <= '0';")
+  tw.writeLine("m_rd <= '0';")
+  tw.writeBlankLine()
+
+  firstState = True
+  for i in range(len(stateMachine)):
+    s = stateMachine[i]
+
+    if s.isWaitState():
+      # IF/ELSIF statement for wait state.
+      if firstState:
+        tw.writeLine("if int_state = " + s.name() + " then")
+        firstState = False
+      else:
+        tw.writeLine("elsif int_state = " + s.name() + " then")
+
+      tw.increaseIndent()
+
+      # If the wait is a READ, we need to get the data from memory into the correct register.
+      if s.instruction().isRead():
+        inst = s.instruction()
+
+        tw.writeCommentLine("Read data into r{:02d}.".format(inst.rD()))
+        tw.writeLine("r{:02d}".format(inst.rD()) + " <= signed(m_data);")
+        tw.writeBlankLine()
+
+      tw.writeLine("int_state <= " + s.getTransition("M_RDY").name() + ";")
+
+      tw.writeBlankLine()
+      tw.decreaseIndent()
+
+  tw.writeLine("else")
+  tw.increaseIndent()
+  tw.writeLine("null;")
+  tw.writeBlankLine()
+  tw.decreaseIndent()
+  tw.writeLine("end if;")
+
+  tw.writeBlankLine()
+  tw.decreaseIndent()
+  tw.writeLine("end if;")
+
+  tw.writeBlankLine()
+  tw.decreaseIndent()
+  tw.writeLine("end process;")
+
+  tw.writeBlankLine()
+  tw.decreaseIndent()
   tw.writeLine("end " + entityName + "_behav;")
 
   return str(tw)
