@@ -4,7 +4,6 @@ ADD_FORMAT = "{:s} := {:s} + {:s};"
 ADDI_FORMAT = "{:s} := {:s} + {:d};"
 
 MUL_FORMAT = "{:s} := {:s} * {:s};"
-IDIV_FORMAT = "{:s} := {:s} / {:s};"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -117,11 +116,23 @@ def getArchitecturalDefinition(stateMachine):
   # Output local variables for each state.
   # These are 'namespaced' by state name so they don't conflict.
   for i in range(len(stateMachine)):
+    if len(stateMachine[i].locals()) > 0:
+      tw.writeCommentLine("State "
+                          + stateMachine[i].name()
+                          + " Locals: "
+                          + ", ".join(list(map(lambda r: "r{:02d}".format(r), stateMachine[i].locals())))
+                          + ".")
+
     for local in stateMachine[i].locals():
-      tw.writeLine("variable " + stateMachine[i].name() + "_r{:02d}".format(local) + "   : signed(31 downto 0);")
+      tw.writeLine("variable " + localName(stateMachine[i].name(), local) + "   : signed(31 downto 0);")
     
     if len(stateMachine[i].locals()) > 0:
       tw.writeBlankLine()
+
+  # Output the 'temp64' variable. This is used by operations which produce a 64-bit result (e.g. multiply)
+  tw.writeCommentLine("Temporary 64-bit variable.")
+  tw.writeLine("variable temp64      : signed(63 downto 0);")
+  tw.writeBlankLine()
 
   # Start the process body.
   tw.decreaseIndent()
@@ -208,7 +219,8 @@ def getArchitecturalDefinition(stateMachine):
       # Now write translations of all the instructions in the block.
       for inst in s.block().instructions():
         tw.writeCommentLine(str(inst))
-        tw.writeLine(translateInstruction(s.name(), inst))
+        for line in translateInstruction(s.name(), inst):
+          tw.writeLine(line)
         tw.writeBlankLine()
 
       tw.writeBlankLine()
@@ -217,7 +229,7 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeCommentLine("Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
                                                            s.block().outputs()))))
       for o in s.block().outputs():
-        tw.writeLine("r{:02d}".format(i) + " <= " + localName(s.name(), o) + ";")
+        tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
 
       tw.writeBlankLine()
 
@@ -226,6 +238,13 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeLine("int_state <= " + s.getTransition("CLK").name() + ";")
     
     tw.decreaseIndent()
+
+  # Finally, null statement for completeness (in case the compiler complains that we've not covered every case.)
+  tw.writeLine("else")
+  tw.increaseIndent()
+  tw.writeLine("null;")
+  tw.writeBlankLine()
+  tw.decreaseIndent()
 
   tw.writeLine("end " + entityName + "_behav;")
 
@@ -238,21 +257,31 @@ def localName(stateName, register):
 def translateInstruction(stateName, instruction):
   mnemonic = instruction.mnemonic()
 
+  lines = []
+  needsTemp = False
+
   if mnemonic == "addk":
-    return ADD_FORMAT.format(localName(stateName, instruction.rD()),
-                             localName(stateName, instruction.rA()),
-                             localName(stateName, instruction.rB()))
+    lines.append(ADD_FORMAT.format(localName(stateName, instruction.rD()),
+                                   localName(stateName, instruction.rA()),
+                                   localName(stateName, instruction.rB())))
   elif mnemonic == "addik":
-    return ADDI_FORMAT.format(localName(stateName, instruction.rD()),
-                              localName(stateName, instruction.rA()),
-                              instruction.imm())
+    lines.append(ADDI_FORMAT.format(localName(stateName, instruction.rD()),
+                                    localName(stateName, instruction.rA()),
+                                    instruction.imm()))
   elif mnemonic == "mul":
-    return MUL_FORMAT.format(localName(stateName, instruction.rD()),
-                             localName(stateName, instruction.rA()),
-                             localName(stateName, instruction.rB()))
-  elif mnemonic == "idiv":
-    return IDIV_FORMAT.format(localName(stateName, instruction.rD()),
-                              localName(stateName, instruction.rA()),
-                              localName(stateName, instruction.rB()))
+    # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
+    # and then put the lower 32 bits of that variable into the destination register.
+    # The generated circuit is the same, but this appeases the VHDL typing gods.
+    lines.append(MUL_FORMAT.format("temp64",
+                                   localName(stateName, instruction.rA()),
+                                   localName(stateName, instruction.rB())))
+
+
+    needsTemp = True
   else:
     raise ValueError("Unknown instruction for translation: " + str(instruction))
+
+  if needsTemp:
+    lines.append(localName(stateName, instruction.rD()) + " := temp64(31 downto 0);")
+
+  return lines
