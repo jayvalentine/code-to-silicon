@@ -18,7 +18,7 @@ def translateStateMachine(stateMachine):
   return s
 
 def getEntityDeclaration(stateMachine):
-  tw = text.TextWriter(4)
+  tw = text.TextWriter(4, "--")
 
   entityName = "hw_core_" + stateMachine.name()
 
@@ -74,7 +74,7 @@ def getEntityDeclaration(stateMachine):
   return str(tw)
 
 def getArchitecturalDefinition(stateMachine):
-  tw = text.TextWriter(4)
+  tw = text.TextWriter(4, "--")
 
   entityName = "hw_core_" + stateMachine.name()
 
@@ -184,6 +184,7 @@ def getArchitecturalDefinition(stateMachine):
       else:
         expr = "r{regA:02d} + r{regB:02d}".format(regA = inst.rA(), regB = inst.rB())
 
+      tw.writeCommentLine(str(inst))
       tw.writeLine("m_addr <= std_logic_vector(unsigned(" + expr + "));")
 
       # If the instruction is a read, we need to set the read strobe high.
@@ -197,6 +198,8 @@ def getArchitecturalDefinition(stateMachine):
     # each instruction.
     else:
       # First get all inputs to the block.
+      tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
+                                                           s.block().inputs()))))
       for i in s.block().inputs():
         tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
 
@@ -204,11 +207,15 @@ def getArchitecturalDefinition(stateMachine):
 
       # Now write translations of all the instructions in the block.
       for inst in s.block().instructions():
+        tw.writeCommentLine(str(inst))
         tw.writeLine(translateInstruction(s.name(), inst))
+        tw.writeBlankLine()
 
       tw.writeBlankLine()
 
       # Finally, write locals to their respective permanent registers.
+      tw.writeCommentLine("Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
+                                                           s.block().outputs()))))
       for o in s.block().outputs():
         tw.writeLine("r{:02d}".format(i) + " <= " + localName(s.name(), o) + ";")
 

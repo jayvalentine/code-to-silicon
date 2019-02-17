@@ -1,8 +1,8 @@
 class TextWriter:
-  def __init__(self, tabWidth):
+  def __init__(self, tabWidth, commentLeader):
     self._str = ""
 
-    self._commentLeader = ""
+    self._commentLeader = commentLeader
     self._indentationChar = " "
     self._tabWidth = tabWidth
     self._indentation = 0
@@ -24,3 +24,6 @@ class TextWriter:
 
   def writeBlankLine(self):
     self.writeLine("")
+
+  def writeCommentLine(self, s):
+    self.writeLine(str(self._commentLeader) + " " + s)
