@@ -1,3 +1,5 @@
+from . import basicblocks
+
 STATE_NAME_FORMAT = "S_{:03d}"
 
 class StateMachine:
@@ -126,25 +128,28 @@ class ComputationState(State):
   def __init__(self, name, instructions):
     super(ComputationState, self).__init__(name)
     
-    self._instructions = instructions
+    self._block = basicblocks.BasicBlock(instructions)
 
   def __str__(self):
     s = super(ComputationState, self).__str__()
 
     s += "Computation:\n"
 
+    s += "Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r), self._block.inputs())))
+    s += "Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r), self._block.outputs())))
+
     for i in self._instructions:
       s += str(i) + "\n"
 
     return s
 
-  def instructions(self):
-    return self._instructions
+  def block(self):
+    return self._block
 
   def locals(self):
     l = []
 
-    for i in self._instructions:
+    for i in self._block.instructions():
       if i.rA() != None and i.rA() not in l:
         l.append(i.rA())
       if i.rB() != None and i.rB() not in l:

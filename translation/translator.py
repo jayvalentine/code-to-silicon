@@ -1,17 +1,10 @@
 from . import text
 
+ADD_FORMAT = "{:s} := {:s} + {:s};"
+ADDI_FORMAT = "{:s} := {:s} + {:d};"
 
-
-ADD_FORMAT = "r{0:d} := r{1:d} + r{2:d}"
-ADDI_FORMAT = "r{0:d} := r{1:d} + {2:d}"
-
-MUL_FORMAT = "r{0:d} := r{1:d} * r{2:d}"
-IDIV_FORMAT = "r{0:d} := r{1:d} / r{2:d}"
-SRA_FORMAT = "r{0:d} := shift_right(r{1:d}, 1)"
-
-MEM_ADDRESS_SET_IMM_FORMAT = "MEM_ADDR <= r{0:d} + {1:d}"
-MEM_DATA_READ = "r{0:d} <= MEM_DATA_IN"
-MEM_DATA_WRITE = "MEM_DATA_OUT <= r{0:d}"
+MUL_FORMAT = "{:s} := {:s} * {:s};"
+IDIV_FORMAT = "{:s} := {:s} / {:s};"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -200,6 +193,26 @@ def getArchitecturalDefinition(stateMachine):
       else:
         tw.writeLine("m_wr <= '1';")
 
+    # Otherwise, this is a computation state, and we need to emit translations of
+    # each instruction.
+    else:
+      # First get all inputs to the block.
+      for i in s.block().inputs():
+        tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
+
+      tw.writeBlankLine()
+
+      # Now write translations of all the instructions in the block.
+      for inst in s.block().instructions():
+        tw.writeLine(translateInstruction(s.name(), inst))
+
+      tw.writeBlankLine()
+
+      # Finally, write locals to their respective permanent registers.
+      for o in s.block().outputs():
+        tw.writeLine("r{:02d}".format(i) + " <= " + localName(s.name(), o) + ";")
+
+      tw.writeBlankLine()
 
     # We transition to the next state if this is not a wait state.
     if "CLK" in s.triggers() and s.getTransition("CLK") != s:
@@ -211,34 +224,28 @@ def getArchitecturalDefinition(stateMachine):
 
   return str(tw)
 
-
-def translateMemoryAccess(instruction):
-  mnemonic = instruction.mnemonic()
-
-  if mnemonic == "swi":
-    s = MEM_ADDRESS_SET_IMM_FORMAT.format(instruction.rA(), instruction.imm()) + "\n"
-    s += MEM_DATA_WRITE.format(instruction.rD())
-    return s
-  elif mnemonic == "lwi":
-    s = MEM_ADDRESS_SET_IMM_FORMAT.format(instruction.rA(), instruction.imm()) + "\n"
-    s += MEM_DATA_READ.format(instruction.rD())
-    return s
-  else:
-    raise ValueError("Unknown instruction for translation: " + str(instruction))
+def localName(stateName, register):
+  return "{:s}_r{:02d}".format(stateName, register)
 
 # Translates a given instruction into one or more lines of VHDL.
-def translateArithmetic(instruction):
+def translateInstruction(stateName, instruction):
   mnemonic = instruction.mnemonic()
 
   if mnemonic == "addk":
-    return ADD_FORMAT.format(instruction.rD(), instruction.rA(), instruction.rB())
+    return ADD_FORMAT.format(localName(stateName, instruction.rD()),
+                             localName(stateName, instruction.rA()),
+                             localName(stateName, instruction.rB()))
   elif mnemonic == "addik":
-    return ADDI_FORMAT.format(instruction.rD(), instruction.rA(), instruction.imm())
+    return ADDI_FORMAT.format(localName(stateName, instruction.rD()),
+                              localName(stateName, instruction.rA()),
+                              instruction.imm())
   elif mnemonic == "mul":
-    return MUL_FORMAT.format(instruction.rD(), instruction.rA(), instruction.rB())
+    return MUL_FORMAT.format(localName(stateName, instruction.rD()),
+                             localName(stateName, instruction.rA()),
+                             localName(stateName, instruction.rB()))
   elif mnemonic == "idiv":
-    return IDIV_FORMAT.format(instruction.rD(), instruction.rA(), instruction.rB())
-  elif mnemonic == "sra":
-    return SRA_FORMAT.format(instruction.rD(), instruction.rA())
+    return IDIV_FORMAT.format(localName(stateName, instruction.rD()),
+                              localName(stateName, instruction.rA()),
+                              localName(stateName, instruction.rB()))
   else:
     raise ValueError("Unknown instruction for translation: " + str(instruction))
