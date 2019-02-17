@@ -220,9 +220,30 @@ perform flow control), but also that the implementation of state machines is les
 
 \chapter{Methodology and Design}
 
-\section{The Hardware Accelerator Model}
+\section{System Architecture}
 
+MicroBlaze \cite{microblaze} is a 32-bit RISC architecture. It is highly configurable, as certain features (e.g. FPU, multiplier, barrel shifter)
+can be disabled if not required. This allows the architecture to be as minimal as is required by the application.
 
+The system used in this project consists of one MicroBlaze core, connected to local instruction and data block RAM (BRAM)
+via the local memory bus (LMB). The processor's AXI bus is used to connect to one or more hardware accelerator cores.
+These hardware accelerator cores are then connected to the BRAM via a standard Xilinx BRAM interface.
+
+\begin{figure}[h]
+\center{\includegraphics[width=\textwidth]
+{figures/architecture.png}}
+\caption{System architecture.}
+\label{fig:systemArchitecture}
+\end{figure}
+
+The LMB is intended for connecting the MicroBlaze core to on-chip BRAM, for use as a local cache memory, with instructions
+and data being stored in off-chip flash or DRAM. The system topology described above allows for a tiled architecture,
+with each block containing a MicroBlaze core and several hardware accelerators. Each tile would have its own local memory,
+with these memories being connected in turn (via some kind of cache interface) to the system-wide main memory. However,
+this is beyond the scope of this project, which focuses on a single MicroBlaze core with associated accelerators,
+and a single BRAM, with no main flash or DRAM.
+
+\section{Hardware Accelerator Model}
 
 \section{Code Analysis}
 
