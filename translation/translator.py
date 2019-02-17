@@ -49,7 +49,8 @@ def getEntityDeclaration(stateMachine):
   # Memory address and data lines.
   tw.writeBlankLine()
   tw.writeLine("m_addr      : out std_logic_vector(31 downto 0);")
-  tw.writeLine("m_data      : inout std_logic_vector(31 downto 0);")
+  tw.writeLine("m_data_in   : in std_logic_vector(31 downto 0);")
+  tw.writeLine("m_data_out   : out std_logic_vector(31 downto 0);")
 
   # Inputs for each register.
   tw.writeBlankLine()
@@ -142,12 +143,12 @@ def getArchitecturalDefinition(stateMachine):
   # Reset condition. If rst = 1 then reset internal values.
   tw.writeLine("if rst = '1' then")
   tw.increaseIndent()
-  tw.writeLine("int_state <= S_RESET;")
-  tw.writeLine("m_data    <= (others => '0');")
-  tw.writeLine("m_addr    <= (others => '0');")
-  tw.writeLine("m_rd      <= '0';")
-  tw.writeLine("m_wr      <= '0';")
-  tw.writeLine("done      <= '0';")
+  tw.writeLine("int_state  <= S_RESET;")
+  tw.writeLine("m_data_out <= (others => '0');")
+  tw.writeLine("m_addr     <= (others => '0');")
+  tw.writeLine("m_rd       <= '0';")
+  tw.writeLine("m_wr       <= '0';")
+  tw.writeLine("done       <= '0';")
   tw.decreaseIndent()
 
   # Rising clock edge condition.
@@ -199,11 +200,11 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeLine("m_addr <= std_logic_vector(unsigned(" + expr + "));")
 
       # If the instruction is a read, we need to set the read strobe high.
-      # If the instruction is a write, we need to set the write strobe high.
+      # If the instruction is a write, we need to set the write strobe high AND set the data out line.
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
       else:
-        tw.writeLine("m_data <= std_logic_vector(unsigned(r{:02d}))".format(inst.rD()))
+        tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}))".format(inst.rD()))
         tw.writeLine("m_wr <= '1';")
 
     # Otherwise, this is a computation state, and we need to emit translations of
@@ -277,7 +278,7 @@ def getArchitecturalDefinition(stateMachine):
         inst = s.instruction()
 
         tw.writeCommentLine("Read data into r{:02d}.".format(inst.rD()))
-        tw.writeLine("r{:02d}".format(inst.rD()) + " <= signed(m_data);")
+        tw.writeLine("r{:02d}".format(inst.rD()) + " <= signed(m_data_in);")
         tw.writeBlankLine()
 
       tw.writeLine("int_state <= " + s.getTransition("M_RDY").name() + ";")
