@@ -78,7 +78,7 @@ def getArchitecturalDefinition(stateMachine):
   entityName = "hw_core_" + stateMachine.name()
 
   # Write architectural definition.
-  tw.writeLine("architecture " + entityName + "_behav of " + entityName + "is")
+  tw.writeLine("architecture " + entityName + "_behav of " + entityName + " is")
 
   # Write type definition of STATE type.
   tw.increaseIndent()
@@ -101,7 +101,7 @@ def getArchitecturalDefinition(stateMachine):
 
   # Declaration of internal registers.
   for r in stateMachine.usedRegisters():
-    tw.writeLine("signal " + "r{:02d}".format(r) + "          :signed(31 downto 0);")
+    tw.writeLine("signal " + "r{:02d}".format(r) + "          : signed(31 downto 0);")
 
   # Begin behavioural definition.
   tw.decreaseIndent()
@@ -203,6 +203,7 @@ def getArchitecturalDefinition(stateMachine):
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
       else:
+        tw.writeLine("m_data <= std_logic_vector(unsigned(r{:02d}))".format(inst.rD()))
         tw.writeLine("m_wr <= '1';")
 
     # Otherwise, this is a computation state, and we need to emit translations of
