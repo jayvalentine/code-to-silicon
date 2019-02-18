@@ -1,0 +1,10 @@
+vhdl xil_defaultlib  \
+"../../../bd/mb_block_design/ip/mb_block_design_microblaze_0_0/sim/mb_block_design_microblaze_0_0.vhd" \
+"../../../bd/mb_block_design/ip/mb_block_design_lmb_v10_0_0/sim/mb_block_design_lmb_v10_0_0.vhd" \
+"../../../bd/mb_block_design/ip/mb_block_design_lmb_v10_1_0/sim/mb_block_design_lmb_v10_1_0.vhd" \
+"../../../bd/mb_block_design/ip/mb_block_design_lmb_bram_if_cntlr_0_0/sim/mb_block_design_lmb_bram_if_cntlr_0_0.vhd" \
+"../../../bd/mb_block_design/ip/mb_block_design_lmb_v10_2_0/sim/mb_block_design_lmb_v10_2_0.vhd" \
+"../../../bd/mb_block_design/ip/mb_block_design_lmb_bram_if_cntlr_1_0/sim/mb_block_design_lmb_bram_if_cntlr_1_0.vhd" \
+"../../../bd/mb_block_design/sim/mb_block_design.vhd" \
+
+nosort

@@ -1,7 +1,7 @@
 --Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------
 --Tool Version: Vivado v.2018.2.1 (lin64) Build 2288692 Thu Jul 26 18:23:50 MDT 2018
---Date        : Mon Feb 18 14:32:07 2019
+--Date        : Mon Feb 18 15:07:56 2019
 --Host        : cse069pc-44 running 64-bit Ubuntu 18.04.2 LTS
 --Command     : generate_target mb_block_design.bd
 --Design      : mb_block_design
@@ -367,6 +367,13 @@ architecture STRUCTURE of mb_block_design is
   signal NLW_lmb_v10_0_LMB_Rst_UNCONNECTED : STD_LOGIC;
   signal NLW_lmb_v10_2_LMB_Rst_UNCONNECTED : STD_LOGIC;
   signal NLW_microblaze_0_Interrupt_Ack_UNCONNECTED : STD_LOGIC_VECTOR ( 0 to 1 );
+  attribute BMM_INFO_ADDRESS_SPACE : string;
+  attribute BMM_INFO_ADDRESS_SPACE of lmb_bram_if_cntlr_0 : label is "byte  0x00000000 32 > mb_block_design blk_mem_gen_0";
+  attribute KEEP_HIERARCHY : string;
+  attribute KEEP_HIERARCHY of lmb_bram_if_cntlr_0 : label is "yes";
+  attribute BMM_INFO_PROCESSOR : string;
+  attribute BMM_INFO_PROCESSOR of microblaze_0 : label is "microblaze-le > mb_block_design lmb_bram_if_cntlr_0";
+  attribute KEEP_HIERARCHY of microblaze_0 : label is "yes";
   attribute X_INTERFACE_INFO : string;
   attribute X_INTERFACE_INFO of LMB_M_0_addrstrobe : signal is "xilinx.com:interface:lmb:1.0 LMB_M_0 ADDRSTROBE";
   attribute X_INTERFACE_INFO of LMB_M_0_ce : signal is "xilinx.com:interface:lmb:1.0 LMB_M_0 CE";
