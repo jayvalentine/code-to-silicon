@@ -1,8 +1,8 @@
 --Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------
 --Tool Version: Vivado v.2018.2.1 (lin64) Build 2288692 Thu Jul 26 18:23:50 MDT 2018
---Date        : Mon Feb 18 15:07:57 2019
---Host        : cse069pc-44 running 64-bit Ubuntu 18.04.2 LTS
+--Date        : Tue Feb 19 12:30:26 2019
+--Host        : cse069pc-16 running 64-bit Ubuntu 18.04.2 LTS
 --Command     : generate_target mb_block_design_wrapper.bd
 --Design      : mb_block_design_wrapper
 --Purpose     : IP block netlist
@@ -13,6 +13,20 @@ library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 entity mb_block_design_wrapper is
   port (
+    BRAM_PORT_DATA_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_DATA_clk : out STD_LOGIC;
+    BRAM_PORT_DATA_din : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_DATA_dout : in STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_DATA_en : out STD_LOGIC;
+    BRAM_PORT_DATA_rst : out STD_LOGIC;
+    BRAM_PORT_DATA_we : out STD_LOGIC_VECTOR ( 0 to 3 );
+    BRAM_PORT_INST_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_INST_clk : out STD_LOGIC;
+    BRAM_PORT_INST_din : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_INST_dout : in STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_INST_en : out STD_LOGIC;
+    BRAM_PORT_INST_rst : out STD_LOGIC;
+    BRAM_PORT_INST_we : out STD_LOGIC_VECTOR ( 0 to 3 );
     LMB_M_0_abus : in STD_LOGIC_VECTOR ( 0 to 31 );
     LMB_M_0_addrstrobe : in STD_LOGIC;
     LMB_M_0_be : in STD_LOGIC_VECTOR ( 0 to 3 );
@@ -52,8 +66,6 @@ end mb_block_design_wrapper;
 architecture STRUCTURE of mb_block_design_wrapper is
   component mb_block_design is
   port (
-    clk_100MHz : in STD_LOGIC;
-    rst : in STD_LOGIC;
     M_AXI_DP_0_araddr : out STD_LOGIC_VECTOR ( 31 downto 0 );
     M_AXI_DP_0_arprot : out STD_LOGIC_VECTOR ( 2 downto 0 );
     M_AXI_DP_0_arready : in STD_LOGIC;
@@ -84,12 +96,42 @@ architecture STRUCTURE of mb_block_design_wrapper is
     LMB_M_0_ue : out STD_LOGIC;
     LMB_M_0_wait : out STD_LOGIC;
     LMB_M_0_writedbus : in STD_LOGIC_VECTOR ( 0 to 31 );
-    LMB_M_0_writestrobe : in STD_LOGIC
+    LMB_M_0_writestrobe : in STD_LOGIC;
+    BRAM_PORT_INST_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_INST_clk : out STD_LOGIC;
+    BRAM_PORT_INST_din : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_INST_dout : in STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_INST_en : out STD_LOGIC;
+    BRAM_PORT_INST_rst : out STD_LOGIC;
+    BRAM_PORT_INST_we : out STD_LOGIC_VECTOR ( 0 to 3 );
+    BRAM_PORT_DATA_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_DATA_clk : out STD_LOGIC;
+    BRAM_PORT_DATA_din : out STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_DATA_dout : in STD_LOGIC_VECTOR ( 0 to 31 );
+    BRAM_PORT_DATA_en : out STD_LOGIC;
+    BRAM_PORT_DATA_rst : out STD_LOGIC;
+    BRAM_PORT_DATA_we : out STD_LOGIC_VECTOR ( 0 to 3 );
+    clk_100MHz : in STD_LOGIC;
+    rst : in STD_LOGIC
   );
   end component mb_block_design;
 begin
 mb_block_design_i: component mb_block_design
      port map (
+      BRAM_PORT_DATA_addr(0 to 31) => BRAM_PORT_DATA_addr(0 to 31),
+      BRAM_PORT_DATA_clk => BRAM_PORT_DATA_clk,
+      BRAM_PORT_DATA_din(0 to 31) => BRAM_PORT_DATA_din(0 to 31),
+      BRAM_PORT_DATA_dout(0 to 31) => BRAM_PORT_DATA_dout(0 to 31),
+      BRAM_PORT_DATA_en => BRAM_PORT_DATA_en,
+      BRAM_PORT_DATA_rst => BRAM_PORT_DATA_rst,
+      BRAM_PORT_DATA_we(0 to 3) => BRAM_PORT_DATA_we(0 to 3),
+      BRAM_PORT_INST_addr(0 to 31) => BRAM_PORT_INST_addr(0 to 31),
+      BRAM_PORT_INST_clk => BRAM_PORT_INST_clk,
+      BRAM_PORT_INST_din(0 to 31) => BRAM_PORT_INST_din(0 to 31),
+      BRAM_PORT_INST_dout(0 to 31) => BRAM_PORT_INST_dout(0 to 31),
+      BRAM_PORT_INST_en => BRAM_PORT_INST_en,
+      BRAM_PORT_INST_rst => BRAM_PORT_INST_rst,
+      BRAM_PORT_INST_we(0 to 3) => BRAM_PORT_INST_we(0 to 3),
       LMB_M_0_abus(0 to 31) => LMB_M_0_abus(0 to 31),
       LMB_M_0_addrstrobe => LMB_M_0_addrstrobe,
       LMB_M_0_be(0 to 3) => LMB_M_0_be(0 to 3),

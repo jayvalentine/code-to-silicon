@@ -62,6 +62,20 @@ architecture Behavioral of testbench_test is
     
     component mb_block_design_wrapper is
         port (
+            BRAM_PORT_DATA_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_DATA_clk : out STD_LOGIC;
+            BRAM_PORT_DATA_din : out STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_DATA_dout : in STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_DATA_en : out STD_LOGIC;
+            BRAM_PORT_DATA_rst : out STD_LOGIC;
+            BRAM_PORT_DATA_we : out STD_LOGIC_VECTOR ( 0 to 3 );
+            BRAM_PORT_INST_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_INST_clk : out STD_LOGIC;
+            BRAM_PORT_INST_din : out STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_INST_dout : in STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_INST_en : out STD_LOGIC;
+            BRAM_PORT_INST_rst : out STD_LOGIC;
+            BRAM_PORT_INST_we : out STD_LOGIC_VECTOR ( 0 to 3 );
             LMB_M_0_abus : in STD_LOGIC_VECTOR ( 0 to 31 );
             LMB_M_0_addrstrobe : in STD_LOGIC;
             LMB_M_0_be : in STD_LOGIC_VECTOR ( 0 to 3 );
@@ -97,6 +111,25 @@ architecture Behavioral of testbench_test is
             rst : in STD_LOGIC
         );
     end component mb_block_design_wrapper;
+    
+    component memory is
+        port (
+            BRAM_PORT_INST_addr : in STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_INST_clk : in STD_LOGIC;
+            BRAM_PORT_INST_din : in STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_INST_dout : out STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_INST_en : in STD_LOGIC;
+            BRAM_PORT_INST_rst : in STD_LOGIC;
+            BRAM_PORT_INST_we : in STD_LOGIC_VECTOR ( 0 to 3 );
+            BRAM_PORT_DATA_addr : in STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_DATA_clk : in STD_LOGIC;
+            BRAM_PORT_DATA_din : in STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_DATA_dout : out STD_LOGIC_VECTOR ( 0 to 31 );
+            BRAM_PORT_DATA_en : in STD_LOGIC;
+            BRAM_PORT_DATA_rst : in STD_LOGIC;
+            BRAM_PORT_DATA_we : in STD_LOGIC_VECTOR ( 0 to 3 )
+        );
+    end component memory;
       
     signal clk                      : std_logic;
     signal rst                      : std_logic;
@@ -137,6 +170,21 @@ architecture Behavioral of testbench_test is
     signal M_AXI_DP_0_wready  : STD_LOGIC;
     signal M_AXI_DP_0_wstrb   : STD_LOGIC_VECTOR ( 3 downto 0 );
     signal M_AXI_DP_0_wvalid  : STD_LOGIC;
+    
+    signal BRAM_PORT_INST_addr : STD_LOGIC_VECTOR ( 0 to 31 );
+    signal BRAM_PORT_INST_clk  : STD_LOGIC;
+    signal BRAM_PORT_INST_din  : STD_LOGIC_VECTOR ( 0 to 31 );
+    signal BRAM_PORT_INST_dout : STD_LOGIC_VECTOR ( 0 to 31 );
+    signal BRAM_PORT_INST_en   : STD_LOGIC;
+    signal BRAM_PORT_INST_rst  : STD_LOGIC;
+    signal BRAM_PORT_INST_we   : STD_LOGIC_VECTOR ( 0 to 3 );
+    signal BRAM_PORT_DATA_addr : STD_LOGIC_VECTOR ( 0 to 31 );
+    signal BRAM_PORT_DATA_clk  : STD_LOGIC;
+    signal BRAM_PORT_DATA_din  : STD_LOGIC_VECTOR ( 0 to 31 );
+    signal BRAM_PORT_DATA_dout : STD_LOGIC_VECTOR ( 0 to 31 );
+    signal BRAM_PORT_DATA_en   : STD_LOGIC;
+    signal BRAM_PORT_DATA_rst  : STD_LOGIC;
+    signal BRAM_PORT_DATA_we   : STD_LOGIC_VECTOR ( 0 to 3 );
     
     constant clk_period             : time := 10ns;
 begin
@@ -197,7 +245,40 @@ begin
         M_AXI_DP_0_wdata        => M_AXI_DP_0_wdata,
         M_AXI_DP_0_wready       => M_AXI_DP_0_wready,
         M_AXI_DP_0_wstrb        => M_AXI_DP_0_wstrb,
-        M_AXI_DP_0_wvalid       => M_AXI_DP_0_wvalid 
+        M_AXI_DP_0_wvalid       => M_AXI_DP_0_wvalid,
+        
+        BRAM_PORT_INST_addr     => BRAM_PORT_INST_addr,
+        BRAM_PORT_INST_clk      => BRAM_PORT_INST_clk,
+        BRAM_PORT_INST_din      => BRAM_PORT_INST_din,
+        BRAM_PORT_INST_dout     => BRAM_PORT_INST_dout,
+        BRAM_PORT_INST_en       => BRAM_PORT_INST_en,
+        BRAM_PORT_INST_rst      => BRAM_PORT_INST_rst,
+        BRAM_PORT_INST_we       => BRAM_PORT_INST_we,
+        BRAM_PORT_DATA_addr     => BRAM_PORT_DATA_addr,
+        BRAM_PORT_DATA_clk      => BRAM_PORT_DATA_clk,
+        BRAM_PORT_DATA_din      => BRAM_PORT_DATA_din,
+        BRAM_PORT_DATA_dout     => BRAM_PORT_DATA_dout,
+        BRAM_PORT_DATA_en       => BRAM_PORT_DATA_en,
+        BRAM_PORT_DATA_rst      => BRAM_PORT_DATA_rst,
+        BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we
+    );
+    
+    mem_uut : memory port map
+    (
+        BRAM_PORT_INST_addr     => BRAM_PORT_INST_addr,
+        BRAM_PORT_INST_clk      => BRAM_PORT_INST_clk,
+        BRAM_PORT_INST_din      => BRAM_PORT_INST_din,
+        BRAM_PORT_INST_dout     => BRAM_PORT_INST_dout,
+        BRAM_PORT_INST_en       => BRAM_PORT_INST_en,
+        BRAM_PORT_INST_rst      => BRAM_PORT_INST_rst,
+        BRAM_PORT_INST_we       => BRAM_PORT_INST_we,
+        BRAM_PORT_DATA_addr     => BRAM_PORT_DATA_addr,
+        BRAM_PORT_DATA_clk      => BRAM_PORT_DATA_clk,
+        BRAM_PORT_DATA_din      => BRAM_PORT_DATA_din,
+        BRAM_PORT_DATA_dout     => BRAM_PORT_DATA_dout,
+        BRAM_PORT_DATA_en       => BRAM_PORT_DATA_en,
+        BRAM_PORT_DATA_rst      => BRAM_PORT_DATA_rst,
+        BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we
     );
     
     clk_proc : process
@@ -207,4 +288,13 @@ begin
         clk <= '1';
         wait for clk_period/2;
     end process clk_proc;
+    
+    test_proc : process
+    begin
+        rst <= '1';
+        wait for clk_period;
+        rst <= '0';
+        
+        wait;
+    end process test_proc;
 end Behavioral;

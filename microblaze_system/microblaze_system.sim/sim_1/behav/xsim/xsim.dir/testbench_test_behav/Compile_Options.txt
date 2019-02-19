@@ -1,1 +1,0 @@
--wto "c7856ec4ac68435cbcb5cb067d53c85a" --incr --debug "typical" --relax --mt "8" -L "microblaze_v10_0_7" -L "xil_defaultlib" -L "lmb_v10_v3_0_9" -L "lmb_bram_if_cntlr_v4_0_15" -L "secureip" -L "xpm" --snapshot "testbench_test_behav" "xil_defaultlib.testbench_test" -log "elaborate.log" 

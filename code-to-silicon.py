@@ -1,12 +1,23 @@
 import os
 
 from parsing import parser
-from toolchain import compiler
+from toolchain import compiler, memory
 
 from analysis import basicblocks
 from analysis import statemachine
 
 from translation import translator
+
+instructions = [
+    "10110000000000000100010010100000",
+    "00100000001000000000000000000000",
+    "00100000010000000000000000001111",
+    "11111000010000010000000000000000"
+]
+
+words = list(map(lambda i: int(i, 2), instructions))
+
+memory.writeMemoryFile("test.coe", words, 2048)
 
 compiler.compile(["c/main.c"], "main.s")
 
