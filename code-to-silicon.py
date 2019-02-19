@@ -89,13 +89,14 @@ with open(os.path.join("figures", "autogen", "statemachine.tex"), "w") as stream
 with open("test.vhd", "w") as stream:
   stream.write(translator.translateStateMachine(sm))
 
-compiler.assemble(["main.s"], "main.o")
+compiler.link(["main.s", "start.s"], "main.elf")
+compiler.makeHex("main.elf", "main.hex")
+compiler.disassembleElf("main.elf", "main.asm")
 
 # Now build the report!
 
 os.system("pdflatex REPORT > texbuild.log")
 os.system("biber REPORT > texbuild.log")
 os.system("pdflatex REPORT > texbuild.log")
-
 
 print("States: " + str(len(sm)))
