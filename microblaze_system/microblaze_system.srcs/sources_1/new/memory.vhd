@@ -54,7 +54,7 @@ entity memory is
 end memory;
 
 architecture memory_behav of memory is
-    type mem_2kx32 is array(0 to 2047) of std_logic_vector(31 downto 0);
+    type mem_8kx8 is array(0 to 8191) of std_logic_vector(7 downto 0);
     
     -- Function to read memory contents in from a file and return initialized memory object.
     -- As long as this function is used only in initialization, it will not be synthesized (I hope),
@@ -62,14 +62,14 @@ architecture memory_behav of memory is
     --
     -- File is expected in this format:
     -- <addr> <data>\n
-    impure function init_ram (f : string) return mem_2kx32 is
-        variable mem_temp : mem_2kx32 := (others => (others => '0'));
+    impure function init_ram (f : string) return mem_8kx8 is
+        variable mem_temp : mem_8kx8 := (others => (others => '0'));
         
         variable f_line : line;
         file f_file     : text;
         
         variable addr        : integer;
-        variable data        : std_logic_vector(31 downto 0);
+        variable data        : std_logic_vector(7 downto 0);
         variable space       : character;
     begin
         -- Open file for reading.
@@ -97,7 +97,7 @@ architecture memory_behav of memory is
         return mem_temp;
     end init_ram;
     
-    signal ram : mem_2kx32 := init_ram("../../../../memory.txt");
+    signal ram : mem_8kx8 := init_ram("../../../../memory.txt");
 
 begin
     mem_proc : process(BRAM_PORT_INST_clk, BRAM_PORT_INST_rst, BRAM_PORT_DATA_clk, BRAM_PORT_DATA_rst)
@@ -109,27 +109,65 @@ begin
         elsif rising_edge(BRAM_PORT_INST_clk) and BRAM_PORT_INST_en = '1' then
             -- All WE LOW: Read data.
             if BRAM_PORT_INST_we = "0000" then
-                BRAM_PORT_INST_dout <= ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4);
-            -- WE: write to at least one byte
+                BRAM_PORT_INST_dout(24 to 31) <= ram(to_integer(unsigned(BRAM_PORT_INST_addr)));
+                BRAM_PORT_INST_dout(16 to 23) <= ram(to_integer(unsigned(BRAM_PORT_INST_addr)) + 1);
+                BRAM_PORT_INST_dout(8 to 15) <= ram(to_integer(unsigned(BRAM_PORT_INST_addr)) + 2);
+                BRAM_PORT_INST_dout(0 to 7) <= ram(to_integer(unsigned(BRAM_PORT_INST_addr)) + 3);
+            -- WE: write to at least one byte.
             else
                 -- First byte write, if applicable.
                 if BRAM_PORT_INST_we(0) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(0 to 7) <= BRAM_PORT_INST_din(7 downto 0);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))) <= BRAM_PORT_INST_din(24 to 31);
                 end if;
                 
                 -- Second byte write, if applicable.
                 if BRAM_PORT_INST_we(1) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(8 to 15) <= BRAM_PORT_INST_din(15 downto 8);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr)) + 1) <= BRAM_PORT_INST_din(16 to 23);
                 end if;
                 
                 -- Third byte write, if applicable.
                 if BRAM_PORT_INST_we(2) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(16 to 23) <= BRAM_PORT_INST_din(23 downto 16);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr)) + 2) <= BRAM_PORT_INST_din(8 to 15);
                 end if;
                 
                 -- Fourth byte write, if applicable.
                 if BRAM_PORT_INST_we(3) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(24 to 31) <= BRAM_PORT_INST_din(31 downto 24);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr)) + 3) <= BRAM_PORT_INST_din(0 to 7);
+                end if;
+            end if;
+        end if;
+        
+        -- Reset of DATA port.
+        if BRAM_PORT_DATA_rst = '1' then
+            BRAM_PORT_DATA_dout <= (others => '0');
+        -- Rising edge of DATA clk.
+        elsif rising_edge(BRAM_PORT_DATA_clk) and BRAM_PORT_DATA_en = '1' then
+            -- All WE LOW: Read data.
+            if BRAM_PORT_DATA_we = "0000" then
+                BRAM_PORT_DATA_dout(24 to 31) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)));
+                BRAM_PORT_DATA_dout(16 to 23) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 1);
+                BRAM_PORT_DATA_dout(8 to 15) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 2);
+                BRAM_PORT_DATA_dout(0 to 7) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 3);
+            -- WE: write to at least one byte.
+            else
+                -- First byte write, if applicable.
+                if BRAM_PORT_DATA_we(0) = '1' then
+                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr))) <= BRAM_PORT_DATA_din(24 to 31);
+                end if;
+                
+                -- Second byte write, if applicable.
+                if BRAM_PORT_DATA_we(1) = '1' then
+                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 1) <= BRAM_PORT_DATA_din(16 to 23);
+                end if;
+                
+                -- Third byte write, if applicable.
+                if BRAM_PORT_DATA_we(2) = '1' then
+                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 2) <= BRAM_PORT_DATA_din(8 to 15);
+                end if;
+                
+                -- Fourth byte write, if applicable.
+                if BRAM_PORT_DATA_we(3) = '1' then
+                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 3) <= BRAM_PORT_DATA_din(0 to 7);
                 end if;
             end if;
         end if;
