@@ -1,7 +1,7 @@
 
 #define SQUARE(x) ((x) * (x))
 
-int sum_squares_8(int* A)
+int sum_squares_8(const int* A)
 {
   int sum = 0;
 
@@ -17,11 +17,11 @@ int sum_squares_8(int* A)
   return sum;
 }
 
+const int A[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+
 int main()
 {
-  int A[8] = {1, 2, 3, 4, 5, 6, 7, 8};
-
-  int sum = sum_squares_8(A);
+  volatile int sum = sum_squares_8(A);
 
   return 0;
 }
