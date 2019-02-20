@@ -1,7 +1,7 @@
 import os
 
 from parsing import parser
-from toolchain import compiler, memory
+from toolchain import compiler, memory, vivado
 
 from analysis import basicblocks
 from analysis import statemachine
@@ -88,6 +88,9 @@ compiler.disassembleElf("main.elf", "main.asm")
 
 # Generate a memory initialization file ('memory.txt') from the hex file.
 memory.writeMemoryFile("memory.txt", "main.hex")
+
+# Start Vivado.
+vivado.start_batch("toolchain/simulate.tcl")
 
 # Now build the report!
 

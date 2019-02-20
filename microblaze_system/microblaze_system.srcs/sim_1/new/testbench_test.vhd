@@ -295,6 +295,8 @@ begin
         wait for clk_period;
         rst <= '0';
         
-        wait;
+        wait for clk_period * 100;
+        
+        report "Simulation done.";
     end process test_proc;
 end Behavioral;
