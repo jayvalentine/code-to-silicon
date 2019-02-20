@@ -1,5 +1,7 @@
 OUTPUT_FORMAT(elf32-microblazeel)
 
+STACK_SIZE = 512;
+
 MEMORY
 {
   BRAM (RWX) : ORIGIN = 0x00000000, LENGTH = 8K
@@ -22,13 +24,19 @@ SECTIONS
 
   .data ALIGN(4) : {
     *(.data)
+    *(.rodata)
   } > BRAM
-  
+
   .bss ALIGN(4) : {
     *(.bss)
   } > BRAM
 
   .crap ALIGN(4) : {
     *(.*)
+  } > BRAM
+
+  .stack ALIGN(4) : {
+    . += STACK_SIZE;
+    STACK_START = .;
   } > BRAM
 }

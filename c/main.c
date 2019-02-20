@@ -18,10 +18,11 @@ int sum_squares_8(const int* A)
 }
 
 const int A[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+volatile int sum;
 
 int main()
 {
-  volatile int sum = sum_squares_8(A);
+  sum = sum_squares_8(A);
 
   return 0;
 }
