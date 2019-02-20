@@ -26,6 +26,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 
+use STD.TEXTIO.ALL;
+use IEEE.STD_LOGIC_TEXTIO.ALL;
+
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx leaf cells in this code.
 --library UNISIM;
@@ -51,13 +54,50 @@ entity memory is
 end memory;
 
 architecture memory_behav of memory is
-    type mem_2kx32 is array (0 to 2047) of std_logic_vector(31 downto 0);
-    signal ram : mem_2kx32 := (
-        x"b00044a0",
-        x"20200000",
-        x"2040000f",
-        x"f8410000",
-        others => x"00000000");
+    type mem_2kx32 is array(0 to 2047) of std_logic_vector(31 downto 0);
+    
+    -- Function to read memory contents in from a file and return initialized memory object.
+    -- As long as this function is used only in initialization, it will not be synthesized (I hope),
+    -- and instead will just provide initial values for memory.
+    --
+    -- File is expected in this format:
+    -- <addr> <data>\n
+    impure function init_ram (f : string) return mem_2kx32 is
+        variable mem_temp : mem_2kx32 := (others => (others => '0'));
+        
+        variable f_line : line;
+        file f_file     : text;
+        
+        variable addr        : integer;
+        variable data        : std_logic_vector(31 downto 0);
+        variable space       : character;
+    begin
+        -- Open file for reading.
+        file_open(f_file, f, read_mode);
+        
+        -- Loop until we hit the end of the file.
+        while not endfile(f_file) loop
+            readline(f_file, f_line);
+            
+            -- Read in the address.
+            read(f_line, addr);
+            -- Read in the space which separates address and data.
+            read(f_line, space);
+            -- Read in the data as std_logic_vector.
+            read(f_line, data);
+            
+            -- Set the corresponding word in the memory.
+            mem_temp(addr) := data;
+        end loop;
+        
+        -- Close the file.
+        file_close(f_file);
+        
+        -- Return the memory we've contructed.
+        return mem_temp;
+    end init_ram;
+    
+    signal ram : mem_2kx32 := init_ram("../../../../memory.txt");
 
 begin
     mem_proc : process(BRAM_PORT_INST_clk, BRAM_PORT_INST_rst, BRAM_PORT_DATA_clk, BRAM_PORT_DATA_rst)
@@ -74,22 +114,22 @@ begin
             else
                 -- First byte write, if applicable.
                 if BRAM_PORT_INST_we(0) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(7 downto 0) <= BRAM_PORT_INST_din(7 downto 0);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(0 to 7) <= BRAM_PORT_INST_din(7 downto 0);
                 end if;
                 
                 -- Second byte write, if applicable.
                 if BRAM_PORT_INST_we(1) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(15 downto 8) <= BRAM_PORT_INST_din(15 downto 8);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(8 to 15) <= BRAM_PORT_INST_din(15 downto 8);
                 end if;
                 
                 -- Third byte write, if applicable.
                 if BRAM_PORT_INST_we(2) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(23 downto 16) <= BRAM_PORT_INST_din(23 downto 16);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(16 to 23) <= BRAM_PORT_INST_din(23 downto 16);
                 end if;
                 
                 -- Fourth byte write, if applicable.
                 if BRAM_PORT_INST_we(3) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(31 downto 24) <= BRAM_PORT_INST_din(31 downto 24);
+                    ram(to_integer(unsigned(BRAM_PORT_INST_addr))/4)(24 to 31) <= BRAM_PORT_INST_din(31 downto 24);
                 end if;
             end if;
         end if;
