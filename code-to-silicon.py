@@ -69,7 +69,6 @@ print("Mean output size: " + str(averageOutputSize))
 selectedBlocks = list(filter(lambda b: b.memoryAccessDensity() <= 0.5, blocks))
 selectedBlocks = list(filter(lambda b: (len(b.inputs()) + len(b.outputs())) < len(b), selectedBlocks))
 
-
 #for block in selectedBlocks:
 #  print(block)
 
@@ -81,9 +80,14 @@ with open(os.path.join("figures", "autogen", "statemachine.tex"), "w") as stream
 with open("test.vhd", "w") as stream:
   stream.write(translator.translateStateMachine(sm))
 
+# Link the assembly file with start.s, and make a hex file.
+# Disassemble this file for later reference.
 compiler.link(["main.s", "c/start.s"], "main.elf")
 compiler.makeHex("main.elf", "main.hex")
 compiler.disassembleElf("main.elf", "main.asm")
+
+# Generate a memory initialization file ('memory.txt') from the hex file.
+memory.writeMemoryFile("memory.txt", "main.hex")
 
 # Now build the report!
 
