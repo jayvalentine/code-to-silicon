@@ -32,3 +32,6 @@ figures/autogen
 /microblaze_system/microblaze_system.ip_user_files
 /microblaze_system/microblaze_system.srcs/sources_1/bd/mb_block_design/sim
 /microblaze_system/microblaze_system.srcs/sources_1/bd/mb_block_design/ip
+
+# We don't want to ignore the start.s file
+!start.s

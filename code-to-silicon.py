@@ -8,16 +8,8 @@ from analysis import statemachine
 
 from translation import translator
 
-instructions = [
-    "10110000000000000100010010100000",
-    "00100000001000000000000000000000",
-    "00100000010000000000000000001111",
-    "11111000010000010000000000000000"
-]
-
-words = list(map(lambda i: int(i, 2), instructions))
-
-memory.writeMemoryFile("test.coe", words, 2048)
+if not os.path.isdir("figures/autogen"):
+    os.makedirs("figures/autogen")
 
 compiler.compile(["c/main.c"], "main.s")
 
@@ -89,7 +81,7 @@ with open(os.path.join("figures", "autogen", "statemachine.tex"), "w") as stream
 with open("test.vhd", "w") as stream:
   stream.write(translator.translateStateMachine(sm))
 
-compiler.link(["main.s", "start.s"], "main.elf")
+compiler.link(["main.s", "c/start.s"], "main.elf")
 compiler.makeHex("main.elf", "main.hex")
 compiler.disassembleElf("main.elf", "main.asm")
 
