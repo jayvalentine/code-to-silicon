@@ -96,6 +96,10 @@ memory.writeMemoryFile("memory.txt", "main.hex")
 # Start Vivado.
 vivado.start_batch("toolchain/simulate.tcl")
 
+syms = compiler.getElfSymbols("main.elf")
+
+
+
 # Now build the report!
 
 os.system("pdflatex REPORT > texbuild.log")

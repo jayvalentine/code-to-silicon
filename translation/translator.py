@@ -1,4 +1,4 @@
-from . import text
+import text
 
 ADD_FORMAT = "{:s} := {:s} + {:s};"
 ADDI_FORMAT = "{:s} := {:s} + {:d};"
@@ -126,7 +126,7 @@ def getArchitecturalDefinition(stateMachine):
 
     for local in stateMachine[i].locals():
       tw.writeLine("variable " + localName(stateMachine[i].name(), local) + "   : signed(31 downto 0);")
-    
+
     if len(stateMachine[i].locals()) > 0:
       tw.writeBlankLine()
 
@@ -238,7 +238,7 @@ def getArchitecturalDefinition(stateMachine):
     # We transition to the next state if this is not a wait state.
     if "CLK" in s.triggers() and s.getTransition("CLK") != s:
       tw.writeLine("int_state <= " + s.getTransition("CLK").name() + ";")
-    
+
     tw.decreaseIndent()
 
   # Finally, null statement for completeness (in case the compiler complains that we've not covered every case.)
