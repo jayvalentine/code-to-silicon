@@ -187,6 +187,7 @@ architecture Behavioral of testbench_test is
     signal BRAM_PORT_DATA_we   : STD_LOGIC_VECTOR ( 0 to 3 );
     
     constant clk_period             : time := 10ns;
+    signal clk_hold                 : std_logic := '0';
 begin
     hw_accel_controller_uut: hw_accel_controller port map
     (
@@ -283,20 +284,40 @@ begin
     
     clk_proc : process
     begin
-        clk <= '0';
-        wait for clk_period/2;
-        clk <= '1';
-        wait for clk_period/2;
+        if clk_hold = '1' then
+            wait;
+        
+        else
+            clk <= '0';
+            wait for clk_period/2;
+            clk <= '1';
+            wait for clk_period/2;
+        end if;
     end process clk_proc;
     
     test_proc : process
     begin
         rst <= '1';
+        clk_hold <= '0';
         wait for clk_period;
         rst <= '0';
         
-        wait for clk_period * 100;
+        loop
+            -- Trap if we reach the test_failed function, and report the test failure.
+            if BRAM_PORT_INST_addr = x"00000150" then
+                report "TESTBENCH: FAILED";
+                clk_hold <= '1';
+                exit;
+            -- Likewise, trap if we reach the test_passed function, and report the passing test.
+            elsif BRAM_PORT_INST_addr = x"0000016c" then
+                report "TESTBENCH: PASSED";
+                clk_hold <= '1';
+                exit;
+            end if;
+            
+            wait for clk_period/8;
+        end loop;
         
-        report "Simulation done.";
+        wait;
     end process test_proc;
 end Behavioral;

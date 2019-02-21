@@ -20,6 +20,8 @@ SECTIONS
   .text ALIGN(4) : {
     *(.text.startup)
     *(.text)
+    . += 32;
+    *(.break)
   } > BRAM
 
   .data ALIGN(4) : {

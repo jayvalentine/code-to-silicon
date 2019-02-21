@@ -11,9 +11,9 @@ from translation import translator
 if not os.path.isdir("figures/autogen"):
     os.makedirs("figures/autogen")
 
-compiler.compile(["c/main.c"], "main.s")
+compiler.compile(["testbench/application.c"], "application.s")
 
-with open("main.s", 'r') as stream:
+with open("application.s", 'r') as stream:
   instructionList = stream.readlines()
 
   # Filter out blank lines
@@ -80,9 +80,13 @@ with open(os.path.join("figures", "autogen", "statemachine.tex"), "w") as stream
 with open("test.vhd", "w") as stream:
   stream.write(translator.translateStateMachine(sm))
 
+# Compile the harness and test functions.
+compiler.compile(["testbench/main.c"], "main.s")
+compiler.compile(["testbench/test.c"], "test.s")
+
 # Link the assembly file with start.s, and make a hex file.
 # Disassemble this file for later reference.
-compiler.link(["main.s", "c/start.s"], "main.elf")
+compiler.link(["application.s", "test.s", "main.s", "testbench/start.s"], "main.elf")
 compiler.makeHex("main.elf", "main.hex")
 compiler.disassembleElf("main.elf", "main.asm")
 
