@@ -1,11 +1,16 @@
 import os
 import shutil
+import re
 
 import templating
 from toolchain import compiler, memory, vivado
 
 TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
+
+TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
+PASSED = "!!!PASSED!!!"
+FAILED = "!!!FAILED!!!"
 
 def runTest(testName):
     # Get test and temp directory paths.
@@ -22,7 +27,6 @@ def runTest(testName):
     files = [f for f in os.listdir(testDir) if os.path.isfile(os.path.join(testDir, f))]
 
     for file in files:
-        print(file)
         shutil.copy(os.path.join(testDir, file), tempDir)
 
     # Move to the temp directory.
@@ -31,9 +35,18 @@ def runTest(testName):
 
     # Compile files.
     compileApplication()
+
+    # Write the memory initialization file.
     writeMemoryInitFile()
+
+    # Generate testbench templates.
     generateTemplates()
-    runVivado()
+
+    # Run the simulation.
+    if runVivadoSimulation():
+        print("Test " + testName + " passed.")
+    else:
+        print("Test " + testName + " FAILED.")
 
     # Move back to the root directory.
     os.chdir(origDir)
@@ -71,5 +84,22 @@ def generateTemplates():
     templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
     templating.processTemplate(tclTemplate, "simulate.tcl", {})
 
-def runVivado():
-    print(vivado.start_batch("simulate.tcl"))
+def runVivadoSimulation():
+    passed = None
+    output = vivado.start_batch("simulate.tcl")
+
+    output_lines = output.splitlines()
+    for l in output_lines:
+        m = TESTBENCH_MSG_FORMAT.match(l)PASSED
+        if m != None:
+            print("TESTBENCH: " + m.groups()[0])
+
+            if m.groups()[0] == PASSED:
+                passed = True
+            elif m.groups()[0] == FAILED:
+                passed = False
+
+    if passed == None:
+        raise Exception("Could not determine result of test.")
+
+    return passed

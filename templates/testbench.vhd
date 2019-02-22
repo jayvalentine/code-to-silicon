@@ -305,12 +305,12 @@ begin
         loop
             -- Trap if we reach the test_failed function, and report the test failure.
             if BRAM_PORT_INST_addr = x"%%FAILED_ADDR%%" then
-                report "TESTBENCH: FAILED";
+                report "TESTBENCH: !!!FAILED!!!";
                 clk_hold <= '1';
                 exit;
             -- Likewise, trap if we reach the test_passed function, and report the passing test.
             elsif BRAM_PORT_INST_addr = x"%%PASSED_ADDR%%" then
-                report "TESTBENCH: PASSED";
+                report "TESTBENCH: !!!PASSED!!!";
                 clk_hold <= '1';
                 exit;
             end if;
