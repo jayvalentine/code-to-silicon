@@ -80,9 +80,16 @@ def generateTemplates():
     # Generate testbench template.
     tbTemplate = os.path.join(TEMPLATE_DIR, "testbench.vhd")
     tclTemplate = os.path.join(TEMPLATE_DIR, "simulate.tcl")
+    memTemplate = os.path.join(TEMPLATE_DIR, "memory.vhd")
 
     templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
     templating.processTemplate(tclTemplate, "simulate.tcl", {})
+
+    vars_memory = {
+        "MEMORYFILE": os.path.abspath("memory.txt")
+    }
+
+    templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
 
 def runVivadoSimulation():
     passed = None
