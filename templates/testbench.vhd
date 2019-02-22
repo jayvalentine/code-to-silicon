@@ -1,21 +1,21 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
+-- Company:
+-- Engineer:
+--
 -- Create Date: 18.02.2019 14:43:25
--- Design Name: 
+-- Design Name:
 -- Module Name: testbench_test - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
+-- Project Name:
+-- Target Devices:
+-- Tool Versions:
+-- Description:
+--
+-- Dependencies:
+--
 -- Revision:
 -- Revision 0.01 - File Created
 -- Additional Comments:
--- 
+--
 ----------------------------------------------------------------------------------
 
 
@@ -40,11 +40,11 @@ architecture Behavioral of testbench_test is
         port (
             clk                     : in std_logic;
             rst                     : in std_logic;
-            
+
             accel_select            : out std_logic_vector(31 downto 0);
             reg_out                 : out std_logic_vector(991 downto 0);
             reg_in                  : in std_logic_vector(991 downto 0);
-            
+
             LMB_M_0_abus            : out std_logic_vector(31 downto 0);
             LMB_M_0_addrstrobe      : out std_logic;
             LMB_M_0_be              : out std_logic_vector(3 downto 0);
@@ -59,7 +59,7 @@ architecture Behavioral of testbench_test is
             LMB_M_0_writestrobe     : out std_logic
         );
     end component hw_accel_controller;
-    
+
     component mb_block_design_wrapper is
         port (
             BRAM_PORT_DATA_addr : out STD_LOGIC_VECTOR ( 0 to 31 );
@@ -111,7 +111,7 @@ architecture Behavioral of testbench_test is
             rst : in STD_LOGIC
         );
     end component mb_block_design_wrapper;
-    
+
     component memory is
         port (
             BRAM_PORT_INST_addr : in STD_LOGIC_VECTOR ( 0 to 31 );
@@ -130,14 +130,14 @@ architecture Behavioral of testbench_test is
             BRAM_PORT_DATA_we : in STD_LOGIC_VECTOR ( 0 to 3 )
         );
     end component memory;
-      
+
     signal clk                      : std_logic;
     signal rst                      : std_logic;
-    
+
     signal accel_select             : std_logic_vector(31 downto 0);
     signal reg_out                  : std_logic_vector(991 downto 0);
     signal reg_in                   : std_logic_vector(991 downto 0);
-    
+
     signal LMB_M_0_abus             : std_logic_vector(31 downto 0);
     signal LMB_M_0_addrstrobe       : std_logic;
     signal LMB_M_0_be               : std_logic_vector(3 downto 0);
@@ -150,7 +150,7 @@ architecture Behavioral of testbench_test is
     signal LMB_M_0_wait             : std_logic;
     signal LMB_M_0_writedbus        : std_logic_vector(31 downto 0);
     signal LMB_M_0_writestrobe      : std_logic;
-    
+
     signal M_AXI_DP_0_araddr  : STD_LOGIC_VECTOR ( 31 downto 0 );
     signal M_AXI_DP_0_arprot  : STD_LOGIC_VECTOR ( 2 downto 0 );
     signal M_AXI_DP_0_arready : STD_LOGIC;
@@ -170,7 +170,7 @@ architecture Behavioral of testbench_test is
     signal M_AXI_DP_0_wready  : STD_LOGIC;
     signal M_AXI_DP_0_wstrb   : STD_LOGIC_VECTOR ( 3 downto 0 );
     signal M_AXI_DP_0_wvalid  : STD_LOGIC;
-    
+
     signal BRAM_PORT_INST_addr : STD_LOGIC_VECTOR ( 0 to 31 );
     signal BRAM_PORT_INST_clk  : STD_LOGIC;
     signal BRAM_PORT_INST_din  : STD_LOGIC_VECTOR ( 0 to 31 );
@@ -185,7 +185,7 @@ architecture Behavioral of testbench_test is
     signal BRAM_PORT_DATA_en   : STD_LOGIC;
     signal BRAM_PORT_DATA_rst  : STD_LOGIC;
     signal BRAM_PORT_DATA_we   : STD_LOGIC_VECTOR ( 0 to 3 );
-    
+
     constant clk_period             : time := 10ns;
     signal clk_hold                 : std_logic := '0';
 begin
@@ -196,7 +196,7 @@ begin
         accel_select            => accel_select,
         reg_out                 => reg_out,
         reg_in                  => reg_in,
-        
+
         LMB_M_0_abus            => LMB_M_0_abus,
         LMB_M_0_addrstrobe      => LMB_M_0_addrstrobe,
         LMB_M_0_be              => LMB_M_0_be,
@@ -210,12 +210,12 @@ begin
         LMB_M_0_writedbus       => LMB_M_0_writedbus,
         LMB_M_0_writestrobe     => LMB_M_0_writestrobe
     );
-    
+
     mb_uut : mb_block_design_wrapper port map
     (
         clk_100MHz              => clk,
         rst                     => rst,
-        
+
         LMB_M_0_abus            => LMB_M_0_abus,
         LMB_M_0_addrstrobe      => LMB_M_0_addrstrobe,
         LMB_M_0_be              => LMB_M_0_be,
@@ -228,7 +228,7 @@ begin
         LMB_M_0_wait            => LMB_M_0_wait,
         LMB_M_0_writedbus       => LMB_M_0_writedbus,
         LMB_M_0_writestrobe     => LMB_M_0_writestrobe,
-        
+
         M_AXI_DP_0_araddr       => M_AXI_DP_0_araddr,
         M_AXI_DP_0_arready      => M_AXI_DP_0_arready,
         M_AXI_DP_0_arvalid      => M_AXI_DP_0_arvalid,
@@ -247,7 +247,7 @@ begin
         M_AXI_DP_0_wready       => M_AXI_DP_0_wready,
         M_AXI_DP_0_wstrb        => M_AXI_DP_0_wstrb,
         M_AXI_DP_0_wvalid       => M_AXI_DP_0_wvalid,
-        
+
         BRAM_PORT_INST_addr     => BRAM_PORT_INST_addr,
         BRAM_PORT_INST_clk      => BRAM_PORT_INST_clk,
         BRAM_PORT_INST_din      => BRAM_PORT_INST_din,
@@ -263,7 +263,7 @@ begin
         BRAM_PORT_DATA_rst      => BRAM_PORT_DATA_rst,
         BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we
     );
-    
+
     mem_uut : memory port map
     (
         BRAM_PORT_INST_addr     => BRAM_PORT_INST_addr,
@@ -281,12 +281,12 @@ begin
         BRAM_PORT_DATA_rst      => BRAM_PORT_DATA_rst,
         BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we
     );
-    
+
     clk_proc : process
     begin
         if clk_hold = '1' then
             wait;
-        
+
         else
             clk <= '0';
             wait for clk_period/2;
@@ -294,30 +294,30 @@ begin
             wait for clk_period/2;
         end if;
     end process clk_proc;
-    
+
     test_proc : process
     begin
         rst <= '1';
         clk_hold <= '0';
         wait for clk_period;
         rst <= '0';
-        
+
         loop
             -- Trap if we reach the test_failed function, and report the test failure.
-            if BRAM_PORT_INST_addr = x"00000150" then
+            if BRAM_PORT_INST_addr = x"%%FAILED_ADDR%%" then
                 report "TESTBENCH: FAILED";
                 clk_hold <= '1';
                 exit;
             -- Likewise, trap if we reach the test_passed function, and report the passing test.
-            elsif BRAM_PORT_INST_addr = x"0000016c" then
+            elsif BRAM_PORT_INST_addr = x"%%PASSED_ADDR%%" then
                 report "TESTBENCH: PASSED";
                 clk_hold <= '1';
                 exit;
             end if;
-            
+
             wait for clk_period/8;
         end loop;
-        
+
         wait;
     end process test_proc;
 end Behavioral;

@@ -8,6 +8,8 @@ from analysis import statemachine
 
 from translation import translator
 
+import templating
+
 if not os.path.isdir("figures/autogen"):
     os.makedirs("figures/autogen")
 
@@ -93,15 +95,21 @@ compiler.disassembleElf("main.elf", "main.asm")
 # Generate a memory initialization file ('memory.txt') from the hex file.
 memory.writeMemoryFile("memory.txt", "main.hex")
 
-# Start Vivado.
-vivado.start_batch("toolchain/simulate.tcl")
-
 syms = compiler.getElfSymbols("main.elf")
 
+vars_testbench = {
+    "FAILED_ADDR": syms["test_failed"],
+    "PASSED_ADDR": syms["test_passed"]
+}
 
+templating.processTemplate("templates/testbench.vhd", "testbench_test.vhd", vars_testbench)
+
+templating.processTemplate("templates/simulate.tcl", "simulate.tcl", {})
+
+# Start Vivado.
+print(vivado.start_batch("simulate.tcl"))
 
 # Now build the report!
-
 os.system("pdflatex REPORT > texbuild.log")
 os.system("biber REPORT > texbuild.log")
 os.system("pdflatex REPORT > texbuild.log")
