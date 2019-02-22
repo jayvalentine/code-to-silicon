@@ -13,10 +13,10 @@ def help():
   common.run_command(GCC, ["--help"])
 
 def compile(files, output):
-  common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-funroll-all-loops", "-Os"] + ["-o " + output] + files)
+  common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-funroll-all-loops", "-Os"] + ["-o", output] + files)
 
 def link(files, output):
-  common.run_command(GCC, ["-Wl,-Tlink.x,-Map=link.map", "-nostartfiles"] + ["-o " + output] + files)
+  common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles"] + ["-o", output] + files)
 
 def makeHex(objfile, hexfile):
   common.run_command(OBJCOPY, ["-O", "ihex", objfile, hexfile])
