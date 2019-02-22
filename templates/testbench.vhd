@@ -188,6 +188,7 @@ architecture Behavioral of testbench is
 
     constant clk_period             : time := 10ns;
     signal clk_hold                 : std_logic := '0';
+    signal cycles                   : Integer := 0;
 begin
     hw_accel_controller_uut: hw_accel_controller port map
     (
@@ -292,6 +293,7 @@ begin
             wait for clk_period/2;
             clk <= '1';
             wait for clk_period/2;
+            cycles <= cycles + 1;
         end if;
     end process clk_proc;
 
@@ -317,6 +319,8 @@ begin
 
             wait for clk_period/8;
         end loop;
+
+        report "TESTBENCH: CYCLES: " & Integer'image(cycles);
 
         wait;
     end process test_proc;

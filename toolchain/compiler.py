@@ -31,7 +31,6 @@ def getElfSymbols(elffile):
 
   for line in out.splitlines():
       # See if the line matches our regex.
-      print(line)
       m = SYM_FORMAT.match(line)
       if m != None:
           syms[m.groups()[1]] = m.groups()[0]

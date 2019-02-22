@@ -88,9 +88,13 @@ def runVivadoSimulation():
     passed = None
     output = vivado.start_batch("simulate.tcl")
 
+    # Write the full output to a log file.
+    with open("simulate.log", 'w') as logfile:
+        logfile.write(output)
+
     output_lines = output.splitlines()
     for l in output_lines:
-        m = TESTBENCH_MSG_FORMAT.match(l)PASSED
+        m = TESTBENCH_MSG_FORMAT.match(l)
         if m != None:
             print("TESTBENCH: " + m.groups()[0])
 
