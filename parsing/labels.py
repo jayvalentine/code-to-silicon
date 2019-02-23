@@ -7,6 +7,9 @@ class Label(streams.StreamItem):
   def __str__(self):
     return self._labelName + ":"
 
+  def name(self):
+    return self._labelName
+
   def isLabel(self):
     return True
 

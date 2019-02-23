@@ -16,6 +16,9 @@ def parse(stream):
   # Strip any blank lines.
   stream = list(filter(lambda l: len(l) > 0, stream))
 
+  # Strip any lines which are just comments.
+  stream = list(filter(lambda l: l[0] != '#', stream))
+
   return parseStreamItems(stream)
 
 def prettyPrint(stream):

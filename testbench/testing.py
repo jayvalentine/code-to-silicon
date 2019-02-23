@@ -6,6 +6,7 @@ import templating
 from toolchain import compiler, memory, vivado
 
 from parsing import parser
+from analysis import basicblocks
 
 TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
@@ -76,6 +77,12 @@ def generateStateMachines(logger):
                         + " labels, "
                         + str(stream.directiveCount())
                         + " directives.")
+
+    # Get basic blocks from stream.
+    blocks = basicblocks.extractBasicBlocks(stream)
+
+    for b in blocks:
+        print(b)
 
 def compileHarness(logger):
     # Compile the harness and test functions.
