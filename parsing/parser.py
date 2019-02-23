@@ -1,4 +1,4 @@
-from . import instructions, labels, directives
+from . import streams, instructions, labels, directives
 
 """
 Parse a stream of instructions and labels into a linked list of stream items (instructions and labels).
@@ -26,16 +26,16 @@ def prettyPrint(stream):
       print(s)
 
 def parseStreamItems(stream):
+  s = streams.Stream()
+
   # Check the list is the right length.
   if len(stream) < 1:
     raise ValueError("Must provide at least one instruction for parsing.")
 
-  streamItems = []
-
   for line in stream:
-    streamItems.append(parseStreamItem(line))
+    s.add(parseStreamItem(line))
 
-  return streamItems
+  return s
 
 def parseStreamItem(streamItem):
   # Is this a label? If so, parse as a label.

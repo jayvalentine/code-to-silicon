@@ -5,6 +5,8 @@ import re
 import templating
 from toolchain import compiler, memory, vivado
 
+from parsing import parser
+
 TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
 
@@ -33,8 +35,14 @@ def runTest(logger, testName, runSimulation):
     origDir = os.getcwd()
     os.chdir(tempDir)
 
-    # Compile files.
+    # Compile application.
     compileApplication(logger)
+
+    # Analyse generated code and produce statemachines.
+    generateStateMachines(logger)
+
+    # Compile test harness files.
+    compileHarness(logger)
 
     # Write the memory initialization file.
     writeMemoryInitFile()
@@ -57,6 +65,19 @@ def runTest(logger, testName, runSimulation):
 def compileApplication(logger):
     compiler.compile(logger, ["application.c"], "application.s")
 
+def generateStateMachines(logger):
+    logger.info("Reading application file...")
+    with open("application.s", 'r') as file:
+        stream = parser.parse(file.readlines())
+
+    logger.info("Read " + str(stream.instructionCount())
+                        + " instructions, "
+                        + str(stream.labelCount())
+                        + " labels, "
+                        + str(stream.directiveCount())
+                        + " directives.")
+
+def compileHarness(logger):
     # Compile the harness and test functions.
     compiler.compile(logger, ["main.c"], "main.s")
     compiler.compile(logger, ["test.c"], "test.s")
