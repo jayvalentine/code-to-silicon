@@ -11,6 +11,15 @@ class Directive(streams.StreamItem):
   def isDirective(self):
     return True
 
+  def directive(self):
+    return self._directive
+
+  def args(self, index):
+    if index < 0 or index >= len(self._args):
+      raise IndexError("Directive argument index out of range.")
+
+    return self._args[index]
+
 def parseDirective(directiveString):
   # Sanitise the input slightly. We don't care about comments.
   # These begin with a '#' and start after the end of the directive.
@@ -27,9 +36,16 @@ def parseDirective(directiveString):
   if directiveString[0] != ".":
     raise ValueError(directiveString + " is not a valid directive: does not start with '.'.")
 
-  directiveSplit = directiveString.split(" ")
+  directiveSplit = directiveString[1:].split()
 
-  directive = directiveString[0]
-  args = directiveString[1].split(",")
+  directive = directiveSplit[0]
+
+  if len(directiveSplit) > 1:
+    # We might have some spaces which means we will have accidentally split up our arg string.
+    # Join it again so that it's just comma-separated.
+    argString = "".join(directiveSplit[1:])
+    args = list(map(lambda a: a.strip(), argString.split(",")))
+  else:
+    args = []
 
   return Directive(directive, args)

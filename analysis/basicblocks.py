@@ -1,14 +1,20 @@
 from parsing import instructions
 
 class BasicBlock:
-  def __init__(self, name):
+  def __init__(self, name, function):
     self._name = name
+
+    if function == None:
+      raise ValueError("Expected function name, got None.")
+
+    self._function = str(function)
+
     self._instructions = {}
     self._prev = []
     self._next = []
 
   def __str__(self):
-    s = "Basic Block: " + self._name + "\n"
+    s = "Basic Block: " + self._name + " in function " + self._function + "\n"
 
     s += "\tInputs: " + ", ".join(list(map(
       lambda i: "r" + str(i),
@@ -113,13 +119,14 @@ def extractBasicBlocks(stream):
   blocks = []
 
   currentBlock = None
+  currentFunction = None
 
   for i in range(len(stream)):
     s = stream[i]
 
     if s.isInstruction():
       if currentBlock == None:
-        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i))
+        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction)
 
       # If the instruction is a NOP and we're not already in the middle
       # of a basic block, ignore it and skip ahead.
@@ -130,15 +137,31 @@ def extractBasicBlocks(stream):
       currentBlock.add(i, s)
       if s.isBasicBlockBoundary():
         blocks.append(currentBlock)
-        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i))
+        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction)
     elif s.isLabel():
       if currentBlock != None:
         blocks.append(currentBlock)
 
-      currentBlock = BasicBlock(s.name() + "-line-{:04d}".format(i))
+      currentBlock = BasicBlock(s.name() + "-line-{:04d}".format(i), currentFunction)
+    elif s.isDirective():
+      if s.directive() == "type" and s.args(1) == "@function":
+          currentFunction = s.args(0)
 
-  blocks.append(currentBlock)
+  if len(currentBlock) > 0:
+    blocks.append(currentBlock)
 
   blocks = list(filter(lambda b: len(b) > 0, blocks))
+
+  return linkBasicBlocks(blocks)
+
+def linkBasicBlocks(blocks):
+  for i in range(len(blocks)):
+    # A basic block can be linked to another in one of two ways:
+    # 1. a branch instruction
+    # 2. a return
+    #
+    # We can always know the label to which we're jumping (as it's in the instruction itself),
+    # but we might not always know where we're returning to (e.g. if the call site is in another compilation unit.)
+    pass
 
   return blocks
