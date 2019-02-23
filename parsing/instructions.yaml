@@ -47,7 +47,7 @@ FloatArith:
   - fint
   - fsqrt
 
-ControlFlow:
+Branch:
   - beq
   - beqi
   - bge
@@ -68,6 +68,8 @@ ControlFlow:
   - brlid
   - brk
   - brki
+
+Return:
   - rtbd
   - rtid
   - rted

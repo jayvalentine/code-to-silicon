@@ -117,6 +117,9 @@ class Instruction(streams.StreamItem):
   def imm(self):
     return self._imm
 
+  def label(self):
+    return self._label
+
   def isInstruction(self):
     return True
 
@@ -203,7 +206,32 @@ class FloatArithmeticInstruction(ArithmeticInstruction):
     return False
 
 """
-Control flow (branch/jump) instructions. These are:
+Abstract class for control flow instructions
+"""
+class ControlFlowInstruction(Instruction):
+  def __init__(self, mnemonic, rA, rB, rD, imm, label):
+    # For a control flow instruction, there is no rD, so what is passed as rD becomes rA, and rA becomes
+    # rB.
+    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label)
+
+  def canTranslate(self):
+    return False
+
+  def isBasicBlockBoundary(self):
+    return True
+
+  def isMemoryAccess(self):
+    return False
+
+  def isBranch(self):
+    return False
+
+  def isReturn(self):
+    return False
+
+"""
+Branch instructions. These are a subset of CF instructions which transfer control to another
+point in the program, designated by a label.
 
 beq
 beqi
@@ -221,25 +249,23 @@ br
 bri
 brk
 brki
+"""
+class BranchInstruction(ControlFlowInstruction):
+  def isBranch(self):
+    return True
+
+"""
+Return instructions. Unlike branch instructions, these don't transfer control to a specified point,
+but instead return to the call site at which the current subroutine/function was called.
+
 rtbd
 rtid
 rted
 rtsd
 """
-class ControlFlowInstruction(Instruction):
-  def __init__(self, mnemonic, rA, rB, rD, imm, label):
-    # For a control flow instruction, there is no rD, so what is passed as rD becomes rA, and rA becomes
-    # rB.
-    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label)
-
-  def canTranslate(self):
-    return False
-
-  def isBasicBlockBoundary(self):
+class ReturnInstruction(ControlFlowInstruction):
+  def isReturn(self):
     return True
-
-  def isMemoryAccess(self):
-    return False
 
 """
 Input/output instructions. These do not include the FSL-access instructions
@@ -373,8 +399,10 @@ def parseInstruction(instructionString):
     instructionClass = IntegerArithmeticInstruction
   elif category == "FloatArith":
     instructionClass = FloatArithmeticInstruction
-  elif category == "ControlFlow":
-    instructionClass = ControlFlowInstruction
+  elif category == "Branch":
+    instructionClass = BranchInstruction
+  elif category == "Return":
+    instructionClass = ReturnInstruction
   elif category == "Input":
     instructionClass = InputInstruction
   elif category == "Output":

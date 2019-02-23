@@ -47,6 +47,16 @@ class BasicBlock:
   def __len__(self):
     return len(self._instructions)
 
+  def name(self):
+    return self._name
+
+  def function(self):
+    return self._function
+
+  def last(self):
+    lastLine = sorted(list(self._instructions.keys()))[-1]
+    return self._instructions[lastLine]
+
   def add(self, line, instruction):
     if not isinstance(instruction, instructions.Instruction):
       raise TypeError("Not an instruction: " + str(instruction))
@@ -162,6 +172,20 @@ def linkBasicBlocks(blocks):
     #
     # We can always know the label to which we're jumping (as it's in the instruction itself),
     # but we might not always know where we're returning to (e.g. if the call site is in another compilation unit.)
-    pass
+    
+    b = blocks[i]
+
+    # We should never see a basic block which doesn't end with a control flow instruction.
+    lastInstruction = b.last()
+    if not lastInstruction.isBasicBlockBoundary():
+      raise ValueError("Expected control flow instruction as end of block " + b.name() + ", got " + str(lastInstruction))
+
+    # If this is a normal branch instruction, find the block we're branching to.
+    if lastInstruction.isBranch():
+      branchLabel = lastInstruction.label()
+      print(branchLabel)
+    elif lastInstruction.isReturn():
+      currentFunction = b.function()
+      print(currentFunction)
 
   return blocks

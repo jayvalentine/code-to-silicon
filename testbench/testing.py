@@ -81,9 +81,6 @@ def generateStateMachines(logger):
     # Get basic blocks from stream.
     blocks = basicblocks.extractBasicBlocks(stream)
 
-    for b in blocks:
-        print(b)
-
 def compileHarness(logger):
     # Compile the harness and test functions.
     compiler.compile(logger, ["main.c"], "main.s")
