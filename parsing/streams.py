@@ -1,12 +1,12 @@
 class StreamItem:
   def __init__(self):
-    self._next = None
-
-  def getNext(self):
-    return self._next
-
-  def setNext(self, next):
-    self._next = next
+    pass
 
   def isInstruction(self):
+    return False
+
+  def isLabel(self):
+    return False
+
+  def isDirective(self):
     return False

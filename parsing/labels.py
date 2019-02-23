@@ -4,10 +4,11 @@ class Label(streams.StreamItem):
   def __init__(self, labelName):
     self._labelName = str(labelName)
 
-    super(Label, self).__init__()
-
   def __str__(self):
     return self._labelName + ":"
+
+  def isLabel(self):
+    return True
 
 def parseLabel(labelString):
   labelString = str(labelString)

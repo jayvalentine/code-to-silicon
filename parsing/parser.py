@@ -1,4 +1,4 @@
-from . import instructions, labels
+from . import instructions, labels, directives
 
 """
 Parse a stream of instructions and labels into a linked list of stream items (instructions and labels).
@@ -12,6 +12,9 @@ Returns:
 def parse(stream):
   # Strip all leading/trailing whitespace from lines.
   stream = list(map(lambda l: l.strip(), stream))
+
+  # Strip any blank lines.
+  stream = list(filter(lambda l: len(l) > 0, stream))
 
   return parseStreamItems(stream)
 
@@ -38,5 +41,9 @@ def parseStreamItem(streamItem):
   # Is this a label? If so, parse as a label.
   if streamItem[-1] == ":":
     return labels.parseLabel(streamItem)
+  # Is this a directive? If so, parse as a directive.
+  if streamItem[0] == ".":
+    return directives.parseDirective(streamItem)
+  # Otherwise assume it's an instruction.
   else:
     return instructions.parseInstruction(streamItem)
