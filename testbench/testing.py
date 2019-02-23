@@ -67,78 +67,81 @@ def compileApplication(logger):
     compiler.compile(logger, ["application.c"], "application.s")
 
 def generateStateMachines(logger):
-    logger.info("Reading application file...")
-    with open("application.s", 'r') as file:
-        stream = parser.parse(file.readlines())
+  logger.info("Reading application file...")
+  with open("application.s", 'r') as file:
+    stream = parser.parse(file.readlines())
 
-    logger.info("Read " + str(stream.instructionCount())
-                        + " instructions, "
-                        + str(stream.labelCount())
-                        + " labels, "
-                        + str(stream.directiveCount())
-                        + " directives.")
+  logger.info("Read " + str(stream.instructionCount())
+                      + " instructions, "
+                      + str(stream.labelCount())
+                      + " labels, "
+                      + str(stream.directiveCount())
+                      + " directives.")
 
-    # Get basic blocks from stream.
-    blocks = basicblocks.extractBasicBlocks(stream)
+  # Get basic blocks from stream.
+  blocks = basicblocks.extractBasicBlocks(logger, stream)
+
+  for b in blocks:
+    print(b)
 
 def compileHarness(logger):
-    # Compile the harness and test functions.
-    compiler.compile(logger, ["main.c"], "main.s")
-    compiler.compile(logger, ["test.c"], "test.s")
+  # Compile the harness and test functions.
+  compiler.compile(logger, ["main.c"], "main.s")
+  compiler.compile(logger, ["test.c"], "test.s")
 
-    # Link the assembly file with start.s, and make a hex file.
-    # Disassemble this file for later reference.
-    compiler.link(logger, ["application.s", "test.s", "main.s", "start.s"], "main.elf")
-    compiler.makeHex(logger, "main.elf", "main.hex")
-    compiler.disassembleElf(logger, "main.elf", "main.asm")
+  # Link the assembly file with start.s, and make a hex file.
+  # Disassemble this file for later reference.
+  compiler.link(logger, ["application.s", "test.s", "main.s", "start.s"], "main.elf")
+  compiler.makeHex(logger, "main.elf", "main.hex")
+  compiler.disassembleElf(logger, "main.elf", "main.asm")
 
 def writeMemoryInitFile():
-    # Generate a memory initialization file ('memory.txt') from the hex file.
-    memory.writeMemoryFile("memory.txt", "main.hex")
+  # Generate a memory initialization file ('memory.txt') from the hex file.
+  memory.writeMemoryFile("memory.txt", "main.hex")
 
 def generateTemplates(logger):
-    # Read the ELF symbols.
-    syms = compiler.getElfSymbols(logger, "main.elf")
+  # Read the ELF symbols.
+  syms = compiler.getElfSymbols(logger, "main.elf")
 
-    vars_testbench = {
-        "FAILED_ADDR": syms["test_failed"],
-        "PASSED_ADDR": syms["test_passed"]
-    }
+  vars_testbench = {
+    "FAILED_ADDR": syms["test_failed"],
+    "PASSED_ADDR": syms["test_passed"]
+  }
 
-    # Generate testbench template.
-    tbTemplate = os.path.join(TEMPLATE_DIR, "testbench.vhd")
-    tclTemplate = os.path.join(TEMPLATE_DIR, "simulate.tcl")
-    memTemplate = os.path.join(TEMPLATE_DIR, "memory.vhd")
+  # Generate testbench template.
+  tbTemplate = os.path.join(TEMPLATE_DIR, "testbench.vhd")
+  tclTemplate = os.path.join(TEMPLATE_DIR, "simulate.tcl")
+  memTemplate = os.path.join(TEMPLATE_DIR, "memory.vhd")
 
-    templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
-    templating.processTemplate(tclTemplate, "simulate.tcl", {})
+  templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
+  templating.processTemplate(tclTemplate, "simulate.tcl", {})
 
-    vars_memory = {
-        "MEMORYFILE": os.path.abspath("memory.txt")
-    }
+  vars_memory = {
+    "MEMORYFILE": os.path.abspath("memory.txt")
+  }
 
-    templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
+  templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
 
 def runVivadoSimulation():
-    passed = None
-    output = vivado.start_batch("simulate.tcl")
+  passed = None
+  output = vivado.start_batch("simulate.tcl")
 
-    # Write the full output to a log file.
-    with open("simulate.log", 'w') as logfile:
-        logfile.write(output)
+  # Write the full output to a log file.
+  with open("simulate.log", 'w') as logfile:
+    logfile.write(output)
 
-    output_lines = output.splitlines()
-    for l in output_lines:
-        m = TESTBENCH_MSG_FORMAT.match(l)
-        if m != None:
-            print("TESTBENCH: " + m.groups()[0])
+  output_lines = output.splitlines()
+  for l in output_lines:
+    m = TESTBENCH_MSG_FORMAT.match(l)
+    if m != None:
+      print("TESTBENCH: " + m.groups()[0])
 
-            if m.groups()[0] == PASSED:
-                passed = True
-            elif m.groups()[0] == FAILED:
-                passed = False
+      if m.groups()[0] == PASSED:
+        passed = True
+      elif m.groups()[0] == FAILED:
+        passed = False
 
-    if passed == None:
-        raise Exception("Could not determine result of test.")
+  if passed == None:
+    raise Exception("Could not determine result of test.")
 
-    return passed
+  return passed

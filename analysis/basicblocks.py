@@ -1,7 +1,7 @@
 from parsing import instructions
 
 class BasicBlock:
-  def __init__(self, name, function):
+  def __init__(self, name, function, label):
     self._name = name
 
     if function == None:
@@ -9,12 +9,22 @@ class BasicBlock:
 
     self._function = str(function)
 
+    self._label = label
+
     self._instructions = {}
     self._prev = []
     self._next = []
 
+    self._unknownNext = False
+    self._unknownPrev = False
+
   def __str__(self):
-    s = "Basic Block: " + self._name + " in function " + self._function + "\n"
+    s = "Basic Block: " + self._name + " in function " + self._function
+
+    if self._label != None:
+      s += " (label: " + self._label + ")"
+
+    s += "\n"
 
     s += "\tInputs: " + ", ".join(list(map(
       lambda i: "r" + str(i),
@@ -30,13 +40,23 @@ class BasicBlock:
 
     s += "\tMemory-access Density: " + str(round(self.memoryAccessDensity(), 2)) + "\n"
 
-    s += "\tPrevious blocks:\n"
+    s += "\tPrevious blocks:"
     for b in self._prev:
       s += b.name() + " "
 
-    s += "\tNext blocks:\n"
+    if self._unknownNext:
+      s += "(unknown)"
+
+    s += "\n"
+
+    s += "\tNext blocks:"
     for b in self._next:
       s += b.name() + " "
+
+    if self._unknownPrev:
+      s += "(unknown)"
+
+    s += "\n"
 
     s += "Instructions:\n"
     for l in sorted(list(self._instructions.keys())):
@@ -53,6 +73,9 @@ class BasicBlock:
   def function(self):
     return self._function
 
+  def label(self):
+    return self._label
+
   def last(self):
     lastLine = sorted(list(self._instructions.keys()))[-1]
     return self._instructions[lastLine]
@@ -65,6 +88,13 @@ class BasicBlock:
       raise ValueError("Duplicate line number " + str(line) + ": have " + str(self._instructions.keys()) + ", got " + str(instruction))
 
     self._instructions[line] = instruction
+
+  def addNext(self, otherBlock):
+    self._next.append(otherBlock)
+    otherBlock._prev.append(self)
+
+  def addUnknownNext(self):
+    self._unknownNext = True
 
   def instructions(self):
     return self._instructions
@@ -125,7 +155,7 @@ class BasicBlock:
 
     return used
 
-def extractBasicBlocks(stream):
+def extractBasicBlocks(logger, stream):
   blocks = []
 
   currentBlock = None
@@ -136,7 +166,7 @@ def extractBasicBlocks(stream):
 
     if s.isInstruction():
       if currentBlock == None:
-        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction)
+        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction, None)
 
       # If the instruction is a NOP and we're not already in the middle
       # of a basic block, ignore it and skip ahead.
@@ -147,12 +177,12 @@ def extractBasicBlocks(stream):
       currentBlock.add(i, s)
       if s.isBasicBlockBoundary():
         blocks.append(currentBlock)
-        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction)
+        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction, None)
     elif s.isLabel():
       if currentBlock != None:
         blocks.append(currentBlock)
 
-      currentBlock = BasicBlock(s.name() + "-line-{:04d}".format(i), currentFunction)
+      currentBlock = BasicBlock(s.name() + "-line-{:04d}".format(i), currentFunction, s.name())
     elif s.isDirective():
       if s.directive() == "type" and s.args(1) == "@function":
           currentFunction = s.args(0)
@@ -162,9 +192,9 @@ def extractBasicBlocks(stream):
 
   blocks = list(filter(lambda b: len(b) > 0, blocks))
 
-  return linkBasicBlocks(blocks)
+  return linkBasicBlocks(logger, blocks)
 
-def linkBasicBlocks(blocks):
+def linkBasicBlocks(logger, blocks):
   for i in range(len(blocks)):
     # A basic block can be linked to another in one of two ways:
     # 1. a branch instruction
@@ -183,9 +213,20 @@ def linkBasicBlocks(blocks):
     # If this is a normal branch instruction, find the block we're branching to.
     if lastInstruction.isBranch():
       branchLabel = lastInstruction.label()
-      print(branchLabel)
+
+      blocksWithLabel = list(filter(lambda b: b.label() == branchLabel, blocks))
+
+      if len(blocksWithLabel) > 1:
+        raise ValueError("Label " + branchLabel + " is ambiguous (" + str(len(blocksWithLabel)) + " matches)")
+      elif len(blocksWithLabel) < 1:
+        logger.warn("Unknown label: " + branchLabel)
+        b.addUnknownNext()
+      else:
+        b.addNext(blocksWithLabel[0])
+
     elif lastInstruction.isReturn():
+      # Get the name of the function this block is in.
       currentFunction = b.function()
-      print(currentFunction)
+
 
   return blocks
