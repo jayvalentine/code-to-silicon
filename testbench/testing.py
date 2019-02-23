@@ -12,7 +12,7 @@ TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
-def runTest(testName):
+def runTest(logger, testName, runSimulation):
     # Get test and temp directory paths.
     testDir = os.path.join(TESTING_DIR, testName)
     tempDir = os.path.join(testDir, "temp")
@@ -34,43 +34,46 @@ def runTest(testName):
     os.chdir(tempDir)
 
     # Compile files.
-    compileApplication()
+    compileApplication(logger)
 
     # Write the memory initialization file.
     writeMemoryInitFile()
 
     # Generate testbench templates.
-    generateTemplates()
+    generateTemplates(logger)
 
-    # Run the simulation.
-    if runVivadoSimulation():
-        print("Test " + testName + " passed.")
+    # Run the Vivado simulation if we've been asked to.
+    if runSimulation:
+        if runVivadoSimulation():
+            logger.info("Test " + testName + ": passed.")
+        else:
+            logger.warn("Test " + testName + ": FAILED.")
     else:
-        print("Test " + testName + " FAILED.")
+        logger.info("Test " + testName + ": SIMULATION SKIPPED.")
 
     # Move back to the root directory.
     os.chdir(origDir)
 
-def compileApplication():
-    compiler.compile(["application.c"], "application.s")
+def compileApplication(logger):
+    compiler.compile(logger, ["application.c"], "application.s")
 
     # Compile the harness and test functions.
-    compiler.compile(["main.c"], "main.s")
-    compiler.compile(["test.c"], "test.s")
+    compiler.compile(logger, ["main.c"], "main.s")
+    compiler.compile(logger, ["test.c"], "test.s")
 
     # Link the assembly file with start.s, and make a hex file.
     # Disassemble this file for later reference.
-    compiler.link(["application.s", "test.s", "main.s", "start.s"], "main.elf")
-    compiler.makeHex("main.elf", "main.hex")
-    compiler.disassembleElf("main.elf", "main.asm")
+    compiler.link(logger, ["application.s", "test.s", "main.s", "start.s"], "main.elf")
+    compiler.makeHex(logger, "main.elf", "main.hex")
+    compiler.disassembleElf(logger, "main.elf", "main.asm")
 
 def writeMemoryInitFile():
     # Generate a memory initialization file ('memory.txt') from the hex file.
     memory.writeMemoryFile("memory.txt", "main.hex")
 
-def generateTemplates():
+def generateTemplates(logger):
     # Read the ELF symbols.
-    syms = compiler.getElfSymbols("main.elf")
+    syms = compiler.getElfSymbols(logger, "main.elf")
 
     vars_testbench = {
         "FAILED_ADDR": syms["test_failed"],

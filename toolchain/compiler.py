@@ -10,26 +10,42 @@ READELF = common.XILINX_GNU_PREFIX + "readelf"
 SYM_FORMAT = re.compile("\s*\d+: ([0-9a-f]{8})\s+\d+ \w+\s+\w+\s+\w+\s+\S+ (\w+)")
 
 def help():
-  common.run_command(GCC, ["--help"])
+  out = common.run_command(GCC, ["--help"])
 
-def compile(files, output):
-  common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-funroll-all-loops", "-Os"] + ["-o", output] + files)
+  logger.debug("GCC: " + out[0])
 
-def link(files, output):
-  common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles"] + ["-o", output] + files)
+def compile(logger, files, output):
+  out = common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-funroll-all-loops", "-Os"] + ["-o", output] + files)
 
-def makeHex(objfile, hexfile):
-  common.run_command(OBJCOPY, ["-O", "ihex", objfile, hexfile])
+  logger.debug("GCC: " + out[0])
 
-def disassembleElf(elffile, asmfile):
-  return common.run_command(OBJDUMP, ["-d", elffile])
+def link(logger, files, output):
+  out = common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles"] + ["-o", output] + files)
 
-def getElfSymbols(elffile):
+  logger.debug("GCC: " + out[0])
+
+def makeHex(logger, objfile, hexfile):
+  out = common.run_command(OBJCOPY, ["-O", "ihex", objfile, hexfile])
+
+  logger.debug("OBJCOPY: " + out[0])
+
+def disassembleElf(logger, elffile, asmfile):
+  out = common.run_command(OBJDUMP, ["-d", elffile])
+
+  logger.debug("OBJDUMP: " + out[0])
+
+
+def getElfSymbols(logger, elffile):
+  # Get stdout from readelf.
   out = common.run_command(READELF, ["-s", elffile])
+
+  logger.debug("READELF: " + out[0])
+
+  symtab = out[1]
 
   syms = {}
 
-  for line in out.splitlines():
+  for line in symtab.splitlines():
       # See if the line matches our regex.
       m = SYM_FORMAT.match(line)
       if m != None:

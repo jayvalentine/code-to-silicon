@@ -38,3 +38,7 @@ figures/autogen
 
 # We don't want to ignore the start.s file
 !start.s
+
+# Test temp directories.
+/testbench/*/test/*.*
+
