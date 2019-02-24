@@ -125,14 +125,17 @@ def generateTemplates(logger, selectedStateMachines):
 
   # Get the component definitions for each state machine.
   componentDefs = ""
+  uutDefs = ""
 
   for sm in selectedStateMachines:
     componentDefs += translator.getComponentDefinition(sm)
+    uutDefs += translator.getUUTDefinition(sm)
 
   vars_testbench = {
     "FAILED_ADDR": syms["test_failed"],
     "PASSED_ADDR": syms["test_passed"],
-    "STATEMACHINE_COMPONENTS": componentDefs
+    "STATEMACHINE_COMPONENTS": componentDefs,
+    "STATEMACHINE_UUTS": uutDefs
   }
 
   # Generate testbench template.

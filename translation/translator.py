@@ -36,35 +36,8 @@ def getEntityDeclaration(stateMachine):
   tw.writeLine("port (")
   tw.increaseIndent()
 
-  # CLK, M_RDY, and RST signals.
-  tw.writeLine("clk         : in std_logic;")
-  tw.writeLine("rst         : in std_logic;")
-  tw.writeLine("m_rdy       : in std_logic;")
-
-  # Read and write strobes.
-  tw.writeBlankLine()
-  tw.writeLine("m_wr        : out std_logic;")
-  tw.writeLine("m_rd        : out std_logic;")
-
-  # Memory address and data lines.
-  tw.writeBlankLine()
-  tw.writeLine("m_addr      : out std_logic_vector(31 downto 0);")
-  tw.writeLine("m_data_in   : in std_logic_vector(31 downto 0);")
-  tw.writeLine("m_data_out   : out std_logic_vector(31 downto 0);")
-
-  # Inputs for each register.
-  tw.writeBlankLine()
-  for r in stateMachine.inputRegisters():
-    tw.writeLine("in_" + "r{:02d}".format(r) + "      : in std_logic_vector(31 downto 0);")
-
-  # Outputs for each register.
-  tw.writeBlankLine()
-  for r in stateMachine.outputRegisters():
-    tw.writeLine("out_" + "r{:02d}".format(r) + "     : out std_logic_vector(31 downto 0);")
-
-  # Done signal.
-  tw.writeBlankLine()
-  tw.writeLine("done        : out std_logic")
+  for port in getPorts(stateMachine):
+    tw.writeLine(port[0] + " : " + port[1] + " " + port[2] + ";")
 
   tw.decreaseIndent()
   tw.writeLine(");")
@@ -319,35 +292,8 @@ def getComponentDefinition(stateMachine):
   tw.writeLine("port (")
   tw.increaseIndent()
 
-  # CLK, M_RDY, and RST signals.
-  tw.writeLine("clk         : in std_logic;")
-  tw.writeLine("rst         : in std_logic;")
-  tw.writeLine("m_rdy       : in std_logic;")
-
-  # Read and write strobes.
-  tw.writeBlankLine()
-  tw.writeLine("m_wr        : out std_logic;")
-  tw.writeLine("m_rd        : out std_logic;")
-
-  # Memory address and data lines.
-  tw.writeBlankLine()
-  tw.writeLine("m_addr      : out std_logic_vector(31 downto 0);")
-  tw.writeLine("m_data_in   : in std_logic_vector(31 downto 0);")
-  tw.writeLine("m_data_out   : out std_logic_vector(31 downto 0);")
-
-  # Inputs for each register.
-  tw.writeBlankLine()
-  for r in stateMachine.inputRegisters():
-    tw.writeLine("in_" + "r{:02d}".format(r) + "      : in std_logic_vector(31 downto 0);")
-
-  # Outputs for each register.
-  tw.writeBlankLine()
-  for r in stateMachine.outputRegisters():
-    tw.writeLine("out_" + "r{:02d}".format(r) + "     : out std_logic_vector(31 downto 0);")
-
-  # Done signal.
-  tw.writeBlankLine()
-  tw.writeLine("done        : out std_logic")
+  for port in getPorts(stateMachine):
+    tw.writeLine(port[0] + " : " + port[1] + " " + port[2] + ";")
 
   tw.decreaseIndent()
   tw.writeLine(");")
@@ -355,6 +301,27 @@ def getComponentDefinition(stateMachine):
   tw.decreaseIndent()
   tw.writeLine("end component " + stateMachine.name() + ";")
   tw.decreaseIndent()
+  tw.writeBlankLine()
+
+  return str(tw)
+
+def getUUTDefinition(stateMachine):
+  tw = text.TextWriter(4, "--")
+
+  tw.increaseIndent()
+  tw.writeLine(stateMachine.name() + "_uut : " + stateMachine.name() + " port map")
+  tw.writeLine("(")
+
+  tw.increaseIndent()
+
+  ports = getPorts(stateMachine)
+  for port in ports[:-1]:
+    tw.writeLine(port[0] + " => " + stateMachine.name() + "_" + port[0] + ",")
+
+  tw.writeLine(ports[-1][0] + " => " + stateMachine.name() + "_" + ports[-1][0] + ",")
+
+  tw.decreaseIndent()
+  tw.writeLine(");")
   tw.writeBlankLine()
 
   return str(tw)
@@ -394,3 +361,33 @@ def translateInstruction(stateName, instruction):
     lines.append(localName(stateName, instruction.rD()) + " := temp64(31 downto 0);")
 
   return lines
+
+def getPorts(stateMachine):
+  ports = []
+
+  # CLK, M_RDY, and RST signals.
+  ports.append(("clk", "in", "std_logic"))
+  ports.append(("rst", "in", "std_logic"))
+  ports.append(("m_rdy", "in", "std_logic"))
+
+  # Read and write strobes.
+  ports.append(("m_wr", "out", "std_logic"))
+  ports.append(("m_rd", "out", "std_logic"))
+
+  # Memory address and data lines.
+  ports.append(("m_addr", "out", "std_logic_vector(31 downto 0)"))
+  ports.append(("m_data_in", "in", "std_logic_vector(31 downto 0)"))
+  ports.append(("m_data_out", "out", "std_logic_vector(31 downto 0)"))
+
+  # Inputs for each register.
+  for r in stateMachine.inputRegisters():
+    ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0);"))
+
+  # Outputs for each register.
+  for r in stateMachine.outputRegisters():
+    ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0);"))
+
+  # Done signal.
+  ports.append(("done", "out", "std_logic"))
+
+  return ports

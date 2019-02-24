@@ -285,6 +285,8 @@ begin
         BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we
     );
 
+%%STATEMACHINE_UUTS%%
+
     clk_proc : process
     begin
         if clk_hold = '1' then
