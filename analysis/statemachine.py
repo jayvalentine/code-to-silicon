@@ -9,6 +9,8 @@ class StateMachine:
     self._outputRegisters = basicBlock.outputs()
     self._usedRegisters = basicBlock.used()
 
+    self._block = basicBlock
+
     self._states = getStates(basicBlock)
     linkStates(self._states)
 
@@ -31,7 +33,7 @@ class StateMachine:
     return self._usedRegisters
 
   def cost(self):
-    return (len(self.inputRegisters()) + len(self.outputRegisters())) - len(self)
+    return (len(self.inputRegisters()) + len(self.outputRegisters()) + len(self)) - len(self._block)
 
   def toTikzDef(self):
     nodes = ""

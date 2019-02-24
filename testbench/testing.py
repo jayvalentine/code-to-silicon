@@ -40,7 +40,7 @@ def runTest(logger, testName, runSimulation):
     compileApplication(logger)
 
     # Analyse generated code and produce statemachines.
-    generateStateMachines(logger)
+    generateStateMachines(logger, 1)
 
     # Compile test harness files.
     compileHarness(logger)
@@ -66,7 +66,7 @@ def runTest(logger, testName, runSimulation):
 def compileApplication(logger):
     compiler.compile(logger, ["application.c"], "application.s")
 
-def generateStateMachines(logger):
+def generateStateMachines(logger, num):
   logger.info("Reading application file...")
   with open("application.s", 'r') as file:
     stream = parser.parse(file.readlines())
@@ -86,10 +86,16 @@ def generateStateMachines(logger):
     sm = statemachine.getStateMachine(b)
     stateMachines.append(sm)
 
-  for sm in stateMachines:
-    print(sm.name() + ": cost: " + str(sm.cost()))
-    print("Inputs: " + ", ".join(list(map(lambda r: "r" + str(r), sm.inputRegisters()))))
-    print("Outputs: " + ", ".join(list(map(lambda r: "r" + str(r), sm.outputRegisters()))))
+  stateMachines = sorted(list(filter(lambda s: s.cost() <= 0, stateMachines)), key=lambda s: s.cost())
+
+  if len(stateMachines) <= num:
+    logger.debug("Number specified is lower than or equal to number of viable state machines extracted. Selecting all.")
+    selected = stateMachines
+  else:
+    selected = stateMachines[:num]
+
+  for sm in selected:
+    logger.debug("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ")")
 
 def compileHarness(logger):
   # Compile the harness and test functions.
