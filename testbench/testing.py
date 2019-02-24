@@ -7,6 +7,7 @@ from toolchain import compiler, memory, vivado
 
 from parsing import parser
 from analysis import basicblocks, statemachine
+from translation import translator
 
 TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
@@ -96,6 +97,9 @@ def generateStateMachines(logger, num):
 
   for sm in selected:
     logger.debug("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ")")
+    with open(sm.name() + ".vhd", 'w') as file:
+      logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + ".vhd.")
+      file.write(translator.translateStateMachine(sm))
 
 def compileHarness(logger):
   # Compile the harness and test functions.

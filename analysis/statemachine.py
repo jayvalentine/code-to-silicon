@@ -148,6 +148,17 @@ class ComputationState(State):
 
     return s
 
+  def inputs(self):
+    inputs = []
+
+    for i in self._instructions:
+      if i.rA() != None and i.rA() not in inputs:
+        inputs.append(i.rA())
+      if i.rB() != None and i.rB() not in inputs:
+        inputs.append(i.rB())
+
+    return inputs
+
   def locals(self):
     l = []
 
@@ -160,6 +171,18 @@ class ComputationState(State):
         l.append(i.rD())
 
     return l
+
+  def outputs(self):
+    outputs = []
+
+    for i in self._instructions:
+      if i.rD() != None and i.rD() not in outputs:
+        outputs.append(i.rD())
+
+    return outputs
+
+  def instructions(self):
+    return self._instructions
 
 class WaitState(State):
   def __init__(self, name, instruction):

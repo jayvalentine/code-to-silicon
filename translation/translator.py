@@ -212,14 +212,14 @@ def getArchitecturalDefinition(stateMachine):
     else:
       # First get all inputs to the block.
       tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
-                                                           s.block().inputs()))))
-      for i in s.block().inputs():
+                                                           s.inputs()))))
+      for i in s.inputs():
         tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
 
       tw.writeBlankLine()
 
       # Now write translations of all the instructions in the block.
-      for inst in s.block().instructions():
+      for inst in s.instructions():
         tw.writeCommentLine(str(inst))
         for line in translateInstruction(s.name(), inst):
           tw.writeLine(line)
@@ -229,8 +229,8 @@ def getArchitecturalDefinition(stateMachine):
 
       # Finally, write locals to their respective permanent registers.
       tw.writeCommentLine("Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
-                                                           s.block().outputs()))))
-      for o in s.block().outputs():
+                                                           s.outputs()))))
+      for o in s.outputs():
         tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
 
       tw.writeBlankLine()
