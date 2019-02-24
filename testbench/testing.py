@@ -123,9 +123,16 @@ def generateTemplates(logger, selectedStateMachines):
   # Read the ELF symbols.
   syms = compiler.getElfSymbols(logger, "main.elf")
 
+  # Get the component definitions for each state machine.
+  componentDefs = ""
+
+  for sm in selectedStateMachines:
+    componentDefs += translator.getComponentDefinition(sm)
+
   vars_testbench = {
     "FAILED_ADDR": syms["test_failed"],
-    "PASSED_ADDR": syms["test_passed"]
+    "PASSED_ADDR": syms["test_passed"],
+    "STATEMACHINE_COMPONENTS": componentDefs
   }
 
   # Generate testbench template.

@@ -307,6 +307,58 @@ def getArchitecturalDefinition(stateMachine):
 
   return str(tw)
 
+def getComponentDefinition(stateMachine):
+  # Write component statement.
+  tw = text.TextWriter(4, "--")
+  tw.increaseIndent()
+
+  tw.writeLine("component " + stateMachine.name() + " is")
+
+  # Write port definitions.
+  tw.increaseIndent()
+  tw.writeLine("port (")
+  tw.increaseIndent()
+
+  # CLK, M_RDY, and RST signals.
+  tw.writeLine("clk         : in std_logic;")
+  tw.writeLine("rst         : in std_logic;")
+  tw.writeLine("m_rdy       : in std_logic;")
+
+  # Read and write strobes.
+  tw.writeBlankLine()
+  tw.writeLine("m_wr        : out std_logic;")
+  tw.writeLine("m_rd        : out std_logic;")
+
+  # Memory address and data lines.
+  tw.writeBlankLine()
+  tw.writeLine("m_addr      : out std_logic_vector(31 downto 0);")
+  tw.writeLine("m_data_in   : in std_logic_vector(31 downto 0);")
+  tw.writeLine("m_data_out   : out std_logic_vector(31 downto 0);")
+
+  # Inputs for each register.
+  tw.writeBlankLine()
+  for r in stateMachine.inputRegisters():
+    tw.writeLine("in_" + "r{:02d}".format(r) + "      : in std_logic_vector(31 downto 0);")
+
+  # Outputs for each register.
+  tw.writeBlankLine()
+  for r in stateMachine.outputRegisters():
+    tw.writeLine("out_" + "r{:02d}".format(r) + "     : out std_logic_vector(31 downto 0);")
+
+  # Done signal.
+  tw.writeBlankLine()
+  tw.writeLine("done        : out std_logic")
+
+  tw.decreaseIndent()
+  tw.writeLine(");")
+
+  tw.decreaseIndent()
+  tw.writeLine("end component " + stateMachine.name() + ";")
+  tw.decreaseIndent()
+  tw.writeBlankLine()
+
+  return str(tw)
+
 def localName(stateName, register):
   return "{:s}_r{:02d}".format(stateName, register)
 

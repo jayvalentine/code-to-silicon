@@ -131,6 +131,8 @@ architecture Behavioral of testbench is
         );
     end component memory;
 
+%%STATEMACHINE_COMPONENTS%%
+
     signal clk                      : std_logic;
     signal rst                      : std_logic;
 
