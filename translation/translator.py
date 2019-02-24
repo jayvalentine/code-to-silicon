@@ -316,7 +316,12 @@ def getUUTDefinition(stateMachine):
 
   ports = getPorts(stateMachine)
   for port in ports[:-1]:
-    tw.writeLine(port[0] + " => " + stateMachine.name() + "_" + port[0] + ",")
+    if port[0] == "clk" or port[0] == "rst":
+      actualName = port[0]
+    else:
+      actualName = stateMachine.name() + "_" + port[0]
+
+    tw.writeLine(port[0] + " => " + actualName + ",")
 
   tw.writeLine(ports[-1][0] + " => " + stateMachine.name() + "_" + ports[-1][0] + ",")
 
@@ -332,7 +337,9 @@ def getTestbenchSignals(stateMachine):
   tw.increaseIndent()
 
   for port in getPorts(stateMachine):
-    tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
+    # Exclude clk and rst.
+    if port[0] != "clk" and port[0] != "rst":
+      tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
 
   tw.writeBlankLine()
   tw.decreaseIndent()
