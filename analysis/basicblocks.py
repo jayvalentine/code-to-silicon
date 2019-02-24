@@ -96,8 +96,8 @@ class BasicBlock:
   def addUnknownNext(self):
     self._unknownNext = True
 
-  def instructions(self):
-    return self._instructions
+  def lines(self):
+    return sorted(list(self._instructions.keys()))
 
   def memoryAccessDensity(self):
     numInstructions = 0
@@ -228,5 +228,36 @@ def linkBasicBlocks(logger, blocks):
       # Get the name of the function this block is in.
       currentFunction = b.function()
 
+      # Find all callsites for this function.
+      callsites = []
+      for otherB in blocks:
+        if otherB.last().label() == currentFunction:
+          logger.debug("Found callsite for function " + currentFunction + " in block " + otherB.name())
+          callsites.append(otherB)
+
+      # For each callsite, identify the return instruction.
+      # This is usually the next instruction (textually speaking),
+      # but in the case of delayed-branch instructions, we actually skip ahead two instructions
+      # (because the instruction immediately after the delayed-branch is the delay slot instruction).
+      for otherB in callsites:
+        # line number of last instruction
+        lineNo = otherB.lines()[-1]
+
+        if otherB.last().hasDelay():
+          returnLine = lineNo + 2
+        else:
+          returnLine = lineNo + 1
+
+        # Find the next block at this line.
+        foundBlock = None
+        while foundBlock == None:
+          for searchBlock in blocks:
+            if searchBlock.lines()[0] == returnLine:
+              foundBlock = searchBlock
+
+          returnLine += 1
+
+        logger.debug("Found return block for function " + currentFunction + ": block " + foundBlock.name())
+        b.addNext(foundBlock)
 
   return blocks

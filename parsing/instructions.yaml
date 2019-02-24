@@ -58,16 +58,18 @@ Branch:
   - blei
   - blt
   - blti
-  - bltid
   - bne
   - bnei
-  - bneid
   - br
   - bri
-  - brid
-  - brlid
   - brk
   - brki
+
+DelayBranch:
+  - bltid
+  - brid
+  - brlid
+  - bneid
 
 Return:
   - rtbd

@@ -226,6 +226,9 @@ class ControlFlowInstruction(Instruction):
   def isBranch(self):
     return False
 
+  def hasDelay(self):
+    return False
+
   def isReturn(self):
     return False
 
@@ -255,6 +258,19 @@ class BranchInstruction(ControlFlowInstruction):
     return True
 
 """
+Delay branch instructions. These are branch instructions with a 'delay slot', i.e. an instruction which
+is executed before control is transferred to the branch target.
+
+bltid
+brid
+brlid
+bneid
+"""
+class DelayBranchInstruction(BranchInstruction):
+  def hasDelay(self):
+    return True
+
+"""
 Return instructions. Unlike branch instructions, these don't transfer control to a specified point,
 but instead return to the call site at which the current subroutine/function was called.
 
@@ -265,6 +281,11 @@ rtsd
 """
 class ReturnInstruction(ControlFlowInstruction):
   def isReturn(self):
+    return True
+
+  # It seems that the return instructions (rtbd, rtid, rted, rtsd) always have a delay slot,
+  # so it doesn't make sense to have a separate class for delay-returns.
+  def hasDelay(self):
     return True
 
 """
@@ -401,6 +422,8 @@ def parseInstruction(instructionString):
     instructionClass = FloatArithmeticInstruction
   elif category == "Branch":
     instructionClass = BranchInstruction
+  elif category == "DelayBranch":
+    instructionClass = DelayBranchInstruction
   elif category == "Return":
     instructionClass = ReturnInstruction
   elif category == "Input":
