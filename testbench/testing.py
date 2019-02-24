@@ -16,7 +16,7 @@ TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
-def runTest(logger, testName, runSimulation):
+def runTest(logger, testName, numStateMachines, runSimulation):
     # Get test and temp directory paths.
     testDir = os.path.join(TESTING_DIR, testName)
     tempDir = os.path.join(testDir, "temp")
@@ -41,7 +41,8 @@ def runTest(logger, testName, runSimulation):
     compileApplication(logger)
 
     # Analyse generated code and produce statemachines.
-    generateStateMachines(logger, 1)
+    selected = generateStateMachines(logger, numStateMachines)
+    actualNum = len(selected)
 
     # Compile test harness files.
     compileHarness(logger)
@@ -50,16 +51,16 @@ def runTest(logger, testName, runSimulation):
     writeMemoryInitFile()
 
     # Generate testbench templates.
-    generateTemplates(logger)
+    generateTemplates(logger, selected)
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
         if runVivadoSimulation():
-            logger.info("Test " + testName + ": passed.")
+            logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
         else:
-            logger.warn("Test " + testName + ": FAILED.")
+            logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
     else:
-        logger.info("Test " + testName + ": SIMULATION SKIPPED.")
+        logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
 
     # Move back to the root directory.
     os.chdir(origDir)
@@ -101,6 +102,8 @@ def generateStateMachines(logger, num):
       logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + ".vhd.")
       file.write(translator.translateStateMachine(sm))
 
+  return selected
+
 def compileHarness(logger):
   # Compile the harness and test functions.
   compiler.compile(logger, ["main.c"], "main.s")
@@ -116,7 +119,7 @@ def writeMemoryInitFile():
   # Generate a memory initialization file ('memory.txt') from the hex file.
   memory.writeMemoryFile("memory.txt", "main.hex")
 
-def generateTemplates(logger):
+def generateTemplates(logger, selectedStateMachines):
   # Read the ELF symbols.
   syms = compiler.getElfSymbols(logger, "main.elf")
 
@@ -131,7 +134,13 @@ def generateTemplates(logger):
   memTemplate = os.path.join(TEMPLATE_DIR, "memory.vhd")
 
   templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
-  templating.processTemplate(tclTemplate, "simulate.tcl", {})
+
+  vars_tcl = {
+    "ADD_STATEMACHINES": "\n".join(list(map(lambda sm: "add_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
+    "REMOVE_STATEMACHINES": "\n".join(list(map(lambda sm: "remove_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines)))
+  }
+
+  templating.processTemplate(tclTemplate, "simulate.tcl", vars_tcl)
 
   vars_memory = {
     "MEMORYFILE": os.path.abspath("memory.txt")

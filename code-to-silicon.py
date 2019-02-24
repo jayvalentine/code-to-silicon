@@ -93,7 +93,8 @@ def main(argv):
   if not os.path.isdir("figures/autogen"):
       os.makedirs("figures/autogen")
 
-  testing.runTest(logger, "sum_squares", sim)
+  testing.runTest(logger, "sum_squares", 0, sim)
+  testing.runTest(logger, "sum_squares", 1, sim)
 
   # Now build the report (unless we've been asked not to)!
   if report:
