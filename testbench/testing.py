@@ -133,12 +133,15 @@ def generateTemplates(logger, selectedStateMachines):
     uutDefs += translator.getUUTDefinition(sm)
     signals += translator.getTestbenchSignals(sm)
 
+  controllerMapping = translator.getControllerMapping(selectedStateMachines)
+
   vars_testbench = {
     "FAILED_ADDR": syms["test_failed"],
     "PASSED_ADDR": syms["test_passed"],
     "STATEMACHINE_COMPONENTS": componentDefs,
     "STATEMACHINE_UUTS": uutDefs,
-    "STATEMACHINE_SIGNALS": signals
+    "STATEMACHINE_SIGNALS": signals,
+    "CONTROLLER_MAPPING": controllerMapping
   }
 
   # Generate testbench template.

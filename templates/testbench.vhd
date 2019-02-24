@@ -198,9 +198,8 @@ begin
     (
         clk                     => clk,
         rst                     => rst,
-        accel_select            => accel_select,
-        reg_out                 => reg_out,
-        reg_in                  => reg_in,
+        
+%%CONTROLLER_MAPPING%%
 
         LMB_M_0_abus            => LMB_M_0_abus,
         LMB_M_0_addrstrobe      => LMB_M_0_addrstrobe,

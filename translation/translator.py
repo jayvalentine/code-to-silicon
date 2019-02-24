@@ -346,6 +346,27 @@ def getTestbenchSignals(stateMachine):
 
   return str(tw)
 
+def getControllerMapping(stateMachines):
+  tw = text.TextWriter(4, "--")
+
+  tw.increaseIndent()
+  tw.increaseIndent()
+
+  for i in range(len(stateMachines)):
+    sm = stateMachines[i]
+
+    tw.writeLine("accel_select(" + str(i) + ") => " + sm.name() + "_select")
+
+    for r in sm.inputRegisters():
+      regRange = (str((r - 1)*32), str((r * 32) - 1))
+      tw.writeLine("reg_in(" + regRange[1] + " downto " + regRange[0] + ") => " + "{:s}_in_r{:02d}".format(sm.name(), r) + ",")
+
+    for r in sm.outputRegisters():
+      regRange = (str((r - 1)*32), str((r * 32) - 1))
+      tw.writeLine("reg_out(" + regRange[1] + " downto " + regRange[0] + ") => " + "{:s}_out_r{:02d}".format(sm.name(), r) + ",")
+
+  return str(tw)
+
 def localName(stateName, register):
   return "{:s}_r{:02d}".format(stateName, register)
 
@@ -409,5 +430,8 @@ def getPorts(stateMachine):
 
   # Done signal.
   ports.append(("done", "out", "std_logic"))
+
+  # Select signal.
+  ports.append(("select", "in", "std_logic"))
 
   return ports
