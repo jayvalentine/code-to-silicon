@@ -88,6 +88,8 @@ def generateStateMachines(logger):
 
   for sm in stateMachines:
     print(sm.name() + ": cost: " + str(sm.cost()))
+    print("Inputs: " + ", ".join(list(map(lambda r: "r" + str(r), sm.inputRegisters()))))
+    print("Outputs: " + ", ".join(list(map(lambda r: "r" + str(r), sm.outputRegisters()))))
 
 def compileHarness(logger):
   # Compile the harness and test functions.

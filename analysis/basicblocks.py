@@ -12,6 +12,10 @@ class BasicBlock:
     self._label = label
 
     self._instructions = {}
+
+    self._last = None
+    self._lastLine = None
+
     self._prev = []
     self._next = []
 
@@ -82,9 +86,21 @@ class BasicBlock:
   def label(self):
     return self._label
 
+  def setLast(self, line, instruction):
+    self._last = instruction
+    self._lastLine = line
+
   def last(self):
-    lastLine = sorted(list(self._instructions.keys()))[-1]
-    return self._instructions[lastLine]
+    if self._last == None:
+      raise ValueError("Last instruction of block not set.")
+
+    return self._last
+
+  def lastLine(self):
+    if self._lastLine == None:
+      raise ValueError("Last line of block not set.")
+
+    return self._lastLine
 
   def add(self, line, instruction):
     if not isinstance(instruction, instructions.Instruction):
@@ -121,11 +137,43 @@ class BasicBlock:
 
     for l in sorted(list(self._instructions.keys())):
       i = self._instructions[l]
-      if i.rD() != None and i.rD() not in outputs:
-        outputs.append(i.rD())
+
+      # There is no destination register for an output instruction,
+      # as they don't write any values.
+      if not isinstance(i, instructions.OutputInstruction):
+        if i.rD() != None and i.rD() not in outputs:
+          outputs.append(i.rD())
 
     if 0 in outputs:
       outputs.remove(0)
+
+    # We've got all registers written to in this function,
+    # now we need to see if we can do some pruning.
+
+    # Step 1: returns
+    # The MicroBlaze ABI defines the following register usage convention:
+    # r0 - hardcoded 0
+    # r1 - stack pointer
+    # r2 - small data pointer, R
+    # r3-r4 - volatile, return values/temp
+    # r5-r10 - volatile, passing parameters/temp
+    # r11-r12 - volatile, temp
+    # r13 - small data pointer, RW
+    # r14 - interrupt return address
+    # r15 - subroutine return address
+    # r16 - return address for trap
+    # r17 - exception return address
+    # r18 - assembler-reserved
+    # r19-r31 - non-volatile, must be saved across function calls (callee save)
+
+    # From this we can identify that:
+    # r3-12 are caller save, and so will be restored upon returning from the function.
+    # However, r3-r4 are function returns, so obviously are output registers from an end-of-function
+    # block. Therefore, if the last instruction in this block is a return, we can exclude r5-r12.
+    if self.last().isReturn():
+      for r in range(5, 13):
+        if r in outputs:
+          outputs.remove(r)
 
     return outputs
 
@@ -180,10 +228,12 @@ def extractBasicBlocks(logger, stream):
         currentBlock = None
         continue
 
-      currentBlock.add(i, s)
       if s.isBasicBlockBoundary():
+        currentBlock.setLast(i, s)
         blocks.append(currentBlock)
         currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction, None)
+      else:
+        currentBlock.add(i, s)
     elif s.isLabel():
       if currentBlock != None:
         blocks.append(currentBlock)
@@ -247,7 +297,7 @@ def linkBasicBlocks(logger, blocks):
       # (because the instruction immediately after the delayed-branch is the delay slot instruction).
       for otherB in callsites:
         # line number of last instruction
-        lineNo = otherB.lines()[-1]
+        lineNo = otherB.lastLine()
 
         if otherB.last().hasDelay():
           returnLine = lineNo + 2
