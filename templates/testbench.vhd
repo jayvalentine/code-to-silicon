@@ -188,6 +188,8 @@ architecture Behavioral of testbench is
     signal BRAM_PORT_DATA_rst  : STD_LOGIC;
     signal BRAM_PORT_DATA_we   : STD_LOGIC_VECTOR ( 0 to 3 );
 
+%%STATEMACHINE_SIGNALS%%
+
     constant clk_period             : time := 10ns;
     signal clk_hold                 : std_logic := '0';
     signal cycles                   : Integer := 0;

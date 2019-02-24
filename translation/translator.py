@@ -326,6 +326,19 @@ def getUUTDefinition(stateMachine):
 
   return str(tw)
 
+def getTestbenchSignals(stateMachine):
+  tw = text.TextWriter(4, "--")
+
+  tw.increaseIndent()
+
+  for port in getPorts(stateMachine):
+    tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
+
+  tw.writeBlankLine()
+  tw.decreaseIndent()
+
+  return str(tw)
+
 def localName(stateName, register):
   return "{:s}_r{:02d}".format(stateName, register)
 
