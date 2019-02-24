@@ -30,6 +30,9 @@ class StateMachine:
   def usedRegisters(self):
     return self._usedRegisters
 
+  def cost(self):
+    return (len(self.inputRegisters()) + len(self.outputRegisters())) - len(self)
+
   def toTikzDef(self):
     nodes = ""
 
@@ -128,28 +131,25 @@ class ComputationState(State):
   def __init__(self, name, instructions):
     super(ComputationState, self).__init__(name)
     
-    self._block = basicblocks.BasicBlock(instructions)
+    self._instructions = instructions
 
   def __str__(self):
     s = super(ComputationState, self).__str__()
 
     s += "Computation:\n"
 
-    s += "Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r), self._block.inputs())))
-    s += "Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r), self._block.outputs())))
+    s += "Inputs: "
+    s += "Outputs: "
 
     for i in self._instructions:
       s += str(i) + "\n"
 
     return s
 
-  def block(self):
-    return self._block
-
   def locals(self):
     l = []
 
-    for i in self._block.instructions():
+    for i in self._instructions:
       if i.rA() != None and i.rA() not in l:
         l.append(i.rA())
       if i.rB() != None and i.rB() not in l:
@@ -208,7 +208,7 @@ class EndState(State):
     return True
 
 def getStateMachine(basicBlock):
-  return StateMachine("test", basicBlock)
+  return StateMachine(basicBlock.name(), basicBlock)
 
 def escapeUnderscore(s):
   return s.replace("_", "\\_")
@@ -221,8 +221,8 @@ def getStates(basicBlock):
   stateNum = 0
 
   block = []
-  for i in range(len(basicBlock)):
-    inst = basicBlock.instructions()[i]
+  for i in basicBlock.lines():
+    inst = basicBlock[i]
 
     if inst.isMemoryAccess():
       if len(block) > 0:

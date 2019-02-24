@@ -40,9 +40,9 @@ class BasicBlock:
 
     s += "\tMemory-access Density: " + str(round(self.memoryAccessDensity(), 2)) + "\n"
 
-    s += "\tPrevious blocks:"
+    s += "\tPrevious blocks: "
     for b in self._prev:
-      s += b.name() + " "
+      s += b.name() + ", "
 
     if self._unknownNext:
       s += "(unknown)"
@@ -63,6 +63,12 @@ class BasicBlock:
       s += "\t{:04d}: {:s}\n".format(l, str(self._instructions[l]))
 
     return s
+
+  def __getitem__(self, key):
+    if key not in self._instructions.keys():
+      raise KeyError("Line " + str(key) + " not in this basic block.")
+
+    return self._instructions[key]
 
   def __len__(self):
     return len(self._instructions)
@@ -259,5 +265,8 @@ def linkBasicBlocks(logger, blocks):
 
         logger.debug("Found return block for function " + currentFunction + ": block " + foundBlock.name())
         b.addNext(foundBlock)
+
+      # We can't know if we've found all return sites for this function, so add an unknown next.
+      b.addUnknownNext()
 
   return blocks

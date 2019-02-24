@@ -6,7 +6,7 @@ import templating
 from toolchain import compiler, memory, vivado
 
 from parsing import parser
-from analysis import basicblocks
+from analysis import basicblocks, statemachine
 
 TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
@@ -81,8 +81,13 @@ def generateStateMachines(logger):
   # Get basic blocks from stream.
   blocks = basicblocks.extractBasicBlocks(logger, stream)
 
+  stateMachines = []
   for b in blocks:
-    print(b)
+    sm = statemachine.getStateMachine(b)
+    stateMachines.append(sm)
+
+  for sm in stateMachines:
+    print(sm.name() + ": cost: " + str(sm.cost()))
 
 def compileHarness(logger):
   # Compile the harness and test functions.
