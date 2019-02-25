@@ -6,7 +6,7 @@ class Directive(streams.StreamItem):
     self._args = args
 
   def __str__(self):
-    return "." + self._directive + " " + " ".join(self._args)
+    return "." + self._directive + " " + ",".join(self._args)
 
   def isDirective(self):
     return True

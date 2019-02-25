@@ -102,6 +102,11 @@ def generateStateMachines(logger, num):
       logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + ".vhd.")
       file.write(translator.translateStateMachine(sm))
 
+    stream.replaceLines(sm.block().lines()[0], sm.block().lines()[-1], sm.replacementInstructions())
+
+  with open("application.s", 'w') as file:
+    file.write(str(stream))
+
   return selected
 
 def compileHarness(logger):

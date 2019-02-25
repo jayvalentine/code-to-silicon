@@ -24,7 +24,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx leaf cells in this code.
@@ -63,7 +63,27 @@ architecture Behavioral of testbench is
             LMB_M_0_ue              : in std_logic;
             LMB_M_0_wait            : in std_logic;
             LMB_M_0_writedbus       : out std_logic_vector(31 downto 0);
-            LMB_M_0_writestrobe     : out std_logic
+            LMB_M_0_writestrobe     : out std_logic;
+
+            M_AXI_DP_0_araddr       : out STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_arprot       : out STD_LOGIC_VECTOR (2 downto 0);
+            M_AXI_DP_0_arready      : in STD_LOGIC;
+            M_AXI_DP_0_arvalid      : out STD_LOGIC;
+            M_AXI_DP_0_awaddr       : out STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_awprot       : out STD_LOGIC_VECTOR (2 downto 0);
+            M_AXI_DP_0_awready      : in STD_LOGIC;
+            M_AXI_DP_0_awvalid      : out STD_LOGIC;
+            M_AXI_DP_0_bready       : out STD_LOGIC;
+            M_AXI_DP_0_bresp        : in STD_LOGIC_VECTOR (1 downto 0);
+            M_AXI_DP_0_bvalid       : in STD_LOGIC;
+            M_AXI_DP_0_rdata        : in STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_rready       : out STD_LOGIC;
+            M_AXI_DP_0_rresp        : in STD_LOGIC_VECTOR (1 downto 0);
+            M_AXI_DP_0_rvalid       : in STD_LOGIC;
+            M_AXI_DP_0_wdata        : out STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_wready       : in STD_LOGIC;
+            M_AXI_DP_0_wstrb        : out STD_LOGIC_VECTOR (3 downto 0);
+            M_AXI_DP_0_wvalid       : out STD_LOGIC
         );
     end component hw_accel_controller;
 
@@ -236,7 +256,27 @@ begin
         LMB_M_0_ue              => LMB_M_0_ue,
         LMB_M_0_wait            => LMB_M_0_wait,
         LMB_M_0_writedbus       => LMB_M_0_writedbus,
-        LMB_M_0_writestrobe     => LMB_M_0_writestrobe
+        LMB_M_0_writestrobe     => LMB_M_0_writestrobe,
+
+        M_AXI_DP_0_araddr       => M_AXI_DP_0_araddr,
+        M_AXI_DP_0_arprot       => M_AXI_DP_0_arprot,
+        M_AXI_DP_0_arready      => M_AXI_DP_0_arready,
+        M_AXI_DP_0_arvalid      => M_AXI_DP_0_arvalid,
+        M_AXI_DP_0_awaddr       => M_AXI_DP_0_awaddr,
+        M_AXI_DP_0_awprot       => M_AXI_DP_0_awprot,
+        M_AXI_DP_0_awready      => M_AXI_DP_0_awready,
+        M_AXI_DP_0_awvalid      => M_AXI_DP_0_awvalid,
+        M_AXI_DP_0_bready       => M_AXI_DP_0_bready,
+        M_AXI_DP_0_bresp        => M_AXI_DP_0_bresp,
+        M_AXI_DP_0_bvalid       => M_AXI_DP_0_bvalid,
+        M_AXI_DP_0_rdata        => M_AXI_DP_0_rdata,
+        M_AXI_DP_0_rready       => M_AXI_DP_0_rready,
+        M_AXI_DP_0_rresp        => M_AXI_DP_0_rresp,
+        M_AXI_DP_0_rvalid       => M_AXI_DP_0_rvalid,
+        M_AXI_DP_0_wdata        => M_AXI_DP_0_wdata,
+        M_AXI_DP_0_wready       => M_AXI_DP_0_wready,
+        M_AXI_DP_0_wstrb        => M_AXI_DP_0_wstrb,
+        M_AXI_DP_0_wvalid       => M_AXI_DP_0_wvalid
     );
 
     mb_uut : mb_block_design_wrapper port map
@@ -334,6 +374,13 @@ begin
         rst <= '0';
 
         loop
+            -- Report any writes on the AXI bus.
+            if M_AXI_DP_0_wvalid = '1' then
+                report "TESTBENCH: AXI WRITE DETECTED.";
+                report "TESTBENCH: ADDR: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_awaddr)));
+                report "TESTBENCH: DATA: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_wdata)));
+            end if;
+
             -- Trap if we reach the test_failed function, and report the test failure.
             if BRAM_PORT_INST_addr = x"%%FAILED_ADDR%%" then
                 report "TESTBENCH: !!!FAILED!!!";

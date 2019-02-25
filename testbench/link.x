@@ -41,4 +41,7 @@ SECTIONS
     . += STACK_SIZE;
     STACK_START = .;
   } > BRAM
+
+  . = 0x44A00000;
+  HW_ACCEL_PORT = .;
 }

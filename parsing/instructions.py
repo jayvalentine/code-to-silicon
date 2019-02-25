@@ -12,7 +12,7 @@ REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
 IMMEDIATE_FORMAT_RE = re.compile("(-?\d+)")
 LABEL_FORMAT_RE = re.compile("(\$?\w+)")
 
-INSTRUCTION_STRING_TEMPLATE = "{:10}{:24}{:5}"
+INSTRUCTION_STRING_TEMPLATE = "{:10}{:24}"
 
 # We need to catagorise instructions. We do this in a YAML file
 # that we then read in and convert into a dictionary mapping instruction
@@ -83,24 +83,7 @@ class Instruction(streams.StreamItem):
     elif self._label != None:
       params += str(self._label)
 
-    flags = ""
-
-    if self.canTranslate():
-      flags += "T"
-    else:
-      flags += "-"
-
-    if self.isBasicBlockBoundary():
-      flags += "B"
-    else:
-      flags += "-"
-
-    if self.isMemoryAccess():
-      flags += "M"
-    else:
-      flags += "-"
-
-    return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, params, flags)
+    return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, params)
 
   def mnemonic(self):
     return self._mnemonic

@@ -1,4 +1,5 @@
 from . import basicblocks
+from parsing import instructions
 
 STATE_NAME_FORMAT = "S_{:03d}"
 
@@ -23,6 +24,9 @@ class StateMachine:
   def name(self):
     return self._name
 
+  def block(self):
+    return self._block
+
   def inputRegisters(self):
     return self._inputRegisters
 
@@ -34,6 +38,23 @@ class StateMachine:
 
   def cost(self):
     return (len(self.inputRegisters()) + len(self.outputRegisters()) + len(self)) - len(self._block)
+
+  def replacementInstructions(self):
+    replace = []
+
+    # Get start address of hardware accelerator ports.
+    # This symbol will be defined in the linker script.
+    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 31, None, "HW_ACCEL_PORT"))
+
+    # Write the input registers to the right ports.
+    for input in self.inputRegisters():
+      replace.append(instructions.OutputInstruction("swi", 31, None, input, input-1, None))
+
+    # Read the output registers from the right ports.
+    for output in self.outputRegisters():
+      replace.append(instructions.InputInstruction("lwi", 31, None, output, output-1, None))
+
+    return replace
 
   def toTikzDef(self):
     nodes = ""
@@ -132,7 +153,7 @@ class State:
 class ComputationState(State):
   def __init__(self, name, instructions):
     super(ComputationState, self).__init__(name)
-    
+
     self._instructions = instructions
 
   def __str__(self):
