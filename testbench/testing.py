@@ -133,15 +133,12 @@ def generateTemplates(logger, selectedStateMachines):
     uutDefs += translator.getUUTDefinition(sm)
     signals += translator.getTestbenchSignals(sm)
 
-  controllerMapping = translator.getControllerMapping(selectedStateMachines)
-
   vars_testbench = {
     "FAILED_ADDR": syms["test_failed"],
     "PASSED_ADDR": syms["test_passed"],
     "STATEMACHINE_COMPONENTS": componentDefs,
     "STATEMACHINE_UUTS": uutDefs,
-    "STATEMACHINE_SIGNALS": signals,
-    "CONTROLLER_MAPPING": controllerMapping
+    "STATEMACHINE_SIGNALS": signals
   }
 
   # Generate testbench template.
@@ -168,11 +165,14 @@ def runVivadoSimulation():
   passed = None
   output = vivado.start_batch("simulate.tcl")
 
+  print(output[1])
+  print(output[2])
+
   # Write the full output to a log file.
   with open("simulate.log", 'w') as logfile:
-    logfile.write(output)
+    logfile.write(output[1])
 
-  output_lines = output.splitlines()
+  output_lines = output[1].splitlines()
   for l in output_lines:
     m = TESTBENCH_MSG_FORMAT.match(l)
     if m != None:

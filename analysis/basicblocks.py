@@ -220,7 +220,7 @@ def extractBasicBlocks(logger, stream):
 
     if s.isInstruction():
       if currentBlock == None:
-        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction, None)
+        currentBlock = BasicBlock("nolabel_line{:04d}".format(i), currentFunction, None)
 
       # If the instruction is a NOP and we're not already in the middle
       # of a basic block, ignore it and skip ahead.
@@ -231,14 +231,14 @@ def extractBasicBlocks(logger, stream):
       if s.isBasicBlockBoundary():
         currentBlock.setLast(i, s)
         blocks.append(currentBlock)
-        currentBlock = BasicBlock("nolabel-line-{:04d}".format(i), currentFunction, None)
+        currentBlock = BasicBlock("nolabel_line{:04d}".format(i), currentFunction, None)
       else:
         currentBlock.add(i, s)
     elif s.isLabel():
       if currentBlock != None:
         blocks.append(currentBlock)
 
-      currentBlock = BasicBlock(s.name() + "-line-{:04d}".format(i), currentFunction, s.name())
+      currentBlock = BasicBlock(s.name() + "_line{:04d}".format(i), currentFunction, s.name())
     elif s.isDirective():
       if s.directive() == "type" and s.args(1) == "@function":
           currentFunction = s.args(0)
@@ -258,7 +258,7 @@ def linkBasicBlocks(logger, blocks):
     #
     # We can always know the label to which we're jumping (as it's in the instruction itself),
     # but we might not always know where we're returning to (e.g. if the call site is in another compilation unit.)
-    
+
     b = blocks[i]
 
     # We should never see a basic block which doesn't end with a control flow instruction.

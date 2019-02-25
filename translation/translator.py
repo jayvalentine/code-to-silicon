@@ -36,8 +36,11 @@ def getEntityDeclaration(stateMachine):
   tw.writeLine("port (")
   tw.increaseIndent()
 
-  for port in getPorts(stateMachine):
+  ports = getPorts(stateMachine)
+  for port in ports[:-1]:
     tw.writeLine(port[0] + " : " + port[1] + " " + port[2] + ";")
+
+  tw.writeLine(ports[-1][0] + " : " + ports[-1][1] + " " + ports[-1][2])
 
   tw.decreaseIndent()
   tw.writeLine(");")
@@ -285,21 +288,25 @@ def getComponentDefinition(stateMachine):
   tw = text.TextWriter(4, "--")
   tw.increaseIndent()
 
-  tw.writeLine("component " + stateMachine.name() + " is")
+  entityName = "hw_core_" + stateMachine.name()
+  tw.writeLine("component " + entityName + " is")
 
   # Write port definitions.
   tw.increaseIndent()
   tw.writeLine("port (")
   tw.increaseIndent()
 
-  for port in getPorts(stateMachine):
+  ports = getPorts(stateMachine)
+  for port in ports[:-1]:
     tw.writeLine(port[0] + " : " + port[1] + " " + port[2] + ";")
+
+  tw.writeLine(ports[-1][0] + " : " + ports[-1][1] + " " + ports[-1][2])
 
   tw.decreaseIndent()
   tw.writeLine(");")
 
   tw.decreaseIndent()
-  tw.writeLine("end component " + stateMachine.name() + ";")
+  tw.writeLine("end component " + entityName + ";")
   tw.decreaseIndent()
   tw.writeBlankLine()
 
@@ -309,21 +316,18 @@ def getUUTDefinition(stateMachine):
   tw = text.TextWriter(4, "--")
 
   tw.increaseIndent()
-  tw.writeLine(stateMachine.name() + "_uut : " + stateMachine.name() + " port map")
+  entityName = "hw_core_" + stateMachine.name()
+  tw.writeLine(stateMachine.name() + "_uut : " + entityName + " port map")
   tw.writeLine("(")
 
   tw.increaseIndent()
 
   ports = getPorts(stateMachine)
   for port in ports[:-1]:
-    if port[0] == "clk" or port[0] == "rst":
-      actualName = port[0]
-    else:
-      actualName = stateMachine.name() + "_" + port[0]
-
+    actualName = port[3]
     tw.writeLine(port[0] + " => " + actualName + ",")
 
-  tw.writeLine(ports[-1][0] + " => " + stateMachine.name() + "_" + ports[-1][0] + ",")
+  tw.writeLine(ports[-1][0] + " => " + ports[-1][3])
 
   tw.decreaseIndent()
   tw.writeLine(");")
@@ -338,32 +342,11 @@ def getTestbenchSignals(stateMachine):
 
   for port in getPorts(stateMachine):
     # Exclude clk and rst.
-    if port[0] != "clk" and port[0] != "rst":
+    if port[0] == "done" or port[0] == "sel":
       tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
 
   tw.writeBlankLine()
   tw.decreaseIndent()
-
-  return str(tw)
-
-def getControllerMapping(stateMachines):
-  tw = text.TextWriter(4, "--")
-
-  tw.increaseIndent()
-  tw.increaseIndent()
-
-  for i in range(len(stateMachines)):
-    sm = stateMachines[i]
-
-    tw.writeLine("accel_select(" + str(i) + ") => " + sm.name() + "_select")
-
-    for r in sm.inputRegisters():
-      regRange = (str((r - 1)*32), str((r * 32) - 1))
-      tw.writeLine("reg_in(" + regRange[1] + " downto " + regRange[0] + ") => " + "{:s}_in_r{:02d}".format(sm.name(), r) + ",")
-
-    for r in sm.outputRegisters():
-      regRange = (str((r - 1)*32), str((r * 32) - 1))
-      tw.writeLine("reg_out(" + regRange[1] + " downto " + regRange[0] + ") => " + "{:s}_out_r{:02d}".format(sm.name(), r) + ",")
 
   return str(tw)
 
@@ -407,31 +390,33 @@ def getPorts(stateMachine):
   ports = []
 
   # CLK, M_RDY, and RST signals.
-  ports.append(("clk", "in", "std_logic"))
-  ports.append(("rst", "in", "std_logic"))
-  ports.append(("m_rdy", "in", "std_logic"))
+  ports.append(("clk", "in", "std_logic", "clk"))
+  ports.append(("rst", "in", "std_logic", "rst"))
+  ports.append(("m_rdy", "in", "std_logic", "m_rdy"))
 
   # Read and write strobes.
-  ports.append(("m_wr", "out", "std_logic"))
-  ports.append(("m_rd", "out", "std_logic"))
+  ports.append(("m_wr", "out", "std_logic", "m_wr"))
+  ports.append(("m_rd", "out", "std_logic", "m_rd"))
 
   # Memory address and data lines.
-  ports.append(("m_addr", "out", "std_logic_vector(31 downto 0)"))
-  ports.append(("m_data_in", "in", "std_logic_vector(31 downto 0)"))
-  ports.append(("m_data_out", "out", "std_logic_vector(31 downto 0)"))
+  ports.append(("m_addr", "out", "std_logic_vector(31 downto 0)", "m_addr"))
+  ports.append(("m_data_in", "in", "std_logic_vector(31 downto 0)", "m_data_to_accel"))
+  ports.append(("m_data_out", "out", "std_logic_vector(31 downto 0)", "m_data_from_accel"))
 
   # Inputs for each register.
   for r in stateMachine.inputRegisters():
-    ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0);"))
+    regRange = ((r - 1)*32, (r * 32) - 1)
+    ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0)", "reg_in({:d} downto {:d})".format(regRange[1], regRange[0])))
 
   # Outputs for each register.
   for r in stateMachine.outputRegisters():
-    ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0);"))
+    regRange = ((r - 1)*32, (r * 32) - 1)
+    ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0)", "reg_out({:d} downto {:d})".format(regRange[1], regRange[0])))
 
   # Done signal.
-  ports.append(("done", "out", "std_logic"))
+  ports.append(("done", "out", "std_logic", stateMachine.name() + "_done"))
 
   # Select signal.
-  ports.append(("select", "in", "std_logic"))
+  ports.append(("sel", "in", "std_logic", stateMachine.name() + "_sel"))
 
   return ports

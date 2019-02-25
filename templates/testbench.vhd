@@ -41,6 +41,13 @@ architecture Behavioral of testbench is
             clk                     : in std_logic;
             rst                     : in std_logic;
 
+            m_rdy                   : out std_logic;
+            m_wr                    : in std_logic;
+            m_rd                    : in std_logic;
+
+            m_addr                  : in std_logic_vector(31 downto 0);
+            m_data_to_accel         : out std_logic_vector(31 downto 0);
+            m_data_from_accel       : in std_logic_vector(31 downto 0);
             accel_select            : out std_logic_vector(31 downto 0);
             reg_out                 : out std_logic_vector(991 downto 0);
             reg_in                  : in std_logic_vector(991 downto 0);
@@ -140,6 +147,14 @@ architecture Behavioral of testbench is
     signal reg_out                  : std_logic_vector(991 downto 0);
     signal reg_in                   : std_logic_vector(991 downto 0);
 
+    signal m_rdy                    : std_logic;
+    signal m_rd                     : std_logic;
+    signal m_wr                     : std_logic;
+
+    signal m_addr                   : STD_LOGIC_VECTOR(31 downto 0);
+    signal m_data_to_accel          : STD_LOGIC_VECTOR(31 downto 0);
+    signal m_data_from_accel        : STD_LOGIC_VECTOR(31 downto 0);
+
     signal LMB_M_0_abus             : std_logic_vector(31 downto 0);
     signal LMB_M_0_addrstrobe       : std_logic;
     signal LMB_M_0_be               : std_logic_vector(3 downto 0);
@@ -198,8 +213,17 @@ begin
     (
         clk                     => clk,
         rst                     => rst,
-        
-%%CONTROLLER_MAPPING%%
+
+        reg_in                  => reg_in,
+        reg_out                 => reg_out,
+
+        m_rdy                   => m_rdy,
+        m_rd                    => m_rd,
+        m_wr                    => m_wr,
+
+        m_addr                  => m_addr,
+        m_data_to_accel         => m_data_to_accel,
+        m_data_from_accel       => m_data_from_accel,
 
         LMB_M_0_abus            => LMB_M_0_abus,
         LMB_M_0_addrstrobe      => LMB_M_0_addrstrobe,
