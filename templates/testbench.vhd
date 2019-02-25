@@ -65,25 +65,25 @@ architecture Behavioral of testbench is
             LMB_M_0_writedbus       : out std_logic_vector(31 downto 0);
             LMB_M_0_writestrobe     : out std_logic;
 
-            M_AXI_DP_0_araddr       : out STD_LOGIC_VECTOR (31 downto 0);
-            M_AXI_DP_0_arprot       : out STD_LOGIC_VECTOR (2 downto 0);
-            M_AXI_DP_0_arready      : in STD_LOGIC;
-            M_AXI_DP_0_arvalid      : out STD_LOGIC;
-            M_AXI_DP_0_awaddr       : out STD_LOGIC_VECTOR (31 downto 0);
-            M_AXI_DP_0_awprot       : out STD_LOGIC_VECTOR (2 downto 0);
-            M_AXI_DP_0_awready      : in STD_LOGIC;
-            M_AXI_DP_0_awvalid      : out STD_LOGIC;
-            M_AXI_DP_0_bready       : out STD_LOGIC;
-            M_AXI_DP_0_bresp        : in STD_LOGIC_VECTOR (1 downto 0);
-            M_AXI_DP_0_bvalid       : in STD_LOGIC;
-            M_AXI_DP_0_rdata        : in STD_LOGIC_VECTOR (31 downto 0);
-            M_AXI_DP_0_rready       : out STD_LOGIC;
-            M_AXI_DP_0_rresp        : in STD_LOGIC_VECTOR (1 downto 0);
-            M_AXI_DP_0_rvalid       : in STD_LOGIC;
-            M_AXI_DP_0_wdata        : out STD_LOGIC_VECTOR (31 downto 0);
-            M_AXI_DP_0_wready       : in STD_LOGIC;
-            M_AXI_DP_0_wstrb        : out STD_LOGIC_VECTOR (3 downto 0);
-            M_AXI_DP_0_wvalid       : out STD_LOGIC
+            M_AXI_DP_0_araddr       : in STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_arprot       : in STD_LOGIC_VECTOR (2 downto 0);
+            M_AXI_DP_0_arready      : out STD_LOGIC;
+            M_AXI_DP_0_arvalid      : in STD_LOGIC;
+            M_AXI_DP_0_awaddr       : in STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_awprot       : in STD_LOGIC_VECTOR (2 downto 0);
+            M_AXI_DP_0_awready      : out STD_LOGIC;
+            M_AXI_DP_0_awvalid      : in STD_LOGIC;
+            M_AXI_DP_0_bready       : in STD_LOGIC;
+            M_AXI_DP_0_bresp        : out STD_LOGIC_VECTOR (1 downto 0);
+            M_AXI_DP_0_bvalid       : out STD_LOGIC;
+            M_AXI_DP_0_rdata        : out STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_rready       : in STD_LOGIC;
+            M_AXI_DP_0_rresp        : out STD_LOGIC_VECTOR (1 downto 0);
+            M_AXI_DP_0_rvalid       : out STD_LOGIC;
+            M_AXI_DP_0_wdata        : in STD_LOGIC_VECTOR (31 downto 0);
+            M_AXI_DP_0_wready       : out STD_LOGIC;
+            M_AXI_DP_0_wstrb        : in STD_LOGIC_VECTOR (3 downto 0);
+            M_AXI_DP_0_wvalid       : in STD_LOGIC
         );
     end component hw_accel_controller;
 
@@ -375,10 +375,17 @@ begin
 
         loop
             -- Report any writes on the AXI bus.
-            if M_AXI_DP_0_wvalid = '1' then
+            if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
                 report "TESTBENCH: AXI WRITE DETECTED.";
                 report "TESTBENCH: ADDR: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_awaddr)));
                 report "TESTBENCH: DATA: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_wdata)));
+            end if;
+
+            -- Report any reads on the AXI bus.
+            if M_AXI_DP_0_rvalid = '1' and M_AXI_DP_0_arvalid = '1' then
+                report "TESTBENCH: AXI READ DETECTED.";
+                report "TESTBENCH: ADDR: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_araddr)));
+                report "TESTBENCH: DATA: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_rdata)));
             end if;
 
             -- Trap if we reach the test_failed function, and report the test failure.
@@ -393,7 +400,7 @@ begin
                 exit;
             end if;
 
-            wait for clk_period/8;
+            wait for clk_period;
         end loop;
 
         report "TESTBENCH: CYCLES: " & Integer'image(cycles);

@@ -48,11 +48,11 @@ class StateMachine:
 
     # Write the input registers to the right ports.
     for input in self.inputRegisters():
-      replace.append(instructions.OutputInstruction("swi", 31, None, input, input-1, None))
+      replace.append(instructions.OutputInstruction("swi", 31, None, input, (input-1)*4, None))
 
     # Read the output registers from the right ports.
     for output in self.outputRegisters():
-      replace.append(instructions.InputInstruction("lwi", 31, None, output, output-1, None))
+      replace.append(instructions.InputInstruction("lwi", 31, None, output, (output-1)*4, None))
 
     return replace
 
