@@ -32,6 +32,9 @@ def makeHex(logger, objfile, hexfile):
 def disassembleElf(logger, elffile, asmfile):
   out = common.run_command(OBJDUMP, ["-d", elffile])
 
+  with open(asmfile, 'w') as file:
+    file.write(out[1])
+
   logger.debug("OBJDUMP: " + out[0])
 
 
