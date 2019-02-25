@@ -55,7 +55,7 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
-        if runVivadoSimulation():
+        if runVivadoSimulation(logger):
             logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
         else:
             logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
@@ -166,12 +166,9 @@ def generateTemplates(logger, selectedStateMachines):
 
   templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
 
-def runVivadoSimulation():
+def runVivadoSimulation(logger):
   passed = None
   output = vivado.start_batch("simulate.tcl")
-
-  print(output[1])
-  print(output[2])
 
   # Write the full output to a log file.
   with open("simulate.log", 'w') as logfile:
@@ -181,7 +178,7 @@ def runVivadoSimulation():
   for l in output_lines:
     m = TESTBENCH_MSG_FORMAT.match(l)
     if m != None:
-      print("TESTBENCH: " + m.groups()[0])
+      logger.info("TESTBENCH: " + m.groups()[0])
 
       if m.groups()[0] == PASSED:
         passed = True
