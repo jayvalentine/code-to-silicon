@@ -150,6 +150,7 @@ def generateTemplates(logger, selectedStateMachines):
   tbTemplate = os.path.join(TEMPLATE_DIR, "testbench.vhd")
   tclTemplate = os.path.join(TEMPLATE_DIR, "simulate.tcl")
   memTemplate = os.path.join(TEMPLATE_DIR, "memory.vhd")
+  controllerTemplate = os.path.join(TEMPLATE_DIR, "hw_accel_controller.vhd")
 
   templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
 
@@ -165,6 +166,27 @@ def generateTemplates(logger, selectedStateMachines):
   }
 
   templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
+
+  writesToRegisters = translator.getControllerWriteRegisters()
+  readsFromRegisters = translator.getControllerReadRegisters()
+
+  resetPorts = translator.getControllerResetPorts(selectedStateMachines)
+
+  resetPortDefs = ""
+  resetPortSets = ""
+
+  for port in resetPorts:
+    resetPortDefs += "        " + port + " : out std_logic;\n"
+    resetPortSets += "            " + port + " <= '1';\n"
+
+  vars_controller = {
+    "WRITE_REG_TO_ACCEL": writesToRegisters,
+    "READ_REG_FROM_ACCEL": readsFromRegisters,
+    "RESET_STATEMACHINES": resetPortSets,
+    "STATEMACHINE_RST_PORTS": resetPortDefs
+  }
+
+  templating.processTemplate(controllerTemplate, "controller.vhd", vars_controller)
 
 def runVivadoSimulation(logger):
   passed = None

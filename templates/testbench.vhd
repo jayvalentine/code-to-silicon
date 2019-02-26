@@ -49,8 +49,70 @@ architecture Behavioral of testbench is
             m_data_to_accel         : out std_logic_vector(31 downto 0);
             m_data_from_accel       : in std_logic_vector(31 downto 0);
             accel_select            : out std_logic_vector(31 downto 0);
-            reg_out                 : out std_logic_vector(991 downto 0);
-            reg_in                  : in std_logic_vector(991 downto 0);
+
+            reg_from_accel_01       : in std_logic_vector(31 downto 0);
+            reg_from_accel_02       : in std_logic_vector(31 downto 0);
+            reg_from_accel_03       : in std_logic_vector(31 downto 0);
+            reg_from_accel_04       : in std_logic_vector(31 downto 0);
+            reg_from_accel_05       : in std_logic_vector(31 downto 0);
+            reg_from_accel_06       : in std_logic_vector(31 downto 0);
+            reg_from_accel_07       : in std_logic_vector(31 downto 0);
+            reg_from_accel_08       : in std_logic_vector(31 downto 0);
+            reg_from_accel_09       : in std_logic_vector(31 downto 0);
+            reg_from_accel_10       : in std_logic_vector(31 downto 0);
+            reg_from_accel_11       : in std_logic_vector(31 downto 0);
+            reg_from_accel_12       : in std_logic_vector(31 downto 0);
+            reg_from_accel_13       : in std_logic_vector(31 downto 0);
+            reg_from_accel_14       : in std_logic_vector(31 downto 0);
+            reg_from_accel_15       : in std_logic_vector(31 downto 0);
+            reg_from_accel_16       : in std_logic_vector(31 downto 0);
+            reg_from_accel_17       : in std_logic_vector(31 downto 0);
+            reg_from_accel_18       : in std_logic_vector(31 downto 0);
+            reg_from_accel_19       : in std_logic_vector(31 downto 0);
+            reg_from_accel_20       : in std_logic_vector(31 downto 0);
+            reg_from_accel_21       : in std_logic_vector(31 downto 0);
+            reg_from_accel_22       : in std_logic_vector(31 downto 0);
+            reg_from_accel_23       : in std_logic_vector(31 downto 0);
+            reg_from_accel_24       : in std_logic_vector(31 downto 0);
+            reg_from_accel_25       : in std_logic_vector(31 downto 0);
+            reg_from_accel_26       : in std_logic_vector(31 downto 0);
+            reg_from_accel_27       : in std_logic_vector(31 downto 0);
+            reg_from_accel_28       : in std_logic_vector(31 downto 0);
+            reg_from_accel_29       : in std_logic_vector(31 downto 0);
+            reg_from_accel_30       : in std_logic_vector(31 downto 0);
+            reg_from_accel_31       : in std_logic_vector(31 downto 0);
+
+            reg_to_accel_01         : out std_logic_vector(31 downto 0);
+            reg_to_accel_02         : out std_logic_vector(31 downto 0);
+            reg_to_accel_03         : out std_logic_vector(31 downto 0);
+            reg_to_accel_04         : out std_logic_vector(31 downto 0);
+            reg_to_accel_05         : out std_logic_vector(31 downto 0);
+            reg_to_accel_06         : out std_logic_vector(31 downto 0);
+            reg_to_accel_07         : out std_logic_vector(31 downto 0);
+            reg_to_accel_08         : out std_logic_vector(31 downto 0);
+            reg_to_accel_09         : out std_logic_vector(31 downto 0);
+            reg_to_accel_10         : out std_logic_vector(31 downto 0);
+            reg_to_accel_11         : out std_logic_vector(31 downto 0);
+            reg_to_accel_12         : out std_logic_vector(31 downto 0);
+            reg_to_accel_13         : out std_logic_vector(31 downto 0);
+            reg_to_accel_14         : out std_logic_vector(31 downto 0);
+            reg_to_accel_15         : out std_logic_vector(31 downto 0);
+            reg_to_accel_16         : out std_logic_vector(31 downto 0);
+            reg_to_accel_17         : out std_logic_vector(31 downto 0);
+            reg_to_accel_18         : out std_logic_vector(31 downto 0);
+            reg_to_accel_19         : out std_logic_vector(31 downto 0);
+            reg_to_accel_20         : out std_logic_vector(31 downto 0);
+            reg_to_accel_21         : out std_logic_vector(31 downto 0);
+            reg_to_accel_22         : out std_logic_vector(31 downto 0);
+            reg_to_accel_23         : out std_logic_vector(31 downto 0);
+            reg_to_accel_24         : out std_logic_vector(31 downto 0);
+            reg_to_accel_25         : out std_logic_vector(31 downto 0);
+            reg_to_accel_26         : out std_logic_vector(31 downto 0);
+            reg_to_accel_27         : out std_logic_vector(31 downto 0);
+            reg_to_accel_28         : out std_logic_vector(31 downto 0);
+            reg_to_accel_29         : out std_logic_vector(31 downto 0);
+            reg_to_accel_30         : out std_logic_vector(31 downto 0);
+            reg_to_accel_31         : out std_logic_vector(31 downto 0);
 
             LMB_M_0_abus            : out std_logic_vector(31 downto 0);
             LMB_M_0_addrstrobe      : out std_logic;
@@ -164,8 +226,71 @@ architecture Behavioral of testbench is
     signal rst                      : std_logic;
 
     signal accel_select             : std_logic_vector(31 downto 0);
-    signal reg_out                  : std_logic_vector(991 downto 0);
+
+    signal reg_from_accel_01       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_02       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_03       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_04       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_05       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_06       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_07       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_08       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_09       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_10       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_11       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_12       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_13       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_14       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_15       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_16       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_17       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_18       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_19       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_20       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_21       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_22       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_23       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_24       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_25       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_26       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_27       : std_logic_vector(31 downto 0);    signal reg_out                  : std_logic_vector(991 downto 0);
     signal reg_in                   : std_logic_vector(991 downto 0);
+    signal reg_from_accel_28       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_29       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_30       : std_logic_vector(31 downto 0);
+    signal reg_from_accel_31       : std_logic_vector(31 downto 0);
+
+    signal reg_to_accel_01         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_02         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_03         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_04         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_05         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_06         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_07         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_08         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_09         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_10         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_11         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_12         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_13         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_14         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_15         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_16         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_17         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_18         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_19         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_20         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_21         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_22         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_23         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_24         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_25         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_26         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_27         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_28         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_29         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_30         : std_logic_vector(31 downto 0);
+    signal reg_to_accel_31         : std_logic_vector(31 downto 0);
 
     signal m_rdy                    : std_logic;
     signal m_rd                     : std_logic;
@@ -228,14 +353,141 @@ architecture Behavioral of testbench is
     constant clk_period             : time := 10ns;
     signal clk_hold                 : std_logic := '0';
     signal cycles                   : Integer := 0;
+
+    function byte_to_hex(b: std_logic_vector(7 downto 0)) return string is
+        variable upper : character;
+        variable lower : character;
+
+        variable returnString : string(1 to 2);
+    begin
+        case b(7 downto 4) is
+            when "0000" => upper := '0';
+            when "0001" => upper := '1';
+            when "0010" => upper := '2';
+            when "0011" => upper := '3';
+            when "0100" => upper := '4';
+            when "0101" => upper := '5';
+            when "0110" => upper := '6';
+            when "0111" => upper := '7';
+            when "1000" => upper := '8';
+            when "1001" => upper := '9';
+            when "1010" => upper := 'A';
+            when "1011" => upper := 'B';
+            when "1100" => upper := 'C';
+            when "1101" => upper := 'D';
+            when "1110" => upper := 'E';
+            when "1111" => upper := 'F';
+        end case;
+
+        case b(3 downto 0) is
+            when "0000" => lower := '0';
+            when "0001" => lower := '1';
+            when "0010" => lower := '2';
+            when "0011" => lower := '3';
+            when "0100" => lower := '4';
+            when "0101" => lower := '5';
+            when "0110" => lower := '6';
+            when "0111" => lower := '7';
+            when "1000" => lower := '8';
+            when "1001" => lower := '9';
+            when "1010" => lower := 'A';
+            when "1011" => lower := 'B';
+            when "1100" => lower := 'C';
+            when "1101" => lower := 'D';
+            when "1110" => lower := 'E';
+            when "1111" => lower := 'F';
+        end case;
+
+        returnString := upper & lower;
+        return returnString;
+    end byte_to_hex;
+
+
+    function std_logic_vec_to_hex(vec: std_logic_vector(31 downto 0)) return string is
+        variable byte1 : std_logic_vector(7 downto 0);
+        variable byte2 : std_logic_vector(7 downto 0);
+        variable byte3 : std_logic_vector(7 downto 0);
+        variable byte4 : std_logic_vector(7 downto 0);
+
+        variable returnString : string(1 to 8);
+    begin
+        byte1 := vec(31 downto 24);
+        byte2 := vec(23 downto 16);
+        byte3 := vec(15 downto 8);
+        byte4 := vec(7 downto 0);
+
+        returnString := byte_to_hex(byte1) & byte_to_hex(byte2) & byte_to_hex(byte3) & byte_to_hex(byte4);
+        return returnString;
+    end std_logic_vec_to_hex;
 begin
     hw_accel_controller_uut: hw_accel_controller port map
     (
         clk                     => clk,
         rst                     => rst,
 
-        reg_in                  => reg_in,
-        reg_out                 => reg_out,
+        reg_from_accel_01       => reg_from_accel_01,
+        reg_from_accel_02       => reg_from_accel_02,
+        reg_from_accel_03       => reg_from_accel_03,
+        reg_from_accel_04       => reg_from_accel_04,
+        reg_from_accel_05       => reg_from_accel_05,
+        reg_from_accel_06       => reg_from_accel_06,
+        reg_from_accel_07       => reg_from_accel_07,
+        reg_from_accel_08       => reg_from_accel_08,
+        reg_from_accel_09       => reg_from_accel_09,
+        reg_from_accel_10       => reg_from_accel_10,
+        reg_from_accel_11       => reg_from_accel_11,
+        reg_from_accel_12       => reg_from_accel_12,
+        reg_from_accel_13       => reg_from_accel_13,
+        reg_from_accel_14       => reg_from_accel_14,
+        reg_from_accel_15       => reg_from_accel_15,
+        reg_from_accel_16       => reg_from_accel_16,
+        reg_from_accel_17       => reg_from_accel_17,
+        reg_from_accel_18       => reg_from_accel_18,
+        reg_from_accel_19       => reg_from_accel_19,
+        reg_from_accel_20       => reg_from_accel_20,
+        reg_from_accel_21       => reg_from_accel_21,
+        reg_from_accel_22       => reg_from_accel_22,
+        reg_from_accel_23       => reg_from_accel_23,
+        reg_from_accel_24       => reg_from_accel_24,
+        reg_from_accel_25       => reg_from_accel_25,
+        reg_from_accel_26       => reg_from_accel_26,
+        reg_from_accel_27       => reg_from_accel_27,
+        reg_from_accel_28       => reg_from_accel_28,
+        reg_from_accel_29       => reg_from_accel_29,
+        reg_from_accel_30       => reg_from_accel_30,
+        reg_from_accel_31       => reg_from_accel_31,
+
+        reg_to_accel_01         => reg_to_accel_01,
+        reg_to_accel_02         => reg_to_accel_02,
+        reg_to_accel_03         => reg_to_accel_03,
+        reg_to_accel_04         => reg_to_accel_04,
+        reg_to_accel_05         => reg_to_accel_05,
+        reg_to_accel_06         => reg_to_accel_06,
+        reg_to_accel_07         => reg_to_accel_07,
+        reg_to_accel_08         => reg_to_accel_08,
+        reg_to_accel_09         => reg_to_accel_09,
+        reg_to_accel_10         => reg_to_accel_10,
+        reg_to_accel_11         => reg_to_accel_11,
+        reg_to_accel_12         => reg_to_accel_12,
+        reg_to_accel_13         => reg_to_accel_13,
+        reg_to_accel_14         => reg_to_accel_14,
+        reg_to_accel_15         => reg_to_accel_15,
+        reg_to_accel_16         => reg_to_accel_16,
+        reg_to_accel_17         => reg_to_accel_17,
+        reg_to_accel_18         => reg_to_accel_18,
+        reg_to_accel_19         => reg_to_accel_19,
+        reg_to_accel_20         => reg_to_accel_20,
+        reg_to_accel_21         => reg_to_accel_21,
+        reg_to_accel_22         => reg_to_accel_22,
+        reg_to_accel_23         => reg_to_accel_23,
+        reg_to_accel_24         => reg_to_accel_24,
+        reg_to_accel_25         => reg_to_accel_25,
+        reg_to_accel_26         => reg_to_accel_26,
+        reg_to_accel_27         => reg_to_accel_27,
+        reg_to_accel_28         => reg_to_accel_28,
+        reg_to_accel_29         => reg_to_accel_29,
+        reg_to_accel_30         => reg_to_accel_30,
+        reg_to_accel_31         => reg_to_accel_31,
 
         m_rdy                   => m_rdy,
         m_rd                    => m_rd,
@@ -377,15 +629,15 @@ begin
             -- Report any writes on the AXI bus.
             if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
                 report "TESTBENCH: AXI WRITE DETECTED.";
-                report "TESTBENCH: ADDR: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_awaddr)));
-                report "TESTBENCH: DATA: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_wdata)));
+                report "TESTBENCH: ADDR: " & std_logic_vec_to_hex(M_AXI_DP_0_awaddr);
+                report "TESTBENCH: DATA: " & std_logic_vec_to_hex(M_AXI_DP_0_wdata);
             end if;
 
             -- Report any reads on the AXI bus.
             if M_AXI_DP_0_rvalid = '1' and M_AXI_DP_0_arvalid = '1' then
                 report "TESTBENCH: AXI READ DETECTED.";
-                report "TESTBENCH: ADDR: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_araddr)));
-                report "TESTBENCH: DATA: " & Integer'image(to_integer(unsigned(M_AXI_DP_0_rdata)));
+                report "TESTBENCH: ADDR: " & std_logic_vec_to_hex(M_AXI_DP_0_araddr);
+                report "TESTBENCH: DATA: " & std_logic_vec_to_hex(M_AXI_DP_0_rdata);
             end if;
 
             -- Trap if we reach the test_failed function, and report the test failure.

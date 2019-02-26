@@ -122,9 +122,18 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("int_state  <= S_RESET;")
   tw.writeLine("m_data_out <= (others => '0');")
   tw.writeLine("m_addr     <= (others => '0');")
+
+  tw.writeBlankLine()
+
+  for out in stateMachine.outputRegisters():
+    tw.writeLine("out_r{:02d} <= (others => '0');".format(out))
+
+  tw.writeBlankLine()
+
   tw.writeLine("m_rd       <= '0';")
   tw.writeLine("m_wr       <= '0';")
   tw.writeLine("done       <= '0';")
+
   tw.decreaseIndent()
 
   # Rising clock edge condition.
@@ -350,6 +359,56 @@ def getTestbenchSignals(stateMachine):
 
   return str(tw)
 
+def getControllerWriteRegisters():
+  tw = text.TextWriter(4, "--")
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+
+  for i in range(1,32):
+    tw.writeLine("when x\"44A0{:04x}\" =>".format((i-1)*4))
+    tw.increaseIndent()
+    tw.writeLine("reg_to_accel_{:02d} <= M_AXI_DP_0_wdata;".format(i))
+    tw.decreaseIndent()
+
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+
+  return str(tw)
+
+def getControllerReadRegisters():
+  tw = text.TextWriter(4, "--")
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+
+  for i in range(1,32):
+    tw.writeLine("when x\"44A0{:04x}\" =>".format((i-1)*4))
+    tw.increaseIndent()
+    tw.writeLine("M_AXI_DP_0_rdata <= reg_from_accel_{:02d};".format(i))
+    tw.decreaseIndent()
+
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+
+  return str(tw)
+
+def getControllerResetPorts(stateMachines):
+  ports = []
+
+  for sm in stateMachines:
+    ports.append("rst_" + sm.name())
+
+  return ports
+
 def localName(stateName, register):
   return "{:s}_r{:02d}".format(stateName, register)
 
@@ -406,12 +465,12 @@ def getPorts(stateMachine):
   # Inputs for each register.
   for r in stateMachine.inputRegisters():
     regRange = ((r - 1)*32, (r * 32) - 1)
-    ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0)", "reg_in({:d} downto {:d})".format(regRange[1], regRange[0])))
+    ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0)", "reg_to_accel_{:02d}".format(r)))
 
   # Outputs for each register.
   for r in stateMachine.outputRegisters():
     regRange = ((r - 1)*32, (r * 32) - 1)
-    ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0)", "reg_out({:d} downto {:d})".format(regRange[1], regRange[0])))
+    ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0)", "reg_from_accel_{:02d}".format(r)))
 
   # Done signal.
   ports.append(("done", "out", "std_logic", stateMachine.name() + "_done"))

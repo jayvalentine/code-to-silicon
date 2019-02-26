@@ -16,6 +16,8 @@ entity hw_accel_controller is
         m_data_from_accel       : in std_logic_vector(31 downto 0);
         accel_select            : out std_logic_vector(31 downto 0);
 
+%%STATEMACHINE_RST_PORTS%%
+
         reg_from_accel_01       : in std_logic_vector(31 downto 0);
         reg_from_accel_02       : in std_logic_vector(31 downto 0);
         reg_from_accel_03       : in std_logic_vector(31 downto 0);
@@ -117,36 +119,44 @@ end entity hw_accel_controller;
 
 architecture hw_accel_controller_behav of hw_accel_controller is
 begin
-    dummy : process(M_AXI_DP_0_awvalid, M_AXI_DP_0_wvalid, M_AXI_DP_0_arvalid, M_AXI_DP_0_rready)
+    control_proc : process(rst, M_AXI_DP_0_awvalid, M_AXI_DP_0_wvalid, M_AXI_DP_0_arvalid, M_AXI_DP_0_rready)
     begin
-        if M_AXI_DP_0_awvalid = '1' then
-            M_AXI_DP_0_awready <= '1';
-        else
-            M_AXI_DP_0_awready <= '0';
-        end if;
+        if rst = '1' then
+%%RESET_STATEMACHINES%%
 
-        -- Write transaction.
-        if M_AXI_DP_0_wvalid = '1' then
-            case M_AXI_DP_0_wdata is
+        else
+            if M_AXI_DP_0_awvalid = '1' then
+                M_AXI_DP_0_awready <= '1';
+            else
+                M_AXI_DP_0_awready <= '0';
+            end if;
+
+            -- Write transaction.
+            if M_AXI_DP_0_wvalid = '1' then
+                case M_AXI_DP_0_awaddr is
 %%WRITE_REG_TO_ACCEL%%
+                end case;
 
-            M_AXI_DP_0_wready <= '1';
-        else
-            M_AXI_DP_0_wready <= '0';
-        end if;
+                M_AXI_DP_0_wready <= '1';
+            else
+                M_AXI_DP_0_wready <= '0';
+            end if;
 
-        -- Dummy response to read transaction. Return 0x5A5A5A5A
-        if M_AXI_DP_0_arvalid = '1' then
-            M_AXI_DP_0_arready <= '1';
-        else
-            M_AXI_DP_0_arready <= '0';
-        end if;
+            if M_AXI_DP_0_arvalid = '1' then
+                M_AXI_DP_0_arready <= '1';
+            else
+                M_AXI_DP_0_arready <= '0';
+            end if;
 
-        if M_AXI_DP_0_rready = '1' then
-            M_AXI_DP_0_rdata <= x"5A5A5A5A";
-            M_AXI_DP_0_rvalid <= '1';
-        else
-            M_AXI_DP_0_rvalid <= '0';
+            if M_AXI_DP_0_rready = '1' then
+                case M_AXI_DP_0_araddr is
+%%READ_REG_FROM_ACCEL%%
+                end case;
+
+                M_AXI_DP_0_rvalid <= '1';
+            else
+                M_AXI_DP_0_rvalid <= '0';
+            end if;
         end if;
-    end process dummy;
+    end process control_proc;
 end architecture hw_accel_controller_behav;
