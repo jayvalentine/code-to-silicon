@@ -41,6 +41,10 @@ architecture Behavioral of testbench is
             clk                     : in std_logic;
             rst                     : in std_logic;
 
+%%STATEMACHINE_SEL_PORTS%%
+
+%%STATEMACHINE_RST_PORTS%%
+
             m_rdy                   : out std_logic;
             m_wr                    : in std_logic;
             m_rd                    : in std_logic;
@@ -225,8 +229,6 @@ architecture Behavioral of testbench is
     signal clk                      : std_logic;
     signal rst                      : std_logic;
 
-    signal accel_select             : std_logic_vector(31 downto 0);
-
     signal reg_from_accel_01       : std_logic_vector(31 downto 0);
     signal reg_from_accel_02       : std_logic_vector(31 downto 0);
     signal reg_from_accel_03       : std_logic_vector(31 downto 0);
@@ -253,8 +255,7 @@ architecture Behavioral of testbench is
     signal reg_from_accel_24       : std_logic_vector(31 downto 0);
     signal reg_from_accel_25       : std_logic_vector(31 downto 0);
     signal reg_from_accel_26       : std_logic_vector(31 downto 0);
-    signal reg_from_accel_27       : std_logic_vector(31 downto 0);    signal reg_out                  : std_logic_vector(991 downto 0);
-    signal reg_in                   : std_logic_vector(991 downto 0);
+    signal reg_from_accel_27       : std_logic_vector(31 downto 0);
     signal reg_from_accel_28       : std_logic_vector(31 downto 0);
     signal reg_from_accel_29       : std_logic_vector(31 downto 0);
     signal reg_from_accel_30       : std_logic_vector(31 downto 0);

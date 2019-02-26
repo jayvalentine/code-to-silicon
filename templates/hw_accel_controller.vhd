@@ -14,7 +14,8 @@ entity hw_accel_controller is
         m_addr                  : in std_logic_vector(31 downto 0);
         m_data_to_accel         : out std_logic_vector(31 downto 0);
         m_data_from_accel       : in std_logic_vector(31 downto 0);
-        accel_select            : out std_logic_vector(31 downto 0);
+
+%%STATEMACHINE_SEL_PORTS%%
 
 %%STATEMACHINE_RST_PORTS%%
 

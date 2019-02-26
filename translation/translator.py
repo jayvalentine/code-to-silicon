@@ -350,9 +350,7 @@ def getTestbenchSignals(stateMachine):
   tw.increaseIndent()
 
   for port in getPorts(stateMachine):
-    # Exclude clk and rst.
-    if port[0] == "done" or port[0] == "sel":
-      tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
+    tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
 
   tw.writeBlankLine()
   tw.decreaseIndent()
@@ -406,6 +404,14 @@ def getControllerResetPorts(stateMachines):
 
   for sm in stateMachines:
     ports.append("rst_" + sm.name())
+
+  return ports
+
+def getControllerSelectPorts(stateMachines):
+  ports = []
+
+  for sm in stateMachines:
+    ports.append("sel_" + sm.name())
 
   return ports
 
