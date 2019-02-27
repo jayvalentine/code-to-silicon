@@ -154,6 +154,13 @@ begin
                 M_AXI_DP_0_wready <= '0';
             end if;
 
+            if M_AXI_DP_0_bready = '1' then
+                M_AXI_DP_0_bresp <= "00";
+                M_AXI_DP_0_bvalid <= '1';
+            else
+                M_AXI_DP_0_bvalid <= '0';
+            end if;
+
             if M_AXI_DP_0_arvalid = '1' then
                 M_AXI_DP_0_arready <= '1';
             else
