@@ -125,7 +125,7 @@ architecture hw_accel_controller_behav of hw_accel_controller is
 
     signal int_state : STATE := S_READY;
 begin
-    control_proc : process(clk, rst, M_AXI_DP_0_awvalid, M_AXI_DP_0_wvalid, M_AXI_DP_0_arvalid, M_AXI_DP_0_rready)
+    control_proc : process(clk, rst)
     begin
         if rst = '1' then
 %%RESET_STATEMACHINES%%
@@ -137,21 +137,19 @@ begin
 
 %%STATEMACHINES_DONE%%
 
-            if M_AXI_DP_0_awvalid = '1' then
+            if int_state = S_DONE or int_state = S_READY then
                 M_AXI_DP_0_awready <= '1';
+                M_AXI_DP_0_wready <= '1';
             else
                 M_AXI_DP_0_awready <= '0';
+                M_AXI_DP_0_wready <= '0';
             end if;
 
             -- Write transaction.
-            if M_AXI_DP_0_wvalid = '1' then
+            if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
                 case M_AXI_DP_0_awaddr is
 %%WRITE_REG_TO_ACCEL%%
                 end case;
-
-                M_AXI_DP_0_wready <= '1';
-            else
-                M_AXI_DP_0_wready <= '0';
             end if;
 
             if M_AXI_DP_0_bready = '1' then
@@ -161,13 +159,13 @@ begin
                 M_AXI_DP_0_bvalid <= '0';
             end if;
 
-            if M_AXI_DP_0_arvalid = '1' then
+            if int_state = S_DONE then
                 M_AXI_DP_0_arready <= '1';
             else
                 M_AXI_DP_0_arready <= '0';
             end if;
 
-            if M_AXI_DP_0_rready = '1' then
+            if M_AXI_DP_0_rready = '1' and M_AXI_DP_0_arvalid = '1' then
                 if int_state = S_DONE then
                     case M_AXI_DP_0_araddr is
 %%READ_REG_FROM_ACCEL%%

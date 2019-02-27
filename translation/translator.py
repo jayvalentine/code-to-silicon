@@ -149,6 +149,8 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("if rising_edge(clk) then")
   tw.increaseIndent()
 
+  tw.writeLine("report \"TESTBENCH: STATEMACHINE: \" & STATE'image(int_state);")
+
   tw.writeLine("case int_state is")
 
   # Reset state condition.
@@ -474,6 +476,8 @@ def getControllerStateMachinesDone(stateMachines):
     tw.increaseIndent()
     tw.writeLine("int_state <= S_DONE;")
     tw.writeLine(sm.name() + "_sel <= '0';")
+    tw.writeLine(sm.name() + "_rst <= '1';")
+    tw.writeLine("report \"TESTBENCH: SM DONE.\";")
     tw.decreaseIndent()
     tw.writeLine("end if;")
 
