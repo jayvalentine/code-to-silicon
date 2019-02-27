@@ -102,5 +102,8 @@ def main(argv):
     os.system("biber REPORT > texbuild.log")
     os.system("pdflatex REPORT > texbuild.log")
 
+  # The Vivado project will have been modified. Revert it.
+  os.system("git checkout microblaze_system/microblaze_system.xpr")
+
 if __name__ == "__main__":
   main(sys.argv[1:])
