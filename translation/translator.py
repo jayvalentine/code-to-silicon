@@ -350,7 +350,8 @@ def getTestbenchSignals(stateMachine):
   tw.increaseIndent()
 
   for port in getPorts(stateMachine):
-    tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
+    if port[0] != "clk":
+      tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
 
   tw.writeBlankLine()
   tw.decreaseIndent()
@@ -415,6 +416,27 @@ def getControllerSelectPorts(stateMachines):
 
   return ports
 
+def reportAcceleratorStart(stateMachines):
+  tw = text.TextWriter(4, "--")
+
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+
+  for sm in stateMachines:
+    tw.writeLine("if " + sm.name() + "_rst = '1' then")
+    tw.increaseIndent()
+    tw.writeLine("report \"" + sm.name() + " EXECUTION START.\";")
+    tw.decreaseIndent()
+    tw.writeLine("elsif " + sm.name() + "_done = '1' then")
+    tw.increaseIndent()
+    tw.writeLine("report \"" + sm.name() + " EXECUTION COMPLETE.\";")
+    tw.decreaseIndent()
+    tw.writeLine("end if;")
+    tw.writeBlankLine()
+
+  return str(tw)
+
 def localName(stateName, register):
   return "{:s}_r{:02d}".format(stateName, register)
 
@@ -456,7 +478,7 @@ def getPorts(stateMachine):
 
   # CLK, M_RDY, and RST signals.
   ports.append(("clk", "in", "std_logic", "clk"))
-  ports.append(("rst", "in", "std_logic", "rst"))
+  ports.append(("rst", "in", "std_logic", stateMachine.name() + "_rst"))
   ports.append(("m_rdy", "in", "std_logic", "m_rdy"))
 
   # Read and write strobes.

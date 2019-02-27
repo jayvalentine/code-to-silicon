@@ -154,6 +154,8 @@ def generateTemplates(logger, selectedStateMachines):
   for port in selPorts:
     selPortDefs += "        " + port + " : out std_logic;\n"
 
+  reportStart = translator.reportAcceleratorStart(selectedStateMachines)
+
   vars_testbench = {
     "FAILED_ADDR": syms["test_failed"],
     "PASSED_ADDR": syms["test_passed"],
@@ -161,7 +163,8 @@ def generateTemplates(logger, selectedStateMachines):
     "STATEMACHINE_UUTS": uutDefs,
     "STATEMACHINE_SIGNALS": signals,
     "STATEMACHINE_SEL_PORTS": selPortDefs,
-    "STATEMACHINE_RST_PORTS": resetPortDefs
+    "STATEMACHINE_RST_PORTS": resetPortDefs,
+    "REPORT_ACCEL_START": reportStart
   }
 
   # Generate testbench template.

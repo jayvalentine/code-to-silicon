@@ -52,7 +52,6 @@ architecture Behavioral of testbench is
             m_addr                  : in std_logic_vector(31 downto 0);
             m_data_to_accel         : out std_logic_vector(31 downto 0);
             m_data_from_accel       : in std_logic_vector(31 downto 0);
-            accel_select            : out std_logic_vector(31 downto 0);
 
             reg_from_accel_01       : in std_logic_vector(31 downto 0);
             reg_from_accel_02       : in std_logic_vector(31 downto 0);
@@ -640,6 +639,9 @@ begin
                 report "TESTBENCH: ADDR: " & std_logic_vec_to_hex(M_AXI_DP_0_araddr);
                 report "TESTBENCH: DATA: " & std_logic_vec_to_hex(M_AXI_DP_0_rdata);
             end if;
+
+            -- Report if any hardware accelerators have been started or have finished.
+%%REPORT_ACCEL_START%%
 
             -- Trap if we reach the test_failed function, and report the test failure.
             if BRAM_PORT_INST_addr = x"%%FAILED_ADDR%%" then
