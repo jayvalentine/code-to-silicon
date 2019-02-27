@@ -142,26 +142,29 @@ def generateTemplates(logger, selectedStateMachines):
     uutDefs += translator.getUUTDefinition(sm)
     signals += translator.getTestbenchSignals(sm)
 
-  resetPortDefs = ""
+  portDefs = ""
   resetPortSets = ""
 
-  selPortsMap = ""
-  rstPortsMap = ""
+  portsMap = ""
 
   resetPorts = translator.getControllerResetPorts(selectedStateMachines)
 
   for port in resetPorts:
-    resetPortDefs += "            " + port + " : out std_logic;\n"
-    resetPortSets += "            " + port + " <= '1';\n"
-    rstPortsMap += "        " + port + " => " + port + ",\n"
-
-  selPortDefs = ""
+    portDefs += "        " + port[0] + " : " + port[1] + " std_logic;\n"
+    resetPortSets += "            " + port[0] + " <= '1';\n"
+    portsMap += "        " + port[0] + " => " + port[0] + ",\n"
 
   selPorts = translator.getControllerSelectPorts(selectedStateMachines)
 
   for port in selPorts:
-    selPortDefs += "            " + port + " : out std_logic;\n"
-    selPortsMap += "        " + port + " => " + port + ",\n"
+    portDefs += "        " + port[0] + " : " + port[1] + " std_logic;\n"
+    portsMap += "        " + port[0] + " => " + port[0] + ",\n"
+
+  donePorts = translator.getControllerDonePorts(selectedStateMachines)
+
+  for port in donePorts:
+    portDefs += "        " + port[0] + " : " + port[1] + " std_logic;\n"
+    portsMap += "        " + port[0] + " => " + port[0] + ",\n"
 
   reportStart = translator.reportAcceleratorStart(selectedStateMachines)
 
@@ -171,11 +174,9 @@ def generateTemplates(logger, selectedStateMachines):
     "STATEMACHINE_COMPONENTS": componentDefs,
     "STATEMACHINE_UUTS": uutDefs,
     "STATEMACHINE_SIGNALS": signals,
-    "STATEMACHINE_SEL_PORTS": selPortDefs,
-    "STATEMACHINE_RST_PORTS": resetPortDefs,
+    "STATEMACHINE_PORTS": portDefs,
     "REPORT_ACCEL_START": reportStart,
-    "STATEMACHINE_SEL_PORTS_MAP": selPortsMap,
-    "STATEMACHINE_RST_PORTS_MAP": rstPortsMap
+    "STATEMACHINE_PORTS_MAP": portsMap
   }
 
   # Generate testbench template.
@@ -203,14 +204,15 @@ def generateTemplates(logger, selectedStateMachines):
   readsFromRegisters = translator.getControllerReadRegisters()
 
   unreset = translator.getControllerUnreset(selectedStateMachines)
+  stateMachinesDone = translator.getControllerStateMachinesDone(selectedStateMachines)
 
   vars_controller = {
     "WRITE_REG_TO_ACCEL": writesToRegisters,
     "READ_REG_FROM_ACCEL": readsFromRegisters,
     "RESET_STATEMACHINES": resetPortSets,
     "UNRESET_STATEMACHINES": unreset,
-    "STATEMACHINE_RST_PORTS": resetPortDefs,
-    "STATEMACHINE_SEL_PORTS": selPortDefs
+    "STATEMACHINE_PORTS": portDefs,
+    "STATEMACHINES_DONE": stateMachinesDone
   }
 
   templating.processTemplate(controllerTemplate, "controller.vhd", vars_controller)

@@ -41,9 +41,7 @@ architecture Behavioral of testbench is
             clk                     : in std_logic;
             rst                     : in std_logic;
 
-%%STATEMACHINE_SEL_PORTS%%
-
-%%STATEMACHINE_RST_PORTS%%
+%%STATEMACHINE_PORTS%%
 
             m_rdy                   : out std_logic;
             m_wr                    : in std_logic;
@@ -431,9 +429,7 @@ begin
         clk                     => clk,
         rst                     => rst,
 
-%%STATEMACHINE_SEL_PORTS_MAP%%
-
-%%STATEMACHINE_RST_PORTS_MAP%%
+%%STATEMACHINE_PORTS_MAP%%
 
         reg_from_accel_01       => reg_from_accel_01,
         reg_from_accel_02       => reg_from_accel_02,

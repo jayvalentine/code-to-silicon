@@ -15,9 +15,7 @@ entity hw_accel_controller is
         m_data_to_accel         : out std_logic_vector(31 downto 0);
         m_data_from_accel       : in std_logic_vector(31 downto 0);
 
-%%STATEMACHINE_SEL_PORTS%%
-
-%%STATEMACHINE_RST_PORTS%%
+%%STATEMACHINE_PORTS%%
 
         reg_from_accel_01       : in std_logic_vector(31 downto 0);
         reg_from_accel_02       : in std_logic_vector(31 downto 0);
@@ -119,6 +117,13 @@ entity hw_accel_controller is
 end entity hw_accel_controller;
 
 architecture hw_accel_controller_behav of hw_accel_controller is
+    type STATE is (
+        S_DONE,
+        S_WAITING,
+        S_READY
+    );
+
+    signal int_state : STATE := S_READY;
 begin
     control_proc : process(clk, rst, M_AXI_DP_0_awvalid, M_AXI_DP_0_wvalid, M_AXI_DP_0_arvalid, M_AXI_DP_0_rready)
     begin
@@ -129,7 +134,9 @@ begin
             if rising_edge(clk) then
 %%UNRESET_STATEMACHINES%%
             end if;
-            
+
+%%STATEMACHINES_DONE%%
+
             if M_AXI_DP_0_awvalid = '1' then
                 M_AXI_DP_0_awready <= '1';
             else
@@ -154,11 +161,15 @@ begin
             end if;
 
             if M_AXI_DP_0_rready = '1' then
-                case M_AXI_DP_0_araddr is
+                if int_state = S_DONE then
+                    case M_AXI_DP_0_araddr is
 %%READ_REG_FROM_ACCEL%%
-                end case;
+                    end case;
 
-                M_AXI_DP_0_rvalid <= '1';
+                    M_AXI_DP_0_rvalid <= '1';
+                else
+                    M_AXI_DP_0_rvalid <= '0';
+                end if;
             else
                 M_AXI_DP_0_rvalid <= '0';
             end if;

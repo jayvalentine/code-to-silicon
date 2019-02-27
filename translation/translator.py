@@ -373,6 +373,7 @@ def getControllerWriteRegisters(stateMachines):
       tw.writeLine("when x\"{:08x}\" =>".format(2**stateMachines[i].id()))
       tw.increaseIndent()
       tw.writeLine(stateMachines[i].name() + "_sel <= '1';")
+      tw.writeLine("int_state <= S_WAITING;")
       tw.writeBlankLine()
       tw.decreaseIndent()
 
@@ -403,6 +404,7 @@ def getControllerReadRegisters():
   tw.increaseIndent()
   tw.increaseIndent()
   tw.increaseIndent()
+  tw.increaseIndent()
 
   for i in range(1,32):
     tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
@@ -414,6 +416,7 @@ def getControllerReadRegisters():
   tw.decreaseIndent()
   tw.decreaseIndent()
   tw.decreaseIndent()
+  tw.decreaseIndent()
 
   return str(tw)
 
@@ -421,7 +424,7 @@ def getControllerResetPorts(stateMachines):
   ports = []
 
   for sm in stateMachines:
-    ports.append(sm.name() + "_rst")
+    ports.append((sm.name() + "_rst", "out"))
 
   return ports
 
@@ -429,7 +432,15 @@ def getControllerSelectPorts(stateMachines):
   ports = []
 
   for sm in stateMachines:
-    ports.append(sm.name() + "_sel")
+    ports.append((sm.name() + "_sel", "out"))
+
+  return ports
+
+def getControllerDonePorts(stateMachines):
+  ports = []
+
+  for sm in stateMachines:
+    ports.append((sm.name() + "_done", "in"))
 
   return ports
 
@@ -445,6 +456,27 @@ def getControllerUnreset(stateMachines):
     tw.writeLine(sm.name() + "_rst <= '0';")
 
   tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+
+  return str(tw)
+
+def getControllerStateMachinesDone(stateMachines):
+  tw = text.TextWriter(4, "--")
+
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+
+  for sm in stateMachines:
+    tw.writeLine("if rising_edge(" + sm.name() + "_done) then")
+    tw.increaseIndent()
+    tw.writeLine("int_state <= S_DONE;")
+    tw.writeLine(sm.name() + "_sel <= '0';")
+    tw.decreaseIndent()
+    tw.writeLine("end if;")
+
   tw.decreaseIndent()
   tw.decreaseIndent()
   tw.decreaseIndent()
