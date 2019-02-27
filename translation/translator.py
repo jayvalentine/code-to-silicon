@@ -136,17 +136,23 @@ def getArchitecturalDefinition(stateMachine):
 
   tw.decreaseIndent()
 
+  tw.writeLine("elsif sel = '1' then")
+
+  tw.increaseIndent()
+
   # Rising clock edge condition.
   # If we're in a memory state, set the address and correct strobe.
   # If we're in a computation state, do some computation.
   # If we're in a start state, get some inputs.
   # If we're in an end state, write some outputs.
   # If we're in the reset state, move to the first state.
-  tw.writeLine("elsif rising_edge(clk) then")
+  tw.writeLine("if rising_edge(clk) then")
   tw.increaseIndent()
 
+  tw.writeLine("case int_state is")
+
   # Reset state condition.
-  tw.writeLine("if int_state = S_RESET then")
+  tw.writeLine("when S_RESET =>")
   tw.increaseIndent()
   tw.writeLine("int_state <= " + stateMachine[0].name() + ";")
   tw.decreaseIndent()
@@ -156,13 +162,14 @@ def getArchitecturalDefinition(stateMachine):
     s = stateMachine[i]
 
     tw.writeBlankLine()
-    tw.writeLine("elsif int_state = " + s.name() + " then")
+    tw.writeLine("when " + s.name() + " =>")
     tw.increaseIndent()
 
     # If this is a start state, get inputs into the state machine's internal registers.
     if s.isStartState():
       for r in stateMachine.inputRegisters():
         tw.writeLine("r{reg:02d} <= signed(in_r{reg:02d});".format(reg=r))
+      tw.writeBlankLine()
 
     # If this is an end state, put outputs from the state machine's internal registers.
     # Also set the done flag.
@@ -170,6 +177,7 @@ def getArchitecturalDefinition(stateMachine):
       for r in stateMachine.outputRegisters():
         tw.writeLine("out_r{reg:02d} <= std_logic_vector(r{reg:02d});".format(reg=r))
       tw.writeLine("done <= '1';")
+      tw.writeBlankLine()
 
     # If this is a wait state, set up the memory transaction (either a read or a write).
     elif s.isWaitState():
@@ -191,6 +199,8 @@ def getArchitecturalDefinition(stateMachine):
       else:
         tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}))".format(inst.rD()))
         tw.writeLine("m_wr <= '1';")
+
+      tw.writeBlankLine()
 
     # Otherwise, this is a computation state, and we need to emit translations of
     # each instruction.
@@ -226,13 +236,8 @@ def getArchitecturalDefinition(stateMachine):
 
     tw.decreaseIndent()
 
-  # Finally, null statement for completeness (in case the compiler complains that we've not covered every case.)
-  tw.writeLine("else")
-  tw.increaseIndent()
-  tw.writeLine("null;")
-  tw.writeBlankLine()
-  tw.decreaseIndent()
-  tw.writeLine("end if;")
+  tw.writeLine("when others => null;")
+  tw.writeLine("end case;")
 
   tw.decreaseIndent()
 
@@ -245,16 +250,13 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeBlankLine()
 
   firstState = True
+  tw.writeLine("case int_state is")
+
   for i in range(len(stateMachine)):
     s = stateMachine[i]
 
     if s.isWaitState():
-      # IF/ELSIF statement for wait state.
-      if firstState:
-        tw.writeLine("if int_state = " + s.name() + " then")
-        firstState = False
-      else:
-        tw.writeLine("elsif int_state = " + s.name() + " then")
+      tw.writeLine("when " + s.name() + " =>")
 
       tw.increaseIndent()
 
@@ -271,22 +273,18 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeBlankLine()
       tw.decreaseIndent()
 
-  tw.writeLine("else")
-  tw.increaseIndent()
-  tw.writeLine("null;")
-  tw.writeBlankLine()
+  tw.writeLine("when others => null;")
+  tw.writeLine("end case;")
+
   tw.decreaseIndent()
   tw.writeLine("end if;")
 
-  tw.writeBlankLine()
   tw.decreaseIndent()
   tw.writeLine("end if;")
 
-  tw.writeBlankLine()
   tw.decreaseIndent()
   tw.writeLine("end process;")
 
-  tw.writeBlankLine()
   tw.decreaseIndent()
   tw.writeLine("end " + entityName + "_behav;")
 
