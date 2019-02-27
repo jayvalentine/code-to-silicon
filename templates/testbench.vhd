@@ -377,6 +377,7 @@ architecture Behavioral of testbench is
             when "1101" => upper := 'D';
             when "1110" => upper := 'E';
             when "1111" => upper := 'F';
+            when others => upper := 'X';
         end case;
 
         case b(3 downto 0) is
@@ -396,6 +397,7 @@ architecture Behavioral of testbench is
             when "1101" => lower := 'D';
             when "1110" => lower := 'E';
             when "1111" => lower := 'F';
+            when others => lower := 'X';
         end case;
 
         returnString := upper & lower;
