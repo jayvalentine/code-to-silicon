@@ -356,7 +356,7 @@ def getTestbenchSignals(stateMachine):
 
   return str(tw)
 
-def getControllerWriteRegisters():
+def getControllerWriteRegisters(stateMachines):
   tw = text.TextWriter(4, "--")
   tw.increaseIndent()
   tw.increaseIndent()
@@ -364,8 +364,27 @@ def getControllerWriteRegisters():
   tw.increaseIndent()
   tw.increaseIndent()
 
+  tw.writeLine("when x\"44A00000\" =>")
+  tw.increaseIndent()
+  tw.writeLine("case M_AXI_DP_0_wdata is")
+  for i in range(0, 32):
+    if i < len(stateMachines):
+      tw.writeCommentLine("Select accelerator " + stateMachines[i].name() + ".")
+      tw.writeLine("when x\"{:08x}\" =>".format(2**stateMachines[i].id()))
+      tw.increaseIndent()
+      tw.writeLine(stateMachines[i].name() + "_sel <= '1';")
+      tw.writeBlankLine()
+      tw.decreaseIndent()
+
+  tw.writeCommentLine("A non-one-hot value is undefined behaviour.")
+  tw.writeLine("when others => null;")
+  tw.writeBlankLine()
+  tw.writeLine("end case;")
+  tw.writeBlankLine()
+  tw.decreaseIndent()
+
   for i in range(1,32):
-    tw.writeLine("when x\"44A0{:04x}\" =>".format((i-1)*4))
+    tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
     tw.increaseIndent()
     tw.writeLine("reg_to_accel_{:02d} <= M_AXI_DP_0_wdata;".format(i))
     tw.decreaseIndent()
@@ -386,7 +405,7 @@ def getControllerReadRegisters():
   tw.increaseIndent()
 
   for i in range(1,32):
-    tw.writeLine("when x\"44A0{:04x}\" =>".format((i-1)*4))
+    tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
     tw.increaseIndent()
     tw.writeLine("M_AXI_DP_0_rdata <= reg_from_accel_{:02d};".format(i))
     tw.decreaseIndent()
@@ -402,7 +421,7 @@ def getControllerResetPorts(stateMachines):
   ports = []
 
   for sm in stateMachines:
-    ports.append("rst_" + sm.name())
+    ports.append(sm.name() + "_rst")
 
   return ports
 
@@ -410,9 +429,27 @@ def getControllerSelectPorts(stateMachines):
   ports = []
 
   for sm in stateMachines:
-    ports.append("sel_" + sm.name())
+    ports.append(sm.name() + "_sel")
 
   return ports
+
+def getControllerUnreset(stateMachines):
+  tw = text.TextWriter(4, "--")
+
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
+
+  for sm in stateMachines:
+    tw.writeLine(sm.name() + "_rst <= '0';")
+
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+  tw.decreaseIndent()
+
+  return str(tw)
 
 def reportAcceleratorStart(stateMachines):
   tw = text.TextWriter(4, "--")
@@ -422,13 +459,15 @@ def reportAcceleratorStart(stateMachines):
   tw.increaseIndent()
 
   for sm in stateMachines:
-    tw.writeLine("if " + sm.name() + "_rst = '1' then")
+    tw.writeLine("if " + sm.name() + "_sel = '1' and accel_started = '0' then")
     tw.increaseIndent()
-    tw.writeLine("report \"" + sm.name() + " EXECUTION START.\";")
+    tw.writeLine("report \"TESTBENCH: " + sm.name() + " EXECUTION START.\";")
+    tw.writeLine("accel_started <= '1';")
     tw.decreaseIndent()
-    tw.writeLine("elsif " + sm.name() + "_done = '1' then")
+    tw.writeLine("elsif " + sm.name() + "_done = '1' and accel_started = '1' then")
     tw.increaseIndent()
-    tw.writeLine("report \"" + sm.name() + " EXECUTION COMPLETE.\";")
+    tw.writeLine("report \"TESTBENCH: " + sm.name() + " EXECUTION COMPLETE.\";")
+    tw.writeLine("accel_started <= '0';")
     tw.decreaseIndent()
     tw.writeLine("end if;")
     tw.writeBlankLine()

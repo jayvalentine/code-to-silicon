@@ -24,6 +24,12 @@ class StateMachine:
   def name(self):
     return self._name
 
+  def id(self):
+    return self._id
+
+  def setId(self, id):
+    self._id = id
+
   def block(self):
     return self._block
 
@@ -48,11 +54,15 @@ class StateMachine:
 
     # Write the input registers to the right ports.
     for input in self.inputRegisters():
-      replace.append(instructions.OutputInstruction("swi", 31, None, input, (input-1)*4, None))
+      replace.append(instructions.OutputInstruction("swi", 31, None, input, (input)*4, None))
+
+    # Write to the special controller register that will start our desired state machine.
+    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 30, (2**self._id), None))
+    replace.append(instructions.OutputInstruction("swi", 31, None, 30, 0, None))
 
     # Read the output registers from the right ports.
     for output in self.outputRegisters():
-      replace.append(instructions.InputInstruction("lwi", 31, None, output, (output-1)*4, None))
+      replace.append(instructions.InputInstruction("lwi", 31, None, output, (output)*4, None))
 
     return replace
 

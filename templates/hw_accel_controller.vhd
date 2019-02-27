@@ -120,12 +120,16 @@ end entity hw_accel_controller;
 
 architecture hw_accel_controller_behav of hw_accel_controller is
 begin
-    control_proc : process(rst, M_AXI_DP_0_awvalid, M_AXI_DP_0_wvalid, M_AXI_DP_0_arvalid, M_AXI_DP_0_rready)
+    control_proc : process(clk, rst, M_AXI_DP_0_awvalid, M_AXI_DP_0_wvalid, M_AXI_DP_0_arvalid, M_AXI_DP_0_rready)
     begin
         if rst = '1' then
 %%RESET_STATEMACHINES%%
 
         else
+            if rising_edge(clk) then
+%%UNRESET_STATEMACHINES%%
+            end if;
+            
             if M_AXI_DP_0_awvalid = '1' then
                 M_AXI_DP_0_awready <= '1';
             else

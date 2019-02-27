@@ -96,13 +96,17 @@ def generateStateMachines(logger, num):
   else:
     selected = stateMachines[:num]
 
+  id = 0
   for sm in selected:
-    logger.debug("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ")")
+    sm.setId(id)
+
+    logger.debug("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ", id: " + str(id) + ")")
     with open(sm.name() + ".vhd", 'w') as file:
       logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + ".vhd.")
       file.write(translator.translateStateMachine(sm))
 
     stream.replaceLines(sm.block().lines()[0], sm.block().lines()[-1], sm.replacementInstructions())
+    id += 1
 
   with open("application.s", 'w') as file:
     file.write(str(stream))
@@ -141,18 +145,23 @@ def generateTemplates(logger, selectedStateMachines):
   resetPortDefs = ""
   resetPortSets = ""
 
+  selPortsMap = ""
+  rstPortsMap = ""
+
   resetPorts = translator.getControllerResetPorts(selectedStateMachines)
 
   for port in resetPorts:
-    resetPortDefs += "        " + port + " : out std_logic;\n"
+    resetPortDefs += "            " + port + " : out std_logic;\n"
     resetPortSets += "            " + port + " <= '1';\n"
+    rstPortsMap += "        " + port + " => " + port + ",\n"
 
   selPortDefs = ""
 
   selPorts = translator.getControllerSelectPorts(selectedStateMachines)
 
   for port in selPorts:
-    selPortDefs += "        " + port + " : out std_logic;\n"
+    selPortDefs += "            " + port + " : out std_logic;\n"
+    selPortsMap += "        " + port + " => " + port + ",\n"
 
   reportStart = translator.reportAcceleratorStart(selectedStateMachines)
 
@@ -164,7 +173,9 @@ def generateTemplates(logger, selectedStateMachines):
     "STATEMACHINE_SIGNALS": signals,
     "STATEMACHINE_SEL_PORTS": selPortDefs,
     "STATEMACHINE_RST_PORTS": resetPortDefs,
-    "REPORT_ACCEL_START": reportStart
+    "REPORT_ACCEL_START": reportStart,
+    "STATEMACHINE_SEL_PORTS_MAP": selPortsMap,
+    "STATEMACHINE_RST_PORTS_MAP": rstPortsMap
   }
 
   # Generate testbench template.
@@ -188,13 +199,16 @@ def generateTemplates(logger, selectedStateMachines):
 
   templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
 
-  writesToRegisters = translator.getControllerWriteRegisters()
+  writesToRegisters = translator.getControllerWriteRegisters(selectedStateMachines)
   readsFromRegisters = translator.getControllerReadRegisters()
+
+  unreset = translator.getControllerUnreset(selectedStateMachines)
 
   vars_controller = {
     "WRITE_REG_TO_ACCEL": writesToRegisters,
     "READ_REG_FROM_ACCEL": readsFromRegisters,
     "RESET_STATEMACHINES": resetPortSets,
+    "UNRESET_STATEMACHINES": unreset,
     "STATEMACHINE_RST_PORTS": resetPortDefs,
     "STATEMACHINE_SEL_PORTS": selPortDefs
   }

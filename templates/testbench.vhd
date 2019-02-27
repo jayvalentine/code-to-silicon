@@ -354,6 +354,8 @@ architecture Behavioral of testbench is
     signal clk_hold                 : std_logic := '0';
     signal cycles                   : Integer := 0;
 
+    signal accel_started            : std_logic := '0';
+
     function byte_to_hex(b: std_logic_vector(7 downto 0)) return string is
         variable upper : character;
         variable lower : character;
@@ -428,6 +430,10 @@ begin
     (
         clk                     => clk,
         rst                     => rst,
+
+%%STATEMACHINE_SEL_PORTS_MAP%%
+
+%%STATEMACHINE_RST_PORTS_MAP%%
 
         reg_from_accel_01       => reg_from_accel_01,
         reg_from_accel_02       => reg_from_accel_02,
