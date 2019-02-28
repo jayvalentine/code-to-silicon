@@ -64,6 +64,9 @@ class StateMachine:
     for output in self.outputRegisters():
       replace.append(instructions.InputInstruction("lwi", 31, None, output, (output)*4, None))
 
+    # Read the special port at offset 0 to reset the controller.
+    replace.append(instructions.InputInstruction("lwi", 31, None, 0, 0, None))
+
     return replace
 
   def toTikzDef(self):

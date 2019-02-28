@@ -138,7 +138,7 @@ begin
 
 %%STATEMACHINES_DONE%%
 
-            if int_state = S_DONE or int_state = S_READY then
+            if int_state = S_READY then
                 M_AXI_DP_0_awready <= '1';
                 M_AXI_DP_0_wready <= '1';
             else

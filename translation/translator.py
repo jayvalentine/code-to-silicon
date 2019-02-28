@@ -400,13 +400,28 @@ def getControllerWriteRegisters(stateMachines):
 
   return str(tw)
 
-def getControllerReadRegisters():
+def getControllerReadRegisters(stateMachines):
   tw = text.TextWriter(4, "--")
   tw.increaseIndent()
   tw.increaseIndent()
   tw.increaseIndent()
   tw.increaseIndent()
   tw.increaseIndent()
+
+  tw.writeLine("when x\"44A00000\" =>")
+  tw.increaseIndent()
+  tw.writeLine("if int_state = S_DONE then")
+  tw.increaseIndent()
+  tw.writeCommentLine("Reset all state machines.")
+  for sm in stateMachines:
+    tw.writeLine(sm.name() + "_rst <= '1';")
+
+  tw.writeBlankLine()
+  tw.writeCommentLine("Put controller into READY state.")
+  tw.writeLine("int_state <= S_READY;")
+  tw.decreaseIndent()
+  tw.writeLine("end if;")
+  tw.decreaseIndent()
 
   for i in range(1,32):
     tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
@@ -476,8 +491,6 @@ def getControllerStateMachinesDone(stateMachines):
     tw.increaseIndent()
     tw.writeLine("int_state <= S_DONE;")
     tw.writeLine(sm.name() + "_sel <= '0';")
-    tw.writeLine(sm.name() + "_rst <= '1';")
-    tw.writeLine("report \"TESTBENCH: SM DONE.\";")
     tw.decreaseIndent()
     tw.writeLine("end if;")
 

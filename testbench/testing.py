@@ -201,7 +201,7 @@ def generateTemplates(logger, selectedStateMachines):
   templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
 
   writesToRegisters = translator.getControllerWriteRegisters(selectedStateMachines)
-  readsFromRegisters = translator.getControllerReadRegisters()
+  readsFromRegisters = translator.getControllerReadRegisters(selectedStateMachines)
 
   unreset = translator.getControllerUnreset(selectedStateMachines)
   stateMachinesDone = translator.getControllerStateMachinesDone(selectedStateMachines)
