@@ -337,6 +337,7 @@ These are instructions relating to system operation, and are therefore not trans
 as they make no sense outside of the context of executing on the Microblaze core.
 These are:
 
+mbar
 mfs
 mts
 msrclr

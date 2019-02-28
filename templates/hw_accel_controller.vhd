@@ -123,14 +123,9 @@ architecture hw_accel_controller_behav of hw_accel_controller is
         S_READY
     );
 
-    type READ_STATE is (
-        ADDRESS_WAITING,
-        ADDRESS_LATCHED
-    );
-
     signal int_state : STATE := S_READY;
-    signal transaction_state : READ_STATE := ADDRESS_WAITING;
-    signal read_addr : std_logic_vector(31 downto 0);
+
+    signal addr_latch : std_logic_vector(31 downto 0);
 begin
     control_proc : process(clk, rst)
     begin
@@ -167,27 +162,22 @@ begin
                 M_AXI_DP_0_bvalid <= '0';
             end if;
 
-            if int_state = S_DONE then
+            if M_AXI_DP_0_arvalid = '1' then
                 M_AXI_DP_0_arready <= '1';
-            else
-                M_AXI_DP_0_arready <= '0';
-            end if;
-
-            -- Latch address if we get a valid address from MicroBlaze core.
-            if M_AXI_DP_0_arvalid = '1' and transaction_state = ADDRESS_WAITING then
-                read_addr <= M_AXI_DP_0_araddr;
-                transaction_state <= ADDRESS_LATCHED;
+                addr_latch <= M_AXI_DP_0_araddr;
             end if;
 
             if M_AXI_DP_0_rready = '1' and int_state = S_DONE then
-                case read_addr is
-%%READ_REG_FROM_ACCEL%%
+                case addr_latch is
+    %%READ_REG_FROM_ACCEL%%
                 end case;
 
                 M_AXI_DP_0_rvalid <= '1';
-                transaction_state <= ADDRESS_WAITING;
+                M_AXI_DP_0_rresp <= "00";
             else
+                M_AXI_DP_0_arready <= '0';
                 M_AXI_DP_0_rvalid <= '0';
+                M_AXI_DP_0_rresp <= "10";
             end if;
 
             if m_rd = '1' then
