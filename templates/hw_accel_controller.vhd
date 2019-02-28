@@ -128,6 +128,7 @@ begin
     control_proc : process(clk, rst)
     begin
         if rst = '1' then
+            m_rdy <= '0';
 %%RESET_STATEMACHINES%%
 
         else
@@ -177,6 +178,36 @@ begin
                 end if;
             else
                 M_AXI_DP_0_rvalid <= '0';
+            end if;
+
+            if m_rd = '1' then
+                LMB_M_0_abus <= m_addr;
+                LMB_M_0_addrstrobe <= '1';
+
+                LMB_M_0_readstrobe <= '1';
+                LMB_M_0_writestrobe <= '0';
+            elsif m_wr = '1' then
+                LMB_M_0_abus <= m_addr;
+                LMB_M_0_addrstrobe <= '1';
+
+                LMB_M_0_writedbus <= m_data_from_accel;
+                LMB_M_0_readstrobe <= '0';
+                LMB_M_0_writestrobe <= '1';
+            else
+                LMB_M_0_addrstrobe <= '0';
+                LMB_M_0_readstrobe <= '0';
+                LMB_M_0_writestrobe <= '0';
+            end if;
+
+            if LMB_M_0_ready = '1' then
+                LMB_M_0_addrstrobe <= '0';
+                LMB_M_0_readstrobe <= '0';
+                LMB_M_0_writestrobe <= '0';
+
+                m_data_to_accel <= LMB_M_0_readdbus;
+                m_rdy <= '1';
+            else
+                m_rdy <= '0';
             end if;
         end if;
     end process control_proc;
