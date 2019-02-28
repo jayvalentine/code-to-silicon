@@ -472,7 +472,7 @@ def getControllerStateMachinesDone(stateMachines):
   tw.increaseIndent()
 
   for sm in stateMachines:
-    tw.writeLine("if rising_edge(" + sm.name() + "_done) then")
+    tw.writeLine("if " + sm.name() + "_done = '1' then")
     tw.increaseIndent()
     tw.writeLine("int_state <= S_DONE;")
     tw.writeLine(sm.name() + "_sel <= '0';")
