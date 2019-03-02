@@ -1,4 +1,4 @@
-OUTPUT_FORMAT(elf32-microblazeel)
+OUTPUT_FORMAT(elf32-microblaze)
 
 STACK_SIZE = 512;
 
