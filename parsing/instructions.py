@@ -11,6 +11,7 @@ CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
 REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
 IMMEDIATE_FORMAT_RE = re.compile("(-?\d+)")
 LABEL_FORMAT_RE = re.compile("(\$?\w+)")
+REL_LABEL_FORMAT_RE = re.compile("(\.-?\d+)")
 
 INSTRUCTION_STRING_TEMPLATE = "{:10}{:24}"
 
@@ -63,27 +64,25 @@ class Instruction(streams.StreamItem):
   """
   def __str__(self):
 
-    params = ""
+    params = []
 
     if self._rD != None:
-      params += "r" + str(self._rD)
-      params += ", "
+      params.append("r" + str(self._rD))
 
     if self._rA != None:
-      params += "r" + str(self._rA)
-      params += ", "
+      params.append("r" + str(self._rA))
 
     # If imm is None, we assume this is format A (2 source registers).
     # The last element of the string in this case is rB.
     # Otherwise it is the immediate or label.
     if self._imm == None and self._rB != None:
-      params += "r" + str(self._rB)
+      params.append("r" + str(self._rB))
     elif self._imm != None:
-      params += str(self._imm)
+      params.append(str(self._imm))
     elif self._label != None:
-      params += str(self._label)
+      params.append(str(self._label))
 
-    return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, params)
+    return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, ",".join(params))
 
   def mnemonic(self):
     return self._mnemonic
@@ -505,6 +504,9 @@ def parseLabel(s):
   m = LABEL_FORMAT_RE.match(s)
 
   if m == None:
-    return None
+    # Try parsing as a relative label (e.g. '.-4')
+    m = REL_LABEL_FORMAT_RE.match(s)
+    if m == None:
+      return None
 
   return str(m.groups()[0])

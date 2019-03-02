@@ -91,9 +91,6 @@ class BasicBlock:
     self._lastLine = line
 
   def last(self):
-    if self._last == None:
-      raise ValueError("Last instruction of block not set.")
-
     return self._last
 
   def lastLine(self):
@@ -170,7 +167,7 @@ class BasicBlock:
     # r3-12 are caller save, and so will be restored upon returning from the function.
     # However, r3-r4 are function returns, so obviously are output registers from an end-of-function
     # block. Therefore, if the last instruction in this block is a return, we can exclude r5-r12.
-    if self.last().isReturn():
+    if self.last() != None and self.last().isReturn():
       for r in range(5, 13):
         if r in outputs:
           outputs.remove(r)
@@ -238,7 +235,10 @@ def extractBasicBlocks(logger, stream):
       if currentBlock != None:
         blocks.append(currentBlock)
 
-      currentBlock = BasicBlock(s.name() + "_line{:04d}".format(i), currentFunction, s.name())
+      if currentFunction == None:
+        logger.warn("No function detected for label " + s.name() + ". Ignoring label.")
+      else:
+        currentBlock = BasicBlock(s.name() + "_line{:04d}".format(i), currentFunction, s.name())
     elif s.isDirective():
       if s.directive() == "type" and s.args(1) == "@function":
           currentFunction = s.args(0)
@@ -263,60 +263,77 @@ def linkBasicBlocks(logger, blocks):
 
     # We should never see a basic block which doesn't end with a control flow instruction.
     lastInstruction = b.last()
-    if not lastInstruction.isBasicBlockBoundary():
+    if lastInstruction != None and not lastInstruction.isBasicBlockBoundary():
       raise ValueError("Expected control flow instruction as end of block " + b.name() + ", got " + str(lastInstruction))
 
     # If this is a normal branch instruction, find the block we're branching to.
-    if lastInstruction.isBranch():
-      branchLabel = lastInstruction.label()
+    if lastInstruction != None:
+        if lastInstruction.isBranch():
+          branchLabel = lastInstruction.label()
 
-      blocksWithLabel = list(filter(lambda b: b.label() == branchLabel, blocks))
+          blocksWithLabel = list(filter(lambda b: b.label() == branchLabel, blocks))
 
-      if len(blocksWithLabel) > 1:
-        raise ValueError("Label " + branchLabel + " is ambiguous (" + str(len(blocksWithLabel)) + " matches)")
-      elif len(blocksWithLabel) < 1:
-        logger.warn("Unknown label: " + branchLabel)
-        b.addUnknownNext()
-      else:
-        b.addNext(blocksWithLabel[0])
+          if len(blocksWithLabel) > 1:
+            raise ValueError("Label " + branchLabel + " is ambiguous (" + str(len(blocksWithLabel)) + " matches)")
+          elif len(blocksWithLabel) < 1:
+            logger.warn("Unknown label: " + branchLabel)
+            b.addUnknownNext()
+          else:
+            b.addNext(blocksWithLabel[0])
 
-    elif lastInstruction.isReturn():
-      # Get the name of the function this block is in.
-      currentFunction = b.function()
+        elif lastInstruction.isReturn():
+          # Get the name of the function this block is in.
+          currentFunction = b.function()
 
-      # Find all callsites for this function.
-      callsites = []
-      for otherB in blocks:
-        if otherB.last().label() == currentFunction:
-          logger.debug("Found callsite for function " + currentFunction + " in block " + otherB.name())
-          callsites.append(otherB)
+          # Find all callsites for this function.
+          callsites = []
+          for otherB in blocks:
+            if otherB.last() != None and otherB.last().label() == currentFunction:
+              logger.debug("Found callsite for function " + currentFunction + " in block " + otherB.name())
+              callsites.append(otherB)
 
-      # For each callsite, identify the return instruction.
-      # This is usually the next instruction (textually speaking),
-      # but in the case of delayed-branch instructions, we actually skip ahead two instructions
-      # (because the instruction immediately after the delayed-branch is the delay slot instruction).
-      for otherB in callsites:
-        # line number of last instruction
-        lineNo = otherB.lastLine()
+          # For each callsite, identify the return instruction.
+          # This is usually the next instruction (textually speaking),
+          # but in the case of delayed-branch instructions, we actually skip ahead two instructions
+          # (because the instruction immediately after the delayed-branch is the delay slot instruction).
+          for otherB in callsites:
+            # line number of last instruction
+            lineNo = otherB.lastLine()
 
-        if otherB.last().hasDelay():
-          returnLine = lineNo + 2
-        else:
-          returnLine = lineNo + 1
+            if otherB.last() != None and otherB.last().hasDelay():
+              returnLine = lineNo + 2
+            else:
+              returnLine = lineNo + 1
 
-        # Find the next block at this line.
-        foundBlock = None
-        while foundBlock == None:
-          for searchBlock in blocks:
-            if searchBlock.lines()[0] == returnLine:
-              foundBlock = searchBlock
+            # Find the next block at this line.
+            foundBlock = None
+            while foundBlock == None:
+              for searchBlock in blocks:
+                if searchBlock.lines()[0] == returnLine:
+                  foundBlock = searchBlock
 
-          returnLine += 1
+              returnLine += 1
 
-        logger.debug("Found return block for function " + currentFunction + ": block " + foundBlock.name())
-        b.addNext(foundBlock)
+            logger.debug("Found return block for function " + currentFunction + ": block " + foundBlock.name())
+            b.addNext(foundBlock)
 
-      # We can't know if we've found all return sites for this function, so add an unknown next.
-      b.addUnknownNext()
+          # We can't know if we've found all return sites for this function, so add an unknown next.
+          b.addUnknownNext()
+
+    # Otherwise this basic block simply runs into another one. Find the next block.
+    else:
+      nextLine = b.lines()[-1] + 1
+
+      foundBlock = None
+      while foundBlock == None:
+        for otherB in blocks:
+          startLine = otherB.lines()[0]
+          if startLine == nextLine:
+            foundBlock = otherB
+
+        nextLine += 1
+
+      logger.debug("Found next block for " + b.name() + ": " + foundBlock.name() + ".")
+      b.addNext(foundBlock)
 
   return blocks

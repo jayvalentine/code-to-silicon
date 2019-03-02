@@ -108,7 +108,7 @@ def generateStateMachines(logger, num):
     stream.replaceLines(sm.block().lines()[0], sm.block().lines()[-1], sm.replacementInstructions())
     id += 1
 
-  with open("application.s", 'w') as file:
+  with open("application_new.s", 'w') as file:
     file.write(str(stream))
 
   return selected
@@ -120,7 +120,7 @@ def compileHarness(logger):
 
   # Link the assembly file with start.s, and make a hex file.
   # Disassemble this file for later reference.
-  compiler.link(logger, ["application.s", "test.s", "main.s", "start.s"], "main.elf")
+  compiler.link(logger, ["application_new.s", "test.s", "main.s", "start.s"], "main.elf")
   compiler.makeHex(logger, "main.elf", "main.hex")
   compiler.disassembleElf(logger, "main.elf", "main.asm")
 

@@ -22,10 +22,10 @@ class Stream:
       if item.isLabel():
         s += str(item)
       else:
-        s += "    " + str(item)
+        s += "\t" + str(item)
       s += "\n"
 
-    return s[:-1]
+    return s
 
   def __len__(self):
     return len(self._items)

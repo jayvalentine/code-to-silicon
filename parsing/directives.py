@@ -36,14 +36,22 @@ def parseDirective(directiveString):
   if directiveString[0] != ".":
     raise ValueError(directiveString + " is not a valid directive: does not start with '.'.")
 
-  directiveSplit = directiveString[1:].split()
+
+  firstSpace = directiveString.find("\t")
+  if firstSpace == -1:
+    firstSpace = directiveString.find(" ")
+
+  if firstSpace != -1:
+    directiveSplit = [directiveString[1:firstSpace], directiveString[firstSpace:].lstrip()]
+  else:
+    directiveSplit = [directiveString[1:]]
 
   directive = directiveSplit[0]
 
   if len(directiveSplit) > 1:
     # We might have some spaces which means we will have accidentally split up our arg string.
     # Join it again so that it's just comma-separated.
-    argString = "".join(directiveSplit[1:])
+    argString = directiveSplit[1]
     args = list(map(lambda a: a.strip(), argString.split(",")))
   else:
     args = []

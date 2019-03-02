@@ -22,15 +22,21 @@ def compile(logger, files, output):
 def link(logger, files, output):
   out = common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles"] + ["-o", output] + files)
 
+  print(out[2])
+
   logger.debug("GCC: " + out[0])
 
 def makeHex(logger, objfile, hexfile):
   out = common.run_command(OBJCOPY, ["-O", "ihex", objfile, hexfile])
 
+  print(out[2])
+
   logger.debug("OBJCOPY: " + out[0])
 
 def disassembleElf(logger, elffile, asmfile):
   out = common.run_command(OBJDUMP, ["-d", elffile])
+
+  print(out[2])
 
   with open(asmfile, 'w') as file:
     file.write(out[1])
