@@ -129,7 +129,7 @@ architecture hw_accel_controller_behav of hw_accel_controller is
 
     signal int_state : STATE := S_READY;
 begin
-    control_proc : process(clk, rst)
+    control_proc : process(clk, rst, m_rd, m_wr)
     begin
         if rst = '1' then
             int_state <= S_READY;
@@ -138,60 +138,7 @@ begin
 
 %%RESET_STATEMACHINES%%
 
-        elsif rising_edge(clk) then
-%%UNRESET_STATEMACHINES%%
-
-            wakeup <= "00";
-
-            M_AXI_DP_0_awready <= '0';
-            M_AXI_DP_0_wready <= '0';
-
-            M_AXI_DP_0_bvalid <= '0';
-
-            M_AXI_DP_0_arready <= '0';
-            M_AXI_DP_0_rvalid <= '0';
-            M_AXI_DP_0_rresp <= "10";
-
-            case int_state is
-            when S_WAITING_FOR_CORE =>
-%%STATEMACHINES_DONE%%
-
-            when S_READY =>
-                M_AXI_DP_0_awready <= '1';
-                M_AXI_DP_0_wready <= '1';
-
-                -- Write transaction.
-                if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
-                    case M_AXI_DP_0_awaddr is
-%%WRITE_REG_TO_ACCEL%%
-                    end case;
-                end if;
-
-                if M_AXI_DP_0_bready = '1' then
-                    M_AXI_DP_0_bresp <= "00";
-                    M_AXI_DP_0_bvalid <= '1';
-                end if;
-
-            when S_DONE =>
-                wakeup <= "11";
-
-                if sleep = '0' then
-                    int_state <= S_WAITING_FOR_MB;
-                end if;
-
-            when S_WAITING_FOR_MB =>
-                M_AXI_DP_0_arready <= '1';
-
-                if M_AXI_DP_0_rready = '1' then
-                    case M_AXI_DP_0_araddr is
-    %%READ_REG_FROM_ACCEL%%
-                    end case;
-
-                    M_AXI_DP_0_rvalid <= '1';
-                    M_AXI_DP_0_rresp <= "00";
-                end if;
-            end case;
-
+        else
             if m_rd = '1' then
                 LMB_M_0_abus <= m_addr;
                 LMB_M_0_addrstrobe <= '1';
@@ -211,15 +158,66 @@ begin
                 LMB_M_0_writestrobe <= '0';
             end if;
 
-            if LMB_M_0_ready = '1' then
-                LMB_M_0_addrstrobe <= '0';
-                LMB_M_0_readstrobe <= '0';
-                LMB_M_0_writestrobe <= '0';
+            if rising_edge(clk) then
+%%UNRESET_STATEMACHINES%%
 
-                m_data_to_accel <= LMB_M_0_readdbus;
-                m_rdy <= '1';
-            else
-                m_rdy <= '0';
+                if LMB_M_0_ready = '1' then
+                    m_data_to_accel <= LMB_M_0_readdbus;
+                    m_rdy <= '1';
+                else
+                    m_rdy <= '0';
+                end if;
+
+                wakeup <= "00";
+
+                M_AXI_DP_0_awready <= '0';
+                M_AXI_DP_0_wready <= '0';
+
+                M_AXI_DP_0_bvalid <= '0';
+
+                M_AXI_DP_0_arready <= '0';
+                M_AXI_DP_0_rvalid <= '0';
+                M_AXI_DP_0_rresp <= "10";
+
+                case int_state is
+                when S_WAITING_FOR_CORE =>
+%%STATEMACHINES_DONE%%
+
+                when S_READY =>
+                    M_AXI_DP_0_awready <= '1';
+                    M_AXI_DP_0_wready <= '1';
+
+                    -- Write transaction.
+                    if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
+                        case M_AXI_DP_0_awaddr is
+%%WRITE_REG_TO_ACCEL%%
+                        end case;
+                    end if;
+
+                    if M_AXI_DP_0_bready = '1' then
+                        M_AXI_DP_0_bresp <= "00";
+                        M_AXI_DP_0_bvalid <= '1';
+                    end if;
+
+                when S_DONE =>
+                    wakeup <= "11";
+
+                    if sleep = '0' then
+                        int_state <= S_WAITING_FOR_MB;
+                    end if;
+
+                when S_WAITING_FOR_MB =>
+                    M_AXI_DP_0_arready <= '1';
+
+                    if M_AXI_DP_0_rready = '1' then
+                        case M_AXI_DP_0_araddr is
+%%READ_REG_FROM_ACCEL%%
+                        end case;
+
+                        M_AXI_DP_0_rvalid <= '1';
+                        M_AXI_DP_0_rresp <= "00";
+                    end if;
+                end case;
             end if;
         end if;
     end process control_proc;
