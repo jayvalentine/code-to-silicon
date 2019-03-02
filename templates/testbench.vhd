@@ -41,6 +41,9 @@ architecture Behavioral of testbench is
             clk                     : in std_logic;
             rst                     : in std_logic;
 
+            wakeup                  : out std_logic_vector(1 downto 0);
+            sleep                   : in std_logic;
+
 %%STATEMACHINE_PORTS%%
 
             m_rdy                   : out std_logic;
@@ -197,6 +200,8 @@ architecture Behavioral of testbench is
             M_AXI_DP_0_wready : in STD_LOGIC;
             M_AXI_DP_0_wstrb : out STD_LOGIC_VECTOR ( 3 downto 0 );
             M_AXI_DP_0_wvalid : out STD_LOGIC;
+            Sleep_0 : out STD_LOGIC;
+            Wakeup_0 : in STD_LOGIC_VECTOR ( 0 to 1 );
             clk_100MHz : in STD_LOGIC;
             rst : in STD_LOGIC
         );
@@ -346,6 +351,9 @@ architecture Behavioral of testbench is
     signal BRAM_PORT_DATA_rst  : STD_LOGIC;
     signal BRAM_PORT_DATA_we   : STD_LOGIC_VECTOR ( 0 to 3 );
 
+    signal Sleep_0             : STD_LOGIC;
+    signal Wakeup_0            : STD_LOGIC_VECTOR ( 0 to 1 );
+
 %%STATEMACHINE_SIGNALS%%
 
     constant clk_period             : time := 10ns;
@@ -353,6 +361,7 @@ architecture Behavioral of testbench is
     signal cycles                   : Integer := 0;
 
     signal accel_started            : std_logic := '0';
+    signal sleep_mode               : std_logic := '0';
 
     function byte_to_hex(b: std_logic_vector(7 downto 0)) return string is
         variable upper : character;
@@ -499,6 +508,9 @@ begin
         m_rd                    => m_rd,
         m_wr                    => m_wr,
 
+        wakeup                  => Wakeup_0,
+        sleep                   => Sleep_0,
+
         m_addr                  => m_addr,
         m_data_to_accel         => m_data_to_accel,
         m_data_from_accel       => m_data_from_accel,
@@ -587,7 +599,10 @@ begin
         BRAM_PORT_DATA_dout     => BRAM_PORT_DATA_dout,
         BRAM_PORT_DATA_en       => BRAM_PORT_DATA_en,
         BRAM_PORT_DATA_rst      => BRAM_PORT_DATA_rst,
-        BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we
+        BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we,
+
+        Sleep_0                 => Sleep_0,
+        Wakeup_0                => Wakeup_0
     );
 
     mem_uut : memory port map
@@ -631,6 +646,8 @@ begin
         wait for clk_period;
         rst <= '0';
 
+        report "TESTBENCH: TEST START.";
+
         loop
             -- Report any writes on the AXI bus.
             if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
@@ -648,6 +665,15 @@ begin
 
             -- Report if any hardware accelerators have been started or have finished.
 %%REPORT_ACCEL_START%%
+
+            -- Report the MicroBlaze core going to sleep or waking up.
+            if Sleep_0 = '1' and sleep_mode = '0' then
+                report "TESTBENCH: MICROBLAZE SLEEP.";
+                sleep_mode <= '1';
+            elsif Sleep_0 = '0' and sleep_mode = '1' then
+                report "TESTBENCH: MICROBLAZE WAKEUP.";
+                sleep_mode <= '0';
+            end if;
 
             -- Trap if we reach the test_failed function, and report the test failure.
             if BRAM_PORT_INST_addr = x"%%FAILED_ADDR%%" then

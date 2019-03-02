@@ -7,6 +7,9 @@ entity hw_accel_controller is
         clk                     : in std_logic;
         rst                     : in std_logic;
 
+        wakeup                  : out std_logic_vector(1 downto 0);
+        sleep                   : in std_logic;
+
         m_rdy                   : out std_logic;
         m_wr                    : in std_logic;
         m_rd                    : in std_logic;
@@ -119,66 +122,75 @@ end entity hw_accel_controller;
 architecture hw_accel_controller_behav of hw_accel_controller is
     type STATE is (
         S_DONE,
-        S_WAITING,
+        S_WAITING_FOR_CORE,
+        S_WAITING_FOR_MB,
         S_READY
     );
 
     signal int_state : STATE := S_READY;
-
-    signal addr_latch : std_logic_vector(31 downto 0);
 begin
     control_proc : process(clk, rst)
     begin
         if rst = '1' then
+            int_state <= S_READY;
             m_rdy <= '0';
+            wakeup <= "00";
+
 %%RESET_STATEMACHINES%%
 
-        else
-            if rising_edge(clk) then
+        elsif rising_edge(clk) then
 %%UNRESET_STATEMACHINES%%
-            end if;
 
+            wakeup <= "00";
+
+            M_AXI_DP_0_awready <= '0';
+            M_AXI_DP_0_wready <= '0';
+
+            M_AXI_DP_0_bvalid <= '0';
+
+            M_AXI_DP_0_arready <= '0';
+            M_AXI_DP_0_rvalid <= '0';
+            M_AXI_DP_0_rresp <= "10";
+
+            case int_state is
+            when S_WAITING_FOR_CORE =>
 %%STATEMACHINES_DONE%%
 
-            if int_state = S_READY then
+            when S_READY =>
                 M_AXI_DP_0_awready <= '1';
                 M_AXI_DP_0_wready <= '1';
-            else
-                M_AXI_DP_0_awready <= '0';
-                M_AXI_DP_0_wready <= '0';
-            end if;
 
-            -- Write transaction.
-            if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
-                case M_AXI_DP_0_awaddr is
+                -- Write transaction.
+                if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
+                    case M_AXI_DP_0_awaddr is
 %%WRITE_REG_TO_ACCEL%%
-                end case;
-            end if;
+                    end case;
+                end if;
 
-            if M_AXI_DP_0_bready = '1' then
-                M_AXI_DP_0_bresp <= "00";
-                M_AXI_DP_0_bvalid <= '1';
-            else
-                M_AXI_DP_0_bvalid <= '0';
-            end if;
+                if M_AXI_DP_0_bready = '1' then
+                    M_AXI_DP_0_bresp <= "00";
+                    M_AXI_DP_0_bvalid <= '1';
+                end if;
 
-            if M_AXI_DP_0_arvalid = '1' then
+            when S_DONE =>
+                wakeup <= "11";
+
+                if sleep = '0' then
+                    int_state <= S_WAITING_FOR_MB;
+                end if;
+
+            when S_WAITING_FOR_MB =>
                 M_AXI_DP_0_arready <= '1';
-                addr_latch <= M_AXI_DP_0_araddr;
-            end if;
 
-            if M_AXI_DP_0_rready = '1' and int_state = S_DONE then
-                case addr_latch is
+                if M_AXI_DP_0_rready = '1' then
+                    case M_AXI_DP_0_araddr is
     %%READ_REG_FROM_ACCEL%%
-                end case;
+                    end case;
 
-                M_AXI_DP_0_rvalid <= '1';
-                M_AXI_DP_0_rresp <= "00";
-            else
-                M_AXI_DP_0_arready <= '0';
-                M_AXI_DP_0_rvalid <= '0';
-                M_AXI_DP_0_rresp <= "10";
-            end if;
+                    M_AXI_DP_0_rvalid <= '1';
+                    M_AXI_DP_0_rresp <= "00";
+                end if;
+            end case;
 
             if m_rd = '1' then
                 LMB_M_0_abus <= m_addr;

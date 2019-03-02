@@ -149,8 +149,6 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("if rising_edge(clk) then")
   tw.increaseIndent()
 
-  tw.writeLine("report \"TESTBENCH: STATEMACHINE: \" & STATE'image(int_state);")
-
   tw.writeLine("case int_state is")
 
   # Reset state condition.
@@ -375,7 +373,7 @@ def getControllerWriteRegisters(stateMachines):
       tw.writeLine("when x\"{:08x}\" =>".format(2**stateMachines[i].id()))
       tw.increaseIndent()
       tw.writeLine(stateMachines[i].name() + "_sel <= '1';")
-      tw.writeLine("int_state <= S_WAITING;")
+      tw.writeLine("int_state <= S_WAITING_FOR_CORE;")
       tw.writeBlankLine()
       tw.decreaseIndent()
 
@@ -410,8 +408,6 @@ def getControllerReadRegisters(stateMachines):
 
   tw.writeLine("when x\"44A00000\" =>")
   tw.increaseIndent()
-  tw.writeLine("if int_state = S_DONE then")
-  tw.increaseIndent()
   tw.writeCommentLine("Reset all state machines.")
   for sm in stateMachines:
     tw.writeLine(sm.name() + "_rst <= '1';")
@@ -419,8 +415,6 @@ def getControllerReadRegisters(stateMachines):
   tw.writeBlankLine()
   tw.writeCommentLine("Put controller into READY state.")
   tw.writeLine("int_state <= S_READY;")
-  tw.decreaseIndent()
-  tw.writeLine("end if;")
   tw.decreaseIndent()
 
   for i in range(1,32):

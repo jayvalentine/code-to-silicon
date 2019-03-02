@@ -60,6 +60,9 @@ class StateMachine:
     replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 30, (2**self._id), None))
     replace.append(instructions.OutputInstruction("swi", 31, None, 30, 0, None))
 
+    # Go to sleep until wakeup signal from controller.
+    replace.append(instructions.SystemInstruction("mbar", None, None, None, 16, None))
+
     # Read the output registers from the right ports.
     for output in self.outputRegisters():
       replace.append(instructions.InputInstruction("lwi", 31, None, output, (output)*4, None))
