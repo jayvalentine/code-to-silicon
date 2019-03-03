@@ -230,10 +230,23 @@ def extractBasicBlocks(logger, stream):
   currentBlock = None
   currentFunction = None
 
+  delaySlot = False
+  delayBranch = None
+
   for i in range(len(stream)):
     s = stream[i]
 
-    if s.isInstruction():
+    if delaySlot:
+      if not s.isInstruction():
+        raise ValueError("Expected instruction in delay slot, got " + str(s))
+
+      logger.debug("Set delay slot for instruction " + str(delayBranch.mnemonic()) + ".")
+
+      delayBranch.setDelay(s)
+      delaySlot = False
+      delayBranch =  None
+
+    elif s.isInstruction():
       if currentBlock == None:
         currentBlock = BasicBlock("nolabel_line{:04d}".format(i), currentFunction, None)
 
@@ -241,12 +254,19 @@ def extractBasicBlocks(logger, stream):
       # of a basic block, ignore it and skip ahead.
       if type(s) is instructions.NOPInstruction and (len(currentBlock) == 0 or currentBlock == None):
         currentBlock = None
+        delaySlot = False
         continue
 
-      if s.isBasicBlockBoundary():
+      elif s.isBasicBlockBoundary():
         currentBlock.setLast(i, s)
         blocks.append(currentBlock)
-        currentBlock = BasicBlock("nolabel_line{:04d}".format(i), currentFunction, None)
+
+        if s.hasDelay():
+          delaySlot = True
+          delayBranch = s
+          currentBlock = None
+        else:
+          currentBlock = BasicBlock("nolabel_line{:04d}".format(i), currentFunction, None)
       else:
         currentBlock.add(i, s)
     elif s.isLabel():

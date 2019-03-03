@@ -214,6 +214,8 @@ class ControlFlowInstruction(Instruction):
   def isReturn(self):
     return False
 
+  def setDelay(self, instruction):
+    self._delaySlotInstruction = instruction
 """
 Branch instructions. These are a subset of CF instructions which transfer control to another
 point in the program, designated by a label.
