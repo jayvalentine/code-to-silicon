@@ -8,12 +8,12 @@
 
 \tikzset{
   ->, % makes the edges directed
-  node distance=4cm, % specifies the minimum distance between two nodes. Change if necessary.
+  node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
   every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
   initial text=$ $, % sets the text that appears on the start arrow
 }
 
-\newenvironment{monospace}{\ttfamily}{\par}
+\newenvironment{monospace}{\ttfamily\small}{\par}
 
 \BEng
 \supervisor{Dr. Christopher Crispin-Bailey}
@@ -280,6 +280,32 @@ There are four kinds of states in the hardware accelerator model. The start stat
 when activated, transfers inputs from the accelerator's register input ports into internal registers, for use during the
 computation. The end state is the state the accelerator moves to when the computation is complete. In this state, output values
 are transferred from the accelerator's internal registers to the register output ports, to be read by the MicroBlaze core.
+An example abstract state machine is shown in figure ~\ref{fig:abstractStateMachine}.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+  \node[state, initial] (S_START) {S\_START};
+  \node[state, right of=S_START] (S_000) {S\_000};
+  \node[state, below of=S_000] (S_001) {S\_001};
+  \node[state, left of=S_001] (S_002) {S\_002};
+  \node[state, below of=S_001] (S_003) {S\_003};
+  \node[state, left of=S_003] (S_004) {S\_004};
+  \node[state, below of=S_004] (S_END) {S\_END};
+
+  \draw (S_START) edge[above] node{CLK} (S_000);
+  \draw (S_000) edge[loop right] node{CLK} (S_000);
+  \draw (S_000) edge[right] node{M\_RDY} (S_001);
+  \draw (S_001) edge[loop right] node{CLK} (S_001);
+  \draw (S_001) edge[above] node{M\_RDY} (S_002);
+  \draw (S_002) edge[above right] node{CLK} (S_003);
+  \draw (S_003) edge[loop right] node{CLK} (S_003);
+  \draw (S_003) edge[above] node{M\_RDY} (S_004);
+  \draw (S_004) edge[right] node{CLK} (S_END);
+\end{tikzpicture}
+\caption{An example abstract state machine.}
+\label{fig:abstractStateMachine}
+\end{figure}
 
 In between the start and end states are a series of computation and wait states. A computation state is derived from a series of
 non-memory-access instructions (e.g. \texttt{addi} (add-immediate) or \texttt{mul} (integer multiply)). A circuit is constructed
@@ -287,7 +313,7 @@ from the instructions which implements the same functionality, but in parallel, 
 As such, while the instructions represented by a computation state might take several cycles to complete on a general-purpose
 processor, the hardware accelerator can always complete a computation state in a single cycle.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \center{\includegraphics[width=0.75\textwidth]
 {figures/computation-state.png}}
 \caption{Comparison of original program instructions and generated parallel circuit.}
@@ -299,6 +325,151 @@ to the local memory. Each wait state is associated with a single input/output in
 (e.g. \texttt{lwi} (load word immediate) or \texttt{sb} (store byte)). These states can typically be completed within a single
 cycle, but may take more depending on memory latency.
 
+\section{Accessing Cores}
+
+In order for generated hardware accelerators to be at all useful, a lightweight system to allow the MicroBlaze core to
+activate them and retrieve results is required. The accelerator cores are connected, via a controller module, to the
+general-purpose core via the AXI bus, which exposes the controller to MicroBlaze as a set of memory-mapped registers.
+These registers can then be written to and read from using the \texttt{sw} (store word) and \texttt{lw} (load word) instructions.
+
+\subsection{Using a Small-Data Pointer}
+
+The MicroBlaze CPU has two dedicated small-data-area pointers, R2 and R13 \cite{microblaze-ref}.
+A small-data area is an area of memory to which a pointer is held for the duration of an application,
+allowing fast access to the region. Such a pointer can be used to hold the address of the controller module,
+speeding up access to accelerator cores.
+
+\begin{figure}[H]
+    \begin{minipage}[t]{0.5\textwidth}
+      \begin{monospace}
+      \# Save temporary registers.
+
+      swi    r12, r1, -4
+
+      swi    r11, r1, -8
+\\
+
+      \# Get pointer to controller.
+
+      addik  r12, r0, HW\_ACCEL\_PORT
+\\
+
+      \# Write registers.
+
+      swi    rX, r12, (X*4)
+
+      ...
+\\
+
+      \# Activate required core.
+
+      \# C\_id is the core's
+
+      \# numeric ID (0-indexed).
+
+      addik  r11, r0, (1 << C\_id)
+
+      swi    r11, r12, 0
+\\
+
+      \# Sleep until woken.
+
+      mbar   16
+\\
+
+      \# Read registers.
+
+      lwi    rX, r12, (X*4)
+
+      ...
+\\
+
+      \# Read control register.
+
+      \# This resets the core.
+
+      \# The value is discarded.
+
+      lwi    r0, r12, 0
+\\
+
+      \# Restore registers.
+
+      lwi    r11, r1, -8
+
+      lwi    r12, r1, -4
+      \end{monospace}
+    \end{minipage}
+    \begin{minipage}[t]{0.5\textwidth}
+      \begin{monospace}
+      \# Save temporary register.
+
+      swi    r11, r1, -4
+\\
+
+      \# Pointer to controller
+
+      \# is in R13.
+\\
+
+      \# Write registers.
+
+      swi    rX, r13, (X*4)
+
+      ...
+\\
+
+      \# Activate required core.
+
+      \# C\_id is the core's
+
+      \# numeric ID (0-indexed).
+
+      addik  r11, r0, (1 << C\_id)
+
+      swi    r11, r13, 0
+\\
+
+      \# Sleep until woken.
+
+      mbar   16
+\\
+
+      \# Read registers.
+
+      lwi    rX, r13, (X*4)
+
+      ...
+\\
+
+      \# Read control register.
+
+      \# This resets the core.
+
+      \# The value is discarded.
+
+      lwi    r0, r13, 0
+\\
+
+      \# Restore register.
+
+      lwi    r11, r1, -4
+      \end{monospace}
+    \end{minipage}
+
+  \caption{Activating a hardware accelerator core, with (right) and without (left) a small-data pointer.}
+  \label{fig:smallData}
+\end{figure}
+
+As demonstrated in figure ~\ref{fig:smallData}, no temporary register needs to be used to hold a
+pointer to the controller, as the pointer is already stored in the small-data register R13.
+This reduces the number of instructions required to control an accelerator core.
+
+Without the small data area, two extra instructions are required to save and restore a temporary register,
+and another is needed to set up the pointer to the controller. These three instructions are eliminated with the use of a small
+data pointer. This might seem insignificant, but if accelerators are used frequently, the eliminated cycles could provide
+savings in both time and energy.
+
 \section{Code Analysis}
 
 In order to identify the best candidates for extraction into hardware accelerators, some analysis needs to be performed.
@@ -306,7 +477,7 @@ The first step in this analysis is to break the instruction stream up into basic
 code, bounded at both ends by flow control instructions (e.g. branch or call instructions), or a label (indicating that this
 portion of code is the target of a jump somewhere else in the program). These blocks can then be linked
 together into a program-flow graph, in which all nodes are basic blocks, and all edges links between those blocks.
-From this representation, some information about the individual blocks can be extracted. 
+From this representation, some information about the individual blocks can be extracted.
 
 \subsection{Inputs and Outputs}
 
@@ -411,7 +582,8 @@ core.
 
 \chapter{Results}
 
-This section will detail results of testing and benchmarking with the system.
+This section will detail results of testing and benchmarking with the system. The various benchmarks used will be described here,
+and in the following sections different measurements will be presented.
 
 \section{Speedup and Energy Savings}
 
@@ -436,8 +608,14 @@ could give an idea of how accurate the heuristics are.
 
 \section{Discussion of Results}
 
+Discussion of the implications of the results obtained, particularly the more in-depth results such as trends and heuristics.
+
 \section{Further Work}
 
+Proposals of further work to be performed to extend this research.
+
 \section{Conclusion}
+
+\printbibliography
 
 \end{document}
