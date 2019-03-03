@@ -236,7 +236,6 @@ All communication with memory and with the MicroBlaze core by hardware accelerat
 
 This reduces the number of signals required, as the accelerators themselves can use a simplified memory interface to communicate
 with the memory and the MicroBlaze core, rather than each having to separately implement the LMB and AXI protocols.
-In addition, the 
 
 \begin{figure}[h]
 \center{\includegraphics[width=0.75\textwidth]
@@ -367,51 +366,78 @@ the program-flow graph in the same subroutine can be 'pruned' in a similar way. 
 preceeding block, but not a return-value register (R3 or R4), nor an input of the following block, it is not a 'true' output and
 can be assumed to be temporary. This approach can then be applied recursively until the start of the subroutine is reached.
 
-\subsection{Input/Output Overheads}
+\section{Hardware Accelerator Selection Heuristics}
 
-For every input or output register to a block which is to be converted to an accelerator, the data contained within that register
-must be transferred between the processor and the hardware accelerator core. The cycles of overhead for a particular core are
-given by:
+There may be a limited amount of resources available for use as hardware accelerators on any given die. Therefore,
+the system needs to be able to decide which code blocks should be implemented as hardware accelerators and which
+should be left to execute on the general purpose core. A set of heuristics and associated rules were devised to allow
+the system to make this decision in an automated fashion.
 
-\begin{center}
-\[ (\#inputs \times cycles_w) + (\#outputs \times cycles_r) \]
-\end{center}
+\subsection{Input/Output Overhead}
 
-Where \(cycles_w\) and \(cycles_r\) are the number of cycles taken for a read from or write to the hardware accelerator,
-respectively.
+Each accelerator has a number of input and output registers, and these registers must be written to (in the case of inputs)
+and read from (in the case of outputs) the accelerator core by MicroBlaze when a core is used. Each read or write is a transaction
+on the AXI bus, which has an associated overhead. The more inputs or outputs a particular core is, the more expensive its
+overheads will be. However, because the overhead for a block is a fixed cost, it must be considered relative to the size of the
+block itself. For example, a block with 10 cycles of instructions and 2 cycles of overhead has a higher relative overhead
+than a block with 100 cycles of instructions and 10 cycles of overhead.
 
-This means that as the number of inputs or outputs of a block increase, the benefits of converting that block to a hardware
-accelerator will diminish.
+Thus, relative I/O overhead is represented as below:
 
-\subsection{Memory-Access Density}
+\[ \frac{cost_i + cost_o}{\#cycles} \]
 
-The simple hardware accelerator model being used is that of a state machine which alternates between 'wait' states,
-in which the hardware accelerator is waiting on memory for a read or write operation, and 'computation' states,
-in which the hardware accelerator is calculating some values based off its internal registers. While computation states
-can be completed in a single clock cycle, the hardware accelerator may spend several cycles in a wait state, depending
-on the memory latency. Even in the best case, the accelerator will spend at least a single cycle in each wait state.
+Where \(cost_i\) is the cost (in cycles) of transferring inputs from MicroBlaze to the core, \(cost_o\) is the cost (in cycles)
+of transferring outputs from the core to MicroBlaze, and \(\#cycles\) is the number of cycles of instructions in the core. If
+this value is greater than 1, this indicates that the given block would have more I/O overhead than it has instructions,
+making it a poor candidate for translation. Therefore, relative overheads >1 are undesirable, and a core becomes more optimal
+the closer to 0 its relative overhead is.
 
-Because of this, if the translated block contains a large amount of memory-access instructions, and a small amount of computation,
-the accelerator may not provide much of an increase in execution speed over the general purpose processor. Consider the block
-shown in figure ~\ref{fig:highMemoryDensity}: the generated accelerator will alternate between wait and computation states,
-with each computation state containing at most a single instruction. The accelerator will consume the same number of cycles
-executing this operation as the general-purpose processor.
+\subsection{Potential Parallelism}
 
-\begin{figure}[H]
-  \begin{center}
-    \begin{minipage}{0.5\linewidth}
-      \begin{monospace}
-      \input{figures/high-memory-density.tex}
-      \end{monospace}
-    \end{minipage}
-  \end{center}
+The purpose of the hardware accelerator cores being generated is (in part) to extract parallelism out of sequential code.
+This is limited however by the maximum 'width' of any one sequence of computation instructions (i.e. instructions that operate
+only on registers, and not on memory). In extremis, a single computation instruction bounded on both sides by memory-access
+instructions has a 'width' of 1, and is a very poor candidate for parallelism.
 
-  \caption{A block with high memory-access density.}
-  \label{fig:highMemoryDensity}
-\end{figure}
+The core selection process should seek to maximise potential parallelism, as represented below:
 
-Some of these issues can be overcome by compiler optimisation. A compiler could ensure that all the memory access in the example
-is done 'up front', resulting in 3 wait states and 1 computation state. However, if there are dependencies between
-the memory accesses, such an optimization may not be possible.
+\[ \frac{\sum\limits_{c \in C} \#c}{\#C} \]
+
+Where each \(c \in C\) is a computation sequence in the basic block, represented by \(C\), with \(\#c\) being the number of
+instructions in a given sequence, and \(\#C\) being the number of sequences in a given block. Intuitively, this heuristic
+represents the 'average width' of a basic block, and is a predictor of the level of parallelism that can be extracted from the
+block. As such, it is expected that this heuristic be proportional to the instruction-per-cycle (IPC) count of the resulting
+core.
+
+\chapter{Results}
+
+This section will detail results of testing and benchmarking with the system.
+
+\section{Speedup and Energy Savings}
+
+Speedup: cycle count of execution of a range of benchmark applications, with varying numbers of cores (including 0, used
+as the baseline for calculating speedup).
+
+Energy saving: Comparison of post-synthesis energy estimates for baseline (0 cores) and varying number of cores, across
+applications.
+
+\section{Trends in Generated Cores}
+
+Observe trends in generated cores across applications, e.g. input/output counts, IPC (instructions per cycle), state counts.
+
+\section{Effectiveness of Heuristics}
+
+Comparison of different heuristics and their impact on results of the testing. For example, difference in performance between
+'simple' heuristics which evaluate basic blocks before selecting those to be converted and an 'expensive' analysis which converts
+all basic blocks before comparison to see which should be implemented. Comparing performance results between these two 'modes'
+could give an idea of how accurate the heuristics are.
+
+\chapter{Conclusions and Further Work}
+
+\section{Discussion of Results}
+
+\section{Further Work}
+
+\section{Conclusion}
 
 \end{document}
