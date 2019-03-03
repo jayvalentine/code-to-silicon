@@ -18,7 +18,10 @@ class Stream:
   def __str__(self):
     s = ""
 
+    i = 0
     for item in self._items:
+      s += "{:04d}: ".format(i)
+      i += 1
       if item.isLabel():
         s += str(item)
       else:
@@ -70,14 +73,19 @@ class Stream:
     # Check that all the lines we're about to replace are:
     # a. in the stream
     # b. are instructions.
+    startLen = len(self._items)
+
     if start >= len(self._items) or start < 0:
       raise IndexError("Start index is out of range.")
     if end >= len(self._items) or end < 0:
       raise IndexError("End index is out of range.")
 
     for l in range(start, end+1):
-      if not self._items[l].isInstruction:
+      if not self._items[l].isInstruction():
         raise ValueError("Specified range ({:d}, {:d}) is not a contiguous block of instructions.".format(start, end))
 
     # If we've got here without raising an error, it must be safe to slice!
     self._items[start:end+1] = instructions
+
+    # Return the number of lines added or subtracted from the total length.
+    return len(self._items) - startLen

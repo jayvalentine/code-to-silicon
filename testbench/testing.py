@@ -73,6 +73,9 @@ def generateStateMachines(logger, num):
   with open("application.s", 'r') as file:
     stream = parser.parse(file.readlines())
 
+  with open("application.s", 'w') as file:
+    file.write(str(stream))
+
   logger.info("Read " + str(stream.instructionCount())
                       + " instructions, "
                       + str(stream.labelCount())
@@ -91,12 +94,16 @@ def generateStateMachines(logger, num):
   else:
     selected = blocksSorted[:num]
 
+  # Sort in textual order.
+  selected = sorted(selected, key=lambda b: b.lines()[0])
+
   stateMachines = []
   for b in selected:
     sm = statemachine.getStateMachine(b)
     stateMachines.append(sm)
 
   id = 0
+  change = 0
   for sm in stateMachines:
     sm.setId(id)
 
@@ -105,13 +112,13 @@ def generateStateMachines(logger, num):
       logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + ".vhd.")
       file.write(translator.translateStateMachine(sm))
 
-    stream.replaceLines(sm.block().lines()[0], sm.block().lines()[-1], sm.replacementInstructions())
+    change += stream.replaceLines(sm.block().lines()[0]+change, sm.block().lines()[-1]+change, sm.replacementInstructions())
     id += 1
 
   with open("application_new.s", 'w') as file:
     file.write(str(stream))
 
-  return selected
+  return stateMachines
 
 def compileHarness(logger):
   # Compile the harness and test functions.
