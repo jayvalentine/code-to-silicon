@@ -1,12 +1,21 @@
 import text
 
 ADD_FORMAT = "{:s} := {:s} + {:s};"
-ADDI_FORMAT = "{:s} := {:s} + {:d};"
+ADDI_FORMAT = "{:s} := {:s} + {:s};"
+
+AND_FORMAT = "{:s} := {:s} and {:s};"
+ANDI_FORMAT = "{:s} := {:s} and signed({:s});"
 
 OR_FORMAT = "{:s} := {:s} or {:s};"
+ORI_FORMAT = "{:s} := {:s} or signed({:s});"
+
+XOR_FORMAT = "{:s} := {:s} xor {:s};"
+XORI_FORMAT = "{:s} := {:s} xor signed({:s});"
+
+SRL_FORMAT = "{:s} := {:s} srl 1;"
 
 MUL_FORMAT = "{:s} := {:s} * {:s};"
-MULI_FORMAT = "{:s} := {:s} * {:d};"
+MULI_FORMAT = "{:s} := {:s} * {:s};"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -187,9 +196,10 @@ def getArchitecturalDefinition(stateMachine):
       inst = s.instruction()
       # Figure out what the expression is for the memory address.
       # It's either rA+imm or rA+rB.
-      print(inst)
-      if inst.imm != None:
+      if inst.imm() != None:
         expr = "r{reg:02d} + {imm:d}".format(reg = inst.rA(), imm = inst.imm())
+      elif inst.label() != None:
+        expr = "r{reg:02d} + {imm:s}".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
       else:
         expr = "r{regA:02d} + r{regB:02d}".format(regA = inst.rA(), regB = inst.rB())
 
@@ -531,6 +541,11 @@ def translateInstruction(stateName, instruction):
   lines = []
   needsTemp = False
 
+  if instruction.imm() != None:
+    immediate = str(instruction.imm())
+  elif instruction.label() != None:
+    immediate = "%%SYM_" + instruction.label() + "%%"
+
   if mnemonic == "addk":
     lines.append(ADD_FORMAT.format(localName(stateName, instruction.rD()),
                                    localName(stateName, instruction.rA()),
@@ -538,7 +553,8 @@ def translateInstruction(stateName, instruction):
   elif mnemonic == "addik":
     lines.append(ADDI_FORMAT.format(localName(stateName, instruction.rD()),
                                     localName(stateName, instruction.rA()),
-                                    instruction.imm()))
+                                    immediate))
+
   elif mnemonic == "mul":
     # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
     # and then put the lower 32 bits of that variable into the destination register.
@@ -555,13 +571,44 @@ def translateInstruction(stateName, instruction):
     # The generated circuit is the same, but this appeases the VHDL typing gods.
     lines.append(MULI_FORMAT.format("temp64",
                                    localName(stateName, instruction.rA()),
-                                   instruction.imm()))
+                                   immediate))
 
     needsTemp = True
+
+  elif mnemonic == "and":
+    lines.append(AND_FORMAT.format(localName(stateName, instruction.rD()),
+                                   localName(stateName, instruction.rA()),
+                                   localName(stateName, instruction.rB())))
+
+  elif mnemonic == "andi":
+    lines.append(ANDI_FORMAT.format(localName(stateName, instruction.rD()),
+                                    localName(stateName, instruction.rA()),
+                                    immediate))
+
   elif mnemonic == "or":
     lines.append(OR_FORMAT.format(localName(stateName, instruction.rD()),
                                   localName(stateName, instruction.rA()),
                                   localName(stateName, instruction.rB())))
+
+  elif mnemonic == "ori":
+    lines.append(ORI_FORMAT.format(localName(stateName, instruction.rD()),
+                                   localName(stateName, instruction.rA()),
+                                   immediate))
+
+  elif mnemonic == "xor":
+    lines.append(XOR_FORMAT.format(localName(stateName, instruction.rD()),
+                                   localName(stateName, instruction.rA()),
+                                   localName(stateName, instruction.rB())))
+
+  elif mnemonic == "xori":
+    lines.append(XORI_FORMAT.format(localName(stateName, instruction.rD()),
+                                    localName(stateName, instruction.rA()),
+                                    immediate))
+
+  elif mnemonic == "srl":
+    lines.append(SRL_FORMAT.format(localName(stateName, instruction.rD()),
+                                   localName(stateName, instruction.rA())))
+
   else:
     raise ValueError("Unknown instruction for translation: " + str(instruction))
 
