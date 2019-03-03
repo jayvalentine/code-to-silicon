@@ -87,7 +87,10 @@ class BasicBlock:
     return self._label
 
   def cost(self):
-    return (len(self.outputs()) + len(self.inputs())) / len(self._instructions)
+    io_density = (len(self.outputs()) + len(self.inputs())) / len(self._instructions)
+    mem_density = self.memoryAccessDensity()
+
+    return io_density + mem_density
 
   def setLast(self, line, instruction):
     self._last = instruction

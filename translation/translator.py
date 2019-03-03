@@ -3,7 +3,10 @@ import text
 ADD_FORMAT = "{:s} := {:s} + {:s};"
 ADDI_FORMAT = "{:s} := {:s} + {:d};"
 
+OR_FORMAT = "{:s} := {:s} or {:s};"
+
 MUL_FORMAT = "{:s} := {:s} * {:s};"
+MULI_FORMAT = "{:s} := {:s} * {:d};"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -184,6 +187,7 @@ def getArchitecturalDefinition(stateMachine):
       inst = s.instruction()
       # Figure out what the expression is for the memory address.
       # It's either rA+imm or rA+rB.
+      print(inst)
       if inst.imm != None:
         expr = "r{reg:02d} + {imm:d}".format(reg = inst.rA(), imm = inst.imm())
       else:
@@ -543,8 +547,21 @@ def translateInstruction(stateName, instruction):
                                    localName(stateName, instruction.rA()),
                                    localName(stateName, instruction.rB())))
 
+    needsTemp = True
+
+  elif mnemonic == "muli":
+    # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
+    # and then put the lower 32 bits of that variable into the destination register.
+    # The generated circuit is the same, but this appeases the VHDL typing gods.
+    lines.append(MULI_FORMAT.format("temp64",
+                                   localName(stateName, instruction.rA()),
+                                   instruction.imm()))
 
     needsTemp = True
+  elif mnemonic == "or":
+    lines.append(OR_FORMAT.format(localName(stateName, instruction.rD()),
+                                  localName(stateName, instruction.rA()),
+                                  localName(stateName, instruction.rB())))
   else:
     raise ValueError("Unknown instruction for translation: " + str(instruction))
 
