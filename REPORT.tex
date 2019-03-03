@@ -6,6 +6,8 @@
 
 \usepackage{float}
 
+\usepackage{graphicx}
+
 \tikzset{
   ->, % makes the edges directed
   node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
@@ -224,25 +226,25 @@ perform flow control), but also that the implementation of state machines is les
 
 \section{System Architecture}
 
-MicroBlaze \cite{microblaze} is a 32-bit RISC architecture. It is highly configurable, as certain features
-(e.g. FPU, multiplier, barrel shifter) can be disabled if not required. This allows the architecture to be as minimal as is
-required by the application. Because of this, MicroBlaze is often used in embedded environments where power efficiency is
-a significant concern.
+MicroBlaze \cite{microblaze} is a 32-bit RISC architecture, intended for implementation on an FPGA.
+It is highly configurable, as certain features (e.g. FPU, multiplier, barrel shifter) can be disabled if not required.
+This allows the architecture to be as minimal as is required by the application. Because of this, MicroBlaze is often used in
+embedded environments where power efficiency is a significant concern.
 
 The system used in this project consists of one MicroBlaze core, connected to local instruction and data block RAM (BRAM)
 via the local memory bus (LMB). The processor's AXI bus is used to connect to a hardware-accelerator control unit, which is
 in turn connected to one or more hardware accelerator cores, as well as to the BRAM via a standard Xilinx BRAM interface.
 All communication with memory and with the MicroBlaze core by hardware accelerators is managed by the control unit.
 
-This reduces the number of signals required, as the accelerators themselves can use a simplified memory interface to communicate
-with the memory and the MicroBlaze core, rather than each having to separately implement the LMB and AXI protocols.
-
-\begin{figure}[h]
-\center{\includegraphics[width=0.75\textwidth]
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
 {figures/architecture.png}}
 \caption{System architecture.}
 \label{fig:systemArchitecture}
 \end{figure}
+
+This reduces the number of signals required, as the accelerators themselves can use a simplified memory interface to communicate
+with the memory and the MicroBlaze core, rather than each having to separately implement the LMB and AXI protocols.
 
 The LMB is intended for connecting the MicroBlaze core to on-chip BRAM, for use as a local cache memory, with instructions
 and data being stored in off-chip flash or DRAM. The system topology described above allows for a tiled architecture,
@@ -253,10 +255,7 @@ and a single BRAM, with no main flash or DRAM.
 
 \section{Hardware Accelerator Architecture}
 
-Each hardware accelerator is modelled as a sequential state machine, with a sequence of states determined by the structure
-of the code that the hardware accelerator is intended to replace. Each state machine block has a similar interface, as defined in table ~\ref{table:acceleratorSignals}.
-
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{ |p{2cm}|p{2cm}|p{9cm}| }
 \textbf{Signal} & \textbf{Direction} & \multicolumn{1}{c}{\textbf{Description}} \\
@@ -276,13 +275,16 @@ OUT\_Rxx        & O                  & One or more output register lines. Output
 \label{table:acceleratorSignals}
 \end{table}
 
+Each hardware accelerator is modelled as a sequential state machine, with a sequence of states determined by the structure
+of the code that the hardware accelerator is intended to replace. Each state machine block has a similar interface, as defined in table ~\ref{table:acceleratorSignals}.
+
 There are four kinds of states in the hardware accelerator model. The start state, which is the state the accelerator is in
 when activated, transfers inputs from the accelerator's register input ports into internal registers, for use during the
 computation. The end state is the state the accelerator moves to when the computation is complete. In this state, output values
 are transferred from the accelerator's internal registers to the register output ports, to be read by the MicroBlaze core.
 An example abstract state machine is shown in figure ~\ref{fig:abstractStateMachine}.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
   \node[state, initial] (S_START) {S\_START};
@@ -322,15 +324,44 @@ processor, the hardware accelerator can always complete a computation state in a
 
 Each computation state is separated by one or more wait states, in which the accelerator either fetches data from or writes data
 to the local memory. Each wait state is associated with a single input/output instruction
-(e.g. \texttt{lwi} (load word immediate) or \texttt{sb} (store byte)). These states can typically be completed within a single
-cycle, but may take more depending on memory latency.
+(e.g. \texttt{lwi} (load word immediate) or \texttt{sb} (store byte)). These states can typically be completed within two
+cycles, but may take more depending on memory latency (e.g. if other peripherals are using the data bus).
 
 \section{Accessing Cores}
 
-In order for generated hardware accelerators to be at all useful, a lightweight system to allow the MicroBlaze core to
+In order for the generated hardware accelerators to be at all useful, a lightweight system to allow the MicroBlaze core to
 activate them and retrieve results is required. The accelerator cores are connected, via a controller module, to the
 general-purpose core via the AXI bus, which exposes the controller to MicroBlaze as a set of memory-mapped registers.
 These registers can then be written to and read from using the \texttt{sw} (store word) and \texttt{lw} (load word) instructions.
+Table ~\ref{table:controllerRegisters} shows the locations and purpose of these registers.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ |p{6cm}|p{7cm} }
+\textbf{Memory Location}   & \textbf{Description}        \\
+HW\_ACCEL\_PORT            & Control register.         \\[0.05cm]
+HW\_ACCEL\_PORT + 4        & I/O for register R1.      \\[0.05cm]
+...                        & ...                       \\[0.05cm]
+HW\_ACCEL\_PORT + 124      & I/O for register R31.
+\end{tabular}
+\caption{Controller module memory-mapped registers. The symbol HW\_ACCEL\_PORT represents the memory location to which the controller is mapped.}
+\label{table:controllerRegisters}
+\end{table}
+
+\subsection{Transaction Overview}
+
+Before activation, the controller module is in the READY state, waiting for the MicroBlaze core to pass inputs and select
+a core to be activated. The controller module remains in this state as the MicroBlaze core transfers inputs by writing to
+the appropriate controller module register. Once all inputs have been transferred, the required core is activated by writing
+its numeric ID to the special control register. The MicroBlaze core then goes into a 'sleep' mode (by executing a \texttt{mbar}
+instruction) while the controller module activates the core. The controller then goes into the WAITING state.
+
+Once the core has finished its computation, it signals the controller, which goes into the DONE state, and transfers any outputs
+to the controller module. The controller then asserts the MicroBlaze core's wakeup signal, and the MicroBlaze core reads
+the appropriate outputs from the memory-mapped registers. Finally, it reads from the special control register to reset the
+controller and the accelerator core, and the controller again goes into the READY state. The result of this read is discarded,
+as it contains no useful information, and is merely a mechanism by which the MicroBlaze core can signal to the controller that
+it has read all required outputs.
 
 \subsection{Using a Small-Data Pointer}
 
@@ -367,7 +398,7 @@ speeding up access to accelerator cores.
 
       \# numeric ID (0-indexed).
 
-      addik  r11, r0, (1 << C\_id)
+      addik  r11, r0, C\_id
 
       swi    r11, r12, 0
 \\
@@ -425,7 +456,7 @@ speeding up access to accelerator cores.
 
       \# numeric ID (0-indexed).
 
-      addik  r11, r0, (1 << C\_id)
+      addik  r11, r0, C\_id
 
       swi    r11, r13, 0
 \\
@@ -504,15 +535,15 @@ the analysis reporting a large number of 'false outputs'.
 
 In order to solve this problem, the analysis needs to take into account both how the registers are used (as defined by the
 ABI) and the context in which the block exists (i.e. what blocks come before and after it).
-The register descriptions, taken from the ABI, are shown in figure ~\ref{fig:abi}. R3 and R4 are used for returning values from
+The register descriptions, taken from the ABI, are shown in table ~\ref{table:abi}. R3 and R4 are used for returning values from
 subroutines, and so must be outputs from a basic block (if written to) if that block is the last block in a subroutine
 (i.e. the last instruction in it is a \texttt{rtsd} instruction). However, as R5 to R12 are volatile, they are not preserved
 when returning from a subroutine (as they will be restored by the caller). Therefore, if they are written to in the last block
 of a subroutine, they can be discarded as outputs.
 
-\begin{figure}[H]
+\begin{table}[H]
 \centering
-\begin{tabular}{ |p{2cm}|p{2cm}|p{9cm}| }
+\begin{tabular}{ |p{2cm}|p{3cm}|p{8cm}| }
 \textbf{Register} & \textbf{Type} & \multicolumn{1}{c}{\textbf{Description}} \\
 R0       & Dedicated    & Hardcoded 0. \\[0.05cm]
 R1       & Dedicated    & Stack pointer. \\[0.05cm]
@@ -529,8 +560,8 @@ R18      & Dedicated    & Reserved for assembler. \\[0.05cm]
 R19-R31  & Non-volatile & Must be saved across function calls (callee-save).
 \end{tabular}
 \caption{MicroBlaze ABI register descriptions.}
-\label{fig:abi}
-\end{figure}
+\label{table:abi}
+\end{table}
 
 Once the true inputs and outputs of the last block of a subroutine are known, the outputs of any block directly preceeding it in
 the program-flow graph in the same subroutine can be 'pruned' in a similar way. If a volatile register is an output of a
@@ -555,11 +586,15 @@ than a block with 100 cycles of instructions and 10 cycles of overhead.
 
 Thus, relative I/O overhead is represented as below:
 
-\[ \frac{cost_i + cost_o}{\#cycles} \]
+\begin{equation}
+\scalebox{1.5}{$\frac{cost_{in} + cost_{out}}{\#cycles}$}
+\end{equation}
 
-Where \(cost_i\) is the cost (in cycles) of transferring inputs from MicroBlaze to the core, \(cost_o\) is the cost (in cycles)
-of transferring outputs from the core to MicroBlaze, and \(\#cycles\) is the number of cycles of instructions in the core. If
-this value is greater than 1, this indicates that the given block would have more I/O overhead than it has instructions,
+Where \(cost_{in}\) is the cost (in cycles) of transferring inputs from MicroBlaze to the core, \(cost_{out}\) is the cost
+(in cycles) of transferring outputs from the core to MicroBlaze, and \(\#cycles\) is the number of cycles of instructions in the
+core.
+
+If this value is greater than 1, this indicates that the given block would have more I/O overhead than it has instructions,
 making it a poor candidate for translation. Therefore, relative overheads >1 are undesirable, and a core becomes more optimal
 the closer to 0 its relative overhead is.
 
@@ -567,18 +602,43 @@ the closer to 0 its relative overhead is.
 
 The purpose of the hardware accelerator cores being generated is (in part) to extract parallelism out of sequential code.
 This is limited however by the maximum 'width' of any one sequence of computation instructions (i.e. instructions that operate
-only on registers, and not on memory). In extremis, a single computation instruction bounded on both sides by memory-access
-instructions has a 'width' of 1, and is a very poor candidate for parallelism.
+only on registers, and not on memory). In the worst case, a single computation instruction bounded on both sides by memory-access
+instructions has a 'width' of 1, and cannot attain any parallelism whatsoever.
 
 The core selection process should seek to maximise potential parallelism, as represented below:
 
-\[ \frac{\sum\limits_{c \in C} \#c}{\#C} \]
+\begin{equation}
+\scalebox{1.5}{$\frac{\sum\limits_{c \in C} \#c}{\#C}$}
+\end{equation}
 
-Where each \(c \in C\) is a computation sequence in the basic block, represented by \(C\), with \(\#c\) being the number of
-instructions in a given sequence, and \(\#C\) being the number of sequences in a given block. Intuitively, this heuristic
-represents the 'average width' of a basic block, and is a predictor of the level of parallelism that can be extracted from the
-block. As such, it is expected that this heuristic be proportional to the instruction-per-cycle (IPC) count of the resulting
-core.
+Where \(C\) is the set of computation sequences in a basic block, with each \(c \in C\) being an individual sequence.
+\(\#c\) is the number of instructions in a given sequence, and \(\#C\) is the number of sequences in a given block.
+
+Intuitively, this heuristic represents the 'average width' of a basic block, and is a predictor of the level of parallelism that
+can be extracted from the block. As such, it is expected that this heuristic be proportional to the instruction-per-cycle (IPC)
+count of the resulting core.
+
+\subsection{Memory Access Density}
+
+As a core can only access one location in memory at a time, each memory access instruction is converted into its own state.
+In this state, the core sets up control signals, address, and data (if writing) and waits for the memory to respond
+with the 'ready' signal, at which point it reads data (if reading) and continues to the next state. Because each of these
+wait states must take at least one cycle (and usually more), a lower bound on the number of states a core can have is imposed
+by the number of memory accesses in a basic block.
+
+In order to take this into account when selecting basic blocks to be selected, the 'memory-access density' of each block needs
+to be calculated, as follows:
+
+\begin{equation}
+\scalebox{1.5}{$\frac{\#instructions_{io}}{\#instructions_{total}}$}
+\end{equation}
+
+Where \(\#instructions_{io}\) is the number of memory-access instructions in the block, and \(\#instructions_{total}\) is the
+total number of instructions in the block.
+
+A memory-access density of >0.5 indicates that the block has more memory-access in it than it has computation, and a memory-access
+density of <0.5 indicates the reverse. As the amount of memory-access limits the parallelism that can be extracted from a block,
+a lower memory-access density is desirable.
 
 \chapter{Results}
 
