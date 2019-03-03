@@ -86,6 +86,9 @@ class BasicBlock:
   def label(self):
     return self._label
 
+  def cost(self):
+    return (len(self.outputs()) + len(self.inputs())) / len(self._instructions)
+
   def setLast(self, line, instruction):
     self._last = instruction
     self._lastLine = line

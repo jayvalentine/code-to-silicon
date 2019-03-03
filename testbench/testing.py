@@ -83,21 +83,21 @@ def generateStateMachines(logger, num):
   # Get basic blocks from stream.
   blocks = basicblocks.extractBasicBlocks(logger, stream)
 
+  blocksSorted = sorted(blocks, key=lambda b: b.cost())
+
+  if len(blocksSorted) <= num:
+    logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
+    selected = blocksSorted
+  else:
+    selected = blocksSorted[:num]
+
   stateMachines = []
-  for b in blocks:
+  for b in selected:
     sm = statemachine.getStateMachine(b)
     stateMachines.append(sm)
 
-  stateMachines = sorted(list(filter(lambda s: s.cost() <= 0, stateMachines)), key=lambda s: s.cost())
-
-  if len(stateMachines) <= num:
-    logger.debug("Number specified is lower than or equal to number of viable state machines extracted. Selecting all.")
-    selected = stateMachines
-  else:
-    selected = stateMachines[:num]
-
   id = 0
-  for sm in selected:
+  for sm in stateMachines:
     sm.setId(id)
 
     logger.debug("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ", id: " + str(id) + ")")
