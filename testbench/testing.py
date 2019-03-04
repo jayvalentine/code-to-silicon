@@ -51,7 +51,7 @@ def runTest(logger, testName, numStateMachines, runSimulation):
     writeMemoryInitFile()
 
     # Generate testbench templates.
-    generateTemplates(logger, selected)
+    generateTemplates(logger, testName, selected)
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
@@ -135,7 +135,7 @@ def writeMemoryInitFile():
   # Generate a memory initialization file ('memory.txt') from the hex file.
   memory.writeMemoryFile("memory.txt", "main.hex")
 
-def generateTemplates(logger, selectedStateMachines):
+def generateTemplates(logger, testName, selectedStateMachines):
   # Read the ELF symbols.
   syms = compiler.getElfSymbols(logger, "main.elf")
 
@@ -183,7 +183,8 @@ def generateTemplates(logger, selectedStateMachines):
     "STATEMACHINE_SIGNALS": signals,
     "STATEMACHINE_PORTS": portDefs,
     "REPORT_ACCEL_START": reportStart,
-    "STATEMACHINE_PORTS_MAP": portsMap
+    "STATEMACHINE_PORTS_MAP": portsMap,
+    "TESTNAME": testName
   }
 
   # Generate testbench template.

@@ -31,11 +31,11 @@ use IEEE.NUMERIC_STD.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity testbench is
+entity testbench_%%TESTNAME%% is
 --  Port ( );
-end testbench;
+end testbench_%%TESTNAME%%;
 
-architecture Behavioral of testbench is
+architecture Behavioral of testbench_%%TESTNAME%% is
     component hw_accel_controller is
         port (
             clk                     : in std_logic;
@@ -646,7 +646,7 @@ begin
         wait for clk_period;
         rst <= '0';
 
-        report "TESTBENCH: TEST START.";
+        report "TESTBENCH: TEST %%TESTNAME%% START.";
 
         loop
             -- Report any writes on the AXI bus.
