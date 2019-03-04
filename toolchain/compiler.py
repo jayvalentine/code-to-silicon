@@ -20,7 +20,7 @@ def compile(logger, files, output):
   logger.debug("GCC: " + out[0])
 
 def link(logger, files, output):
-  out = common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles"] + ["-o", output] + files)
+  out = common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles", "-mlittle-endian"] + ["-o", output] + files)
 
   logger.debug("GCC: " + out[0])
 
