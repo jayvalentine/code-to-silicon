@@ -89,8 +89,9 @@ class BasicBlock:
   def cost(self):
     io_density = (len(self.outputs()) + len(self.inputs())) / len(self._instructions)
     mem_density = self.memoryAccessDensity()
+    avg_width = self.averageComputationWidth()
 
-    return io_density + mem_density
+    return (io_density + mem_density) / avg_width
 
   def setLast(self, line, instruction):
     self._last = instruction
@@ -152,6 +153,23 @@ class BasicBlock:
         numMemoryAccess += 1
 
     return (float(numMemoryAccess)/float(numInstructions))
+
+  def averageComputationWidth(self):
+    widths = []
+
+    currentWidth = 0.0
+    for l in sorted(list(self._instructions.keys())):
+      if self._instructions[l].isBasicBlockBoundary():
+        if currentWidth > 0.0:
+          widths.append(currentWidth)
+        currentWidth = 0.0
+      else:
+        currentWidth += 1.0
+
+    if currentWidth > 0.0:
+      widths.append(currentWidth)
+
+    return (sum(widths)/len(widths))
 
   def outputs(self):
     outputs = []
