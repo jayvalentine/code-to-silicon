@@ -214,6 +214,10 @@ class BasicBlock:
       if i.rD() != None and i.rD() not in outputs:
         outputs.append(i.rD())
 
+    # r0 can be ignored as it is hardwired to 0.
+    if 0 in inputs:
+      inputs.remove(0)
+
     return inputs
 
   def used(self):
@@ -227,6 +231,10 @@ class BasicBlock:
         used.append(i.rB())
       if i.rD() != None and i.rD() not in used:
         used.append(i.rD())
+
+    # r0 can be ignored as it is hardwired to 0.
+    if 0 in used:
+      used.remove(0)
 
     return used
 
@@ -278,7 +286,8 @@ def extractBasicBlocks(logger, stream):
       if currentFunction == None:
         logger.warn("No function detected for label " + s.name() + ". Ignoring label.")
       else:
-        currentBlock = BasicBlock(s.name() + "_line{:04d}".format(i), currentFunction, s.name())
+        escapedName = s.name().replace("$", "D_")
+        currentBlock = BasicBlock(escapedName + "_line{:04d}".format(i), currentFunction, s.name())
     elif s.isDirective():
       if s.directive() == "type" and s.args(1) == "@function":
           currentFunction = s.args(0)

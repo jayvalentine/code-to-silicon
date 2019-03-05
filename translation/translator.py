@@ -1,21 +1,21 @@
 import text
 
 ADD_FORMAT = "{:s} := {:s} + {:s};"
-ADDI_FORMAT = "{:s} := {:s} + {:s};"
+ADDI_FORMAT = "{:s} := {:s} + to_signed({:s}, 32);"
 
 AND_FORMAT = "{:s} := {:s} and {:s};"
-ANDI_FORMAT = "{:s} := {:s} and signed({:s});"
+ANDI_FORMAT = "{:s} := {:s} and to_signed({:s}, 32);"
 
 OR_FORMAT = "{:s} := {:s} or {:s};"
-ORI_FORMAT = "{:s} := {:s} or signed({:s});"
+ORI_FORMAT = "{:s} := {:s} or to_signed({:s}, 32);"
 
 XOR_FORMAT = "{:s} := {:s} xor {:s};"
-XORI_FORMAT = "{:s} := {:s} xor signed({:s});"
+XORI_FORMAT = "{:s} := {:s} xor to_signed({:s}, 32);"
 
 SRL_FORMAT = "{:s} := {:s} srl 1;"
 
 MUL_FORMAT = "{:s} := {:s} * {:s};"
-MULI_FORMAT = "{:s} := {:s} * {:s};"
+MULI_FORMAT = "{:s} := {:s} * to_signed({:s}, 32);"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -90,7 +90,11 @@ def getArchitecturalDefinition(stateMachine):
 
   # Declaration of internal registers.
   for r in stateMachine.usedRegisters():
-    tw.writeLine("signal " + "r{:02d}".format(r) + "          : signed(31 downto 0);")
+    if r != 0:
+      tw.writeLine("signal " + "r{:02d}".format(r) + "          : signed(31 downto 0);")
+
+  # Constant r0, which is a hardwired 0 value.
+  tw.writeLine("constant r00          : signed(31 downto 0) := x\"00000000\";")
 
   # Begin behavioural definition.
   tw.decreaseIndent()
@@ -197,9 +201,9 @@ def getArchitecturalDefinition(stateMachine):
       # Figure out what the expression is for the memory address.
       # It's either rA+imm or rA+rB.
       if inst.imm() != None:
-        expr = "r{reg:02d} + {imm:d}".format(reg = inst.rA(), imm = inst.imm())
+        expr = "r{reg:02d} + to_signed({imm:d}, 32)".format(reg = inst.rA(), imm = inst.imm())
       elif inst.label() != None:
-        expr = "r{reg:02d} + {imm:s}".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
+        expr = "r{reg:02d} + to_signed({imm:s}, 32)".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
       else:
         expr = "r{regA:02d} + r{regB:02d}".format(regA = inst.rA(), regB = inst.rB())
 
@@ -211,7 +215,7 @@ def getArchitecturalDefinition(stateMachine):
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
       else:
-        tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}))".format(inst.rD()))
+        tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
         tw.writeLine("m_wr <= '1';")
 
       tw.writeBlankLine()
@@ -636,13 +640,13 @@ def getPorts(stateMachine):
 
   # Inputs for each register.
   for r in stateMachine.inputRegisters():
-    regRange = ((r - 1)*32, (r * 32) - 1)
-    ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0)", "reg_to_accel_{:02d}".format(r)))
+    if r != 0:
+      ports.append(("in_r{:02d}".format(r), "in", "std_logic_vector(31 downto 0)", "reg_to_accel_{:02d}".format(r)))
 
   # Outputs for each register.
   for r in stateMachine.outputRegisters():
-    regRange = ((r - 1)*32, (r * 32) - 1)
-    ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0)", "reg_from_accel_{:02d}".format(r)))
+    if r != 0:
+      ports.append(("out_r{:02d}".format(r), "out", "std_logic_vector(31 downto 0)", "reg_from_accel_{:02d}".format(r)))
 
   # Done signal.
   ports.append(("done", "out", "std_logic", stateMachine.name() + "_done"))

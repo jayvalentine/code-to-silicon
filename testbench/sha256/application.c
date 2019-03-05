@@ -118,6 +118,8 @@ static int calc_chunk(uint8_t chunk[CHUNK_SIZE], struct buffer_state * state)
 	return 1;
 }
 
+uint32_t primes[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
+
 /*
  * Limitations:
  * - Since input is a pointer in RAM, the data to hash should be in RAM, which could be a problem
@@ -141,7 +143,16 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 	 * Initialize hash values:
 	 * (first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19):
 	 */
-	uint32_t h[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
+	uint32_t h[8];
+	h[0] = primes[0];
+	h[1] = primes[1];
+	h[2] = primes[2];
+	h[3] = primes[3];
+	h[4] = primes[4];
+	h[5] = primes[5];
+	h[6] = primes[6];
+	h[7] = primes[7];
+	
 	int i, j;
 
 	/* 512-bit chunks is what we will operate on. */

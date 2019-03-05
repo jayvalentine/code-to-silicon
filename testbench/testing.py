@@ -110,8 +110,8 @@ def generateStateMachines(logger, num):
     sm.setId(id)
 
     logger.debug("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ", id: " + str(id) + ")")
-    with open(sm.name() + ".vhd", 'w') as file:
-      logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + ".vhd.")
+    with open(sm.name() + "_temp.vhd", 'w') as file:
+      logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + "_temp.vhd.")
       file.write(translator.translateStateMachine(sm))
 
     change += stream.replaceLines(sm.block().lines()[0]+change, sm.block().lines()[-1]+change, sm.replacementInstructions())
@@ -150,6 +150,12 @@ def generateTemplates(logger, testName, selectedStateMachines):
     componentDefs += translator.getComponentDefinition(sm)
     uutDefs += translator.getUUTDefinition(sm)
     signals += translator.getTestbenchSignals(sm)
+
+    vars_sm = {}
+    for sym in syms.keys():
+      vars_sm["SYM_" + sym] = str(int(syms[sym], 16))
+
+    templating.processTemplate(sm.name() + "_temp.vhd", sm.name() + ".vhd", vars_sm)
 
   portDefs = ""
   resetPortSets = ""

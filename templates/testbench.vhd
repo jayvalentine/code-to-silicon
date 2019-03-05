@@ -26,6 +26,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 use IEEE.NUMERIC_STD.ALL;
 
+use STD.TEXTIO.ALL;
+use IEEE.STD_LOGIC_TEXTIO.ALL;
+
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx leaf cells in this code.
 --library UNISIM;
@@ -363,6 +366,9 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     signal accel_started            : std_logic := '0';
     signal sleep_mode               : std_logic := '0';
 
+    signal bram_addr                : std_logic_vector(31 downto 0);
+    signal waiting_for_data         : std_logic := '0';
+
     function byte_to_hex(b: std_logic_vector(7 downto 0)) return string is
         variable upper : character;
         variable lower : character;
@@ -640,6 +646,8 @@ begin
     end process clk_proc;
 
     test_proc : process
+        file f_file : text;
+        variable f_line : line;
     begin
         rst <= '1';
         clk_hold <= '0';
@@ -675,6 +683,17 @@ begin
                 sleep_mode <= '0';
             end if;
 
+            -- Report any reads on the data bus.
+            if BRAM_PORT_DATA_en = '1' and BRAM_PORT_DATA_we = "0000" and clk = '1' then
+                if waiting_for_data = '1' then
+                    report "BRAM: READ DETECTED: " & std_logic_vec_to_hex(bram_addr) & " " & std_logic_vec_to_hex(BRAM_PORT_DATA_dout);
+                    waiting_for_data <= '0';
+                end if;
+
+                bram_addr <= BRAM_PORT_DATA_addr;
+                waiting_for_data <= '1';
+            end if;
+
             -- Trap if we reach the test_failed function, and report the test failure.
             if BRAM_PORT_INST_addr = x"%%FAILED_ADDR%%" then
                 report "TESTBENCH: !!!FAILED!!!";
@@ -687,11 +706,10 @@ begin
                 exit;
             end if;
 
-            wait for clk_period;
+            wait for clk_period/2;
         end loop;
 
         report "TESTBENCH: CYCLES: " & Integer'image(cycles);
-
         wait;
     end process test_proc;
 end Behavioral;
