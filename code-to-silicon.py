@@ -97,6 +97,8 @@ def main(argv):
 
   coreCounts = []
   speedups = []
+  coreInputsAvg = []
+  coreOutputsAvg = []
   baseCycles = None
 
   for i in range(31):
@@ -106,6 +108,8 @@ def main(argv):
       speedups.append(1.0)
       coreCounts.append(0)
       baseCycles = metrics["cycles"]
+      coreInputsAvg.append(0)
+      coreOutputsAvg.append(0)
 
     else:
       if metrics["cycles"] != None:
@@ -117,11 +121,23 @@ def main(argv):
       # Plot 'population scatter' of inputs vs outputs.
       plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
       plot.savefig("figures/autogen/pop-{:02d}-cores.png".format(metrics["coreCount"]))
+      plot.clf()
+
+      # Store average inputs and outputs.
+      coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
+      coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
 
   # Display a plot of speedup against core count.
   if sim:
     plot.plot(coreCounts, speedups)
     plot.savefig("figures/autogen/speedup-sha256.png")
+    plot.clf()
+
+  plot.plot(coreCounts, coreInputsAvg)
+  plot.plot(coreCounts, coreOutputsAvg)
+
+  plot.savefig("figures/autogen/avg-outputs.png")
+  plot.clf()
 
   # Now build the report (unless we've been asked not to)!
   if report:
