@@ -53,8 +53,10 @@ class StateMachine:
     replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 31, None, "HW_ACCEL_PORT"))
 
     # Write the input registers to the right ports.
+    # For now we just exclude r31.
     for input in self.inputRegisters():
-      replace.append(instructions.OutputInstruction("swi", 31, None, input, (input)*4, None))
+      if input != 31:
+        replace.append(instructions.OutputInstruction("swi", 31, None, input, (input)*4, None))
 
     # Write to the special controller register that will start our desired state machine.
     replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 30, (2**self._id), None))
@@ -65,7 +67,8 @@ class StateMachine:
 
     # Read the output registers from the right ports.
     for output in self.outputRegisters():
-      replace.append(instructions.InputInstruction("lwi", 31, None, output, (output)*4, None))
+      if output != 31:
+        replace.append(instructions.InputInstruction("lwi", 31, None, output, (output)*4, None))
 
     # Read the special port at offset 0 to reset the controller.
     replace.append(instructions.InputInstruction("lwi", 31, None, 0, 0, None))
