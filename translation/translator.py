@@ -148,7 +148,7 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeBlankLine()
 
   tw.writeLine("m_rd       <= '0';")
-  tw.writeLine("m_wr       <= '0';")
+  tw.writeLine("m_wr       <= \"0000\";")
   tw.writeLine("done       <= '0';")
 
   tw.decreaseIndent()
@@ -202,11 +202,11 @@ def getArchitecturalDefinition(stateMachine):
       # Figure out what the expression is for the memory address.
       # It's either rA+imm or rA+rB.
       if inst.imm() != None:
-        expr = "r{reg:02d} + to_signed({imm:d}, 32)".format(reg = inst.rA(), imm = inst.imm())
+        expr = "(r{reg:02d} + to_signed({imm:d}, 32))".format(reg = inst.rA(), imm = inst.imm())
       elif inst.label() != None:
-        expr = "r{reg:02d} + to_signed({imm:s}, 32)".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
+        expr = "(r{reg:02d} + to_signed({imm:s}, 32))".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
       else:
-        expr = "r{regA:02d} + r{regB:02d}".format(regA = inst.rA(), regB = inst.rB())
+        expr = "(r{regA:02d} + r{regB:02d})".format(regA = inst.rA(), regB = inst.rB())
 
       tw.writeCommentLine(str(inst))
       tw.writeLine("m_addr <= std_logic_vector(unsigned(" + expr + "));")
@@ -217,7 +217,18 @@ def getArchitecturalDefinition(stateMachine):
         tw.writeLine("m_rd <= '1';")
       else:
         tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
-        tw.writeLine("m_wr <= '1';")
+
+        # Set up the write enable.
+        tw.writeLine("m_wr <= \"0000\";")
+        if inst.width() == 1:
+          tw.writeLine("m_wr(to_integer(" + expr + ") mod 4) <= '1';")
+        elif inst.width() == 2:
+          tw.writeLine("m_wr((to_integer(" + expr + ") mod 2)*4) <= '1';")
+          tw.writeLine("m_wr(((to_integer(" + expr + ") mod 2)*4)+1) <= '1';")
+        elif inst.width() == 4:
+          tw.writeLine("m_wr <= \"1111\";")
+        else:
+          raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
 
       tw.writeBlankLine()
 
@@ -266,7 +277,7 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("elsif rising_edge(m_rdy) then")
 
   tw.increaseIndent()
-  tw.writeLine("m_wr <= '0';")
+  tw.writeLine("m_wr <= \"0000\";")
   tw.writeLine("m_rd <= '0';")
   tw.writeBlankLine()
 
@@ -319,7 +330,7 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeBlankLine()
 
   tw.writeLine("m_rd       <= 'Z';")
-  tw.writeLine("m_wr       <= 'Z';")
+  tw.writeLine("m_wr       <= \"ZZZZ\";")
 
   tw.decreaseIndent()
 
@@ -663,7 +674,7 @@ def getPorts(stateMachine):
   ports.append(("m_rdy", "in", "std_logic", "m_rdy"))
 
   # Read and write strobes.
-  ports.append(("m_wr", "out", "std_logic", "m_wr"))
+  ports.append(("m_wr", "out", "std_logic_vector(3 downto 0)", "m_wr"))
   ports.append(("m_rd", "out", "std_logic", "m_rd"))
 
   # Memory address and data lines.

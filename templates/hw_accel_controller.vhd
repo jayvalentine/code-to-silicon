@@ -11,7 +11,7 @@ entity hw_accel_controller is
         sleep                   : in std_logic;
 
         m_rdy                   : out std_logic;
-        m_wr                    : in std_logic;
+        m_wr                    : in std_logic_vector(3 downto 0);
         m_rd                    : in std_logic;
 
         m_addr                  : in std_logic_vector(31 downto 0);
@@ -147,13 +147,14 @@ begin
 
                 LMB_M_0_readstrobe <= '1';
                 LMB_M_0_writestrobe <= '0';
-            elsif m_wr = '1' then
+            elsif m_wr /= "0000" and m_wr /= "ZZZZ" then
                 LMB_M_0_abus <= m_addr;
                 LMB_M_0_addrstrobe <= '1';
 
                 LMB_M_0_writedbus <= m_data_from_accel;
                 LMB_M_0_readstrobe <= '0';
                 LMB_M_0_writestrobe <= '1';
+                LMB_M_0_be <= m_wr;
             else
                 LMB_M_0_addrstrobe <= '0';
                 LMB_M_0_readstrobe <= '0';

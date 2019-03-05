@@ -50,7 +50,7 @@ architecture Behavioral of testbench_%%TESTNAME%% is
 %%STATEMACHINE_PORTS%%
 
             m_rdy                   : out std_logic;
-            m_wr                    : in std_logic;
+            m_wr                    : in std_logic_vector(3 downto 0);
             m_rd                    : in std_logic;
 
             m_addr                  : in std_logic_vector(31 downto 0);
@@ -300,7 +300,7 @@ architecture Behavioral of testbench_%%TESTNAME%% is
 
     signal m_rdy                    : std_logic;
     signal m_rd                     : std_logic;
-    signal m_wr                     : std_logic;
+    signal m_wr                     : std_logic_vector(3 downto 0);
 
     signal m_addr                   : STD_LOGIC_VECTOR(31 downto 0);
     signal m_data_to_accel          : STD_LOGIC_VECTOR(31 downto 0);
