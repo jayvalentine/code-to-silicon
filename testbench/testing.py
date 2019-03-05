@@ -159,6 +159,7 @@ def generateTemplates(logger, testName, selectedStateMachines):
 
   portDefs = ""
   resetPortSets = ""
+  selPortSets = ""
 
   portsMap = ""
 
@@ -173,6 +174,7 @@ def generateTemplates(logger, testName, selectedStateMachines):
 
   for port in selPorts:
     portDefs += "        " + port[0] + " : " + port[1] + " std_logic;\n"
+    selPortSets += "            " + port[0] + " <= '0';\n"
     portsMap += "        " + port[0] + " => " + port[0] + ",\n"
 
   donePorts = translator.getControllerDonePorts(selectedStateMachines)
@@ -227,6 +229,7 @@ def generateTemplates(logger, testName, selectedStateMachines):
     "WRITE_REG_TO_ACCEL": writesToRegisters,
     "READ_REG_FROM_ACCEL": readsFromRegisters,
     "RESET_STATEMACHINES": resetPortSets,
+    "DESELECT_STATEMACHINES": selPortSets,
     "UNRESET_STATEMACHINES": unreset,
     "STATEMACHINE_PORTS": portDefs,
     "STATEMACHINES_DONE": stateMachinesDone

@@ -301,6 +301,28 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("end if;")
 
   tw.decreaseIndent()
+
+  tw.writeLine("else")
+
+  tw.increaseIndent()
+
+  tw.writeCommentLine("Put outputs into tri-state to avoid conflicts.")
+
+  tw.writeLine("m_data_out <= (others => 'Z');")
+  tw.writeLine("m_addr     <= (others => 'Z');")
+
+  tw.writeBlankLine()
+
+  for out in stateMachine.outputRegisters():
+    tw.writeLine("out_r{:02d} <= (others => 'Z');".format(out))
+
+  tw.writeBlankLine()
+
+  tw.writeLine("m_rd       <= 'Z';")
+  tw.writeLine("m_wr       <= 'Z';")
+
+  tw.decreaseIndent()
+
   tw.writeLine("end if;")
 
   tw.decreaseIndent()
@@ -369,7 +391,7 @@ def getTestbenchSignals(stateMachine):
   tw.increaseIndent()
 
   for port in getPorts(stateMachine):
-    if port[0] != "clk":
+    if port[0] == "rst" or port[0] == "done" or port[0] == "sel":
       tw.writeLine("signal " + stateMachine.name() + "_" + port[0] + " : " + port[2] + ";")
 
   tw.writeBlankLine()
@@ -432,6 +454,7 @@ def getControllerReadRegisters(stateMachines):
   tw.writeCommentLine("Reset all state machines.")
   for sm in stateMachines:
     tw.writeLine(sm.name() + "_rst <= '1';")
+    tw.writeLine(sm.name() + "_sel <= '0';")
 
   tw.writeBlankLine()
   tw.writeCommentLine("Put controller into READY state.")
@@ -500,15 +523,18 @@ def getControllerStateMachinesDone(stateMachines):
   tw.increaseIndent()
   tw.increaseIndent()
   tw.increaseIndent()
+  tw.increaseIndent()
+  tw.increaseIndent()
 
   for sm in stateMachines:
     tw.writeLine("if " + sm.name() + "_done = '1' then")
     tw.increaseIndent()
     tw.writeLine("int_state <= S_DONE;")
-    tw.writeLine(sm.name() + "_sel <= '0';")
     tw.decreaseIndent()
     tw.writeLine("end if;")
 
+  tw.decreaseIndent()
+  tw.decreaseIndent()
   tw.decreaseIndent()
   tw.decreaseIndent()
   tw.decreaseIndent()

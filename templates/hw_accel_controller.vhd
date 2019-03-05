@@ -138,6 +138,8 @@ begin
 
 %%RESET_STATEMACHINES%%
 
+%%DESELECT_STATEMACHINES%%
+
         else
             if m_rd = '1' then
                 LMB_M_0_abus <= m_addr;
