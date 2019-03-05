@@ -101,7 +101,9 @@ def main(argv):
   coreOutputsAvg = []
   baseCycles = None
 
-  for i in range(31):
+  cores = [1, 4, 9, 16, 25, 36, 49, 64]
+
+  for i in cores:
     metrics = testing.runTest(logger, "sha256", i, sim)
 
     if i == 0:
@@ -128,6 +130,7 @@ def main(argv):
       # Plot regression of heuristic cost against actual cost.
       plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
       plot.savefig("figures/autogen/cost-{:02d}-cores.png".format(metrics["coreCount"]))
+      plot.clf()
 
       # Store average inputs and outputs.
       coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
