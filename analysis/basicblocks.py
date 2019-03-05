@@ -211,8 +211,11 @@ class BasicBlock:
       if i.rB() != None and i.rB() not in inputs and i.rB() not in outputs:
         inputs.append(i.rB())
 
-      if i.rD() != None and i.rD() not in outputs:
-        outputs.append(i.rD())
+      if isinstance(i, instructions.OutputInstruction):
+        inputs.append(i.rD())
+      else:
+        if i.rD() != None and i.rD() not in outputs:
+          outputs.append(i.rD())
 
     # r0 can be ignored as it is hardwired to 0.
     if 0 in inputs:
