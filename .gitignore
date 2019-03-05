@@ -40,5 +40,5 @@ figures/autogen
 !start.s
 
 # Test temp directories.
-/testbench/*/temp/*.*
+/testbench/*/temp/
 
