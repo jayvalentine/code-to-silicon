@@ -141,7 +141,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 	 * Initialize hash values:
 	 * (first 32 bits of the fractional parts of the square roots of the first 8 primes 2..19):
 	 */
-	uint32_t h[] = { 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
+	uint32_t h[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
 	int i, j;
 
 	/* 512-bit chunks is what we will operate on. */
@@ -162,7 +162,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 		uint32_t w[64];
 		const uint8_t *p = chunk;
 
-		//memset(w, 0x00, sizeof w);
+		memset(w, 0x00, sizeof w);
 		for (i = 0; i < 16; i++) {
 			w[i] = (uint32_t) p[0] << 24 | (uint32_t) p[1] << 16 |
 				(uint32_t) p[2] << 8 | (uint32_t) p[3];
@@ -204,17 +204,17 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 			h[i] += ah[i];
 	}
 
-	/* Produce the final hash value (big-endian): */
+	/* Produce the final hash value (little-endian): */
 	for (i = 0, j = 0; i < 8; i++)
 	{
-		hash[j++] = (uint8_t) (h[i] >> 24);
-		hash[j++] = (uint8_t) (h[i] >> 16);
-		hash[j++] = (uint8_t) (h[i] >> 8);
 		hash[j++] = (uint8_t) h[i];
+		hash[j++] = (uint8_t) (h[i] >> 8);
+		hash[j++] = (uint8_t) (h[i] >> 16);
+		hash[j++] = (uint8_t) (h[i] >> 24);
 	}
 }
 
-const char A[44] = "the quick brown fox jumped over the lazy dog";
+const uint8_t A[44] = "the quick brown fox jumped over the lazy dog";
 uint8_t result[32];
 
 void application(void)

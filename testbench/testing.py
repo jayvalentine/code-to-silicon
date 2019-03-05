@@ -16,6 +16,8 @@ TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
+MEM_MSG_FORMAT = re.compile("Note: BRAM: READ DETECTED: ([0-9A-F]+) ([0-9A-F]+)")
+
 def runTest(logger, testName, numStateMachines, runSimulation):
     # Get test and temp directory paths.
     testDir = os.path.join(TESTING_DIR, testName)
@@ -197,7 +199,8 @@ def generateTemplates(logger, testName, selectedStateMachines):
 
   vars_tcl = {
     "ADD_STATEMACHINES": "\n".join(list(map(lambda sm: "add_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
-    "REMOVE_STATEMACHINES": "\n".join(list(map(lambda sm: "remove_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines)))
+    "REMOVE_STATEMACHINES": "\n".join(list(map(lambda sm: "remove_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
+    "TESTNAME": testName
   }
 
   templating.processTemplate(tclTemplate, "simulate.tcl", vars_tcl)
@@ -229,6 +232,8 @@ def runVivadoSimulation(logger):
   passed = None
   output = vivado.start_batch("simulate.tcl")
 
+  mem = {}
+
   # Write the full output to a log file.
   with open("simulate.log", 'w') as logfile:
     logfile.write(output[1])
@@ -243,6 +248,18 @@ def runVivadoSimulation(logger):
         passed = True
       elif m.groups()[0] == FAILED:
         passed = False
+
+    else:
+      m = MEM_MSG_FORMAT.match(l)
+      if m != None:
+        logger.debug(l)
+        mem[int(m.groups()[0], 16)] = m.groups()[1]
+
+  with open("memdump.txt", 'w') as memdump:
+    for i in range(0, 2048):
+      addr = i*4
+      if addr in mem.keys():
+        memdump.write("{:08x}: {:s} {:s} {:s} {:s}\n".format(addr, mem[addr][6:], mem[addr][4:6], mem[addr][2:4], mem[addr][0:2]))
 
   if passed == None:
     raise Exception("Could not determine result of test.")

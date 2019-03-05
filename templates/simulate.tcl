@@ -5,10 +5,10 @@ add_files -fileset sources_1 memory.vhd
 add_files -fileset sources_1 controller.vhd
 %%ADD_STATEMACHINES%%
 
-set_property top testbench [get_filesets "sim_1"]
+set_property top testbench_%%TESTNAME%% [get_filesets "sim_1"]
 
 launch_simulation -simset sim_1
-run 10 ms
+run 2 ms
 
 remove_files -fileset sim_1 testbench.vhd
 remove_files -fileset sources_1 memory.vhd

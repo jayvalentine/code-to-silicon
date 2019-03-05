@@ -10,11 +10,22 @@ void test_passed(void) __attribute__((section(".break")));
 
 void test(void)
 {
+  int failed = 0;
   if (result != 204)
   {
-    test_failed();
+    failed = 1;
   }
 
+  if (failed)
+  {
+    // Avoid erroneous failure by ensuring that MicroBlaze won't accidentally prefetch
+    // the test_failed address.
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    asm("nop");
+    test_failed();
+  }
   test_passed();
 }
 

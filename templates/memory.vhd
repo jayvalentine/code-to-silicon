@@ -85,7 +85,7 @@ architecture memory_behav of memory is
             read(f_line, space);
             -- Read in the data as std_logic_vector.
             read(f_line, data);
-
+            
             -- Set the corresponding word in the memory.
             mem_temp(addr) := data;
         end loop;
@@ -101,6 +101,7 @@ architecture memory_behav of memory is
 
 begin
     mem_proc : process(BRAM_PORT_INST_clk, BRAM_PORT_INST_rst, BRAM_PORT_DATA_clk, BRAM_PORT_DATA_rst)
+        variable data_addr_aligned : Integer;
     begin
         -- Reset of INST port.
         if BRAM_PORT_INST_rst = '1' then
@@ -142,32 +143,35 @@ begin
             BRAM_PORT_DATA_dout <= (others => '0');
         -- Rising edge of DATA clk.
         elsif rising_edge(BRAM_PORT_DATA_clk) and BRAM_PORT_DATA_en = '1' then
+            -- Align address on word boundary.
+            data_addr_aligned := (to_integer(unsigned(BRAM_PORT_DATA_addr)) / 4) * 4;
+
             -- All WE LOW: Read data.
             if BRAM_PORT_DATA_we = "0000" then
-                BRAM_PORT_DATA_dout(24 to 31) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)));
-                BRAM_PORT_DATA_dout(16 to 23) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 1);
-                BRAM_PORT_DATA_dout(8 to 15) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 2);
-                BRAM_PORT_DATA_dout(0 to 7) <= ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 3);
+                BRAM_PORT_DATA_dout(24 to 31) <= ram(data_addr_aligned);
+                BRAM_PORT_DATA_dout(16 to 23) <= ram(data_addr_aligned + 1);
+                BRAM_PORT_DATA_dout(8 to 15) <= ram(data_addr_aligned + 2);
+                BRAM_PORT_DATA_dout(0 to 7) <= ram(data_addr_aligned + 3);
             -- WE: write to at least one byte.
             else
                 -- First byte write, if applicable.
                 if BRAM_PORT_DATA_we(0) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr))) <= BRAM_PORT_DATA_din(24 to 31);
+                    ram(data_addr_aligned) <= BRAM_PORT_DATA_din(24 to 31);
                 end if;
 
                 -- Second byte write, if applicable.
                 if BRAM_PORT_DATA_we(1) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 1) <= BRAM_PORT_DATA_din(16 to 23);
+                    ram(data_addr_aligned + 1) <= BRAM_PORT_DATA_din(16 to 23);
                 end if;
 
                 -- Third byte write, if applicable.
                 if BRAM_PORT_DATA_we(2) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 2) <= BRAM_PORT_DATA_din(8 to 15);
+                    ram(data_addr_aligned + 2) <= BRAM_PORT_DATA_din(8 to 15);
                 end if;
 
                 -- Fourth byte write, if applicable.
                 if BRAM_PORT_DATA_we(3) = '1' then
-                    ram(to_integer(unsigned(BRAM_PORT_DATA_addr)) + 3) <= BRAM_PORT_DATA_din(0 to 7);
+                    ram(data_addr_aligned + 3) <= BRAM_PORT_DATA_din(0 to 7);
                 end if;
             end if;
         end if;

@@ -93,8 +93,7 @@ def main(argv):
   if not os.path.isdir("figures/autogen"):
       os.makedirs("figures/autogen")
 
-  #testing.runTest(logger, "sha256", 0, sim)
-  testing.runTest(logger, "sha256", 10, sim)
+  testing.runTest(logger, "sha256", 0, sim)
 
   # Now build the report (unless we've been asked not to)!
   if report:

@@ -18,10 +18,7 @@ class Stream:
   def __str__(self):
     s = ""
 
-    i = 0
     for item in self._items:
-      s += "{:04d}: ".format(i)
-      i += 1
       if item.isLabel():
         s += str(item)
       else:

@@ -1,6 +1,6 @@
 OUTPUT_FORMAT(elf32-microblaze)
 
-STACK_SIZE = 512;
+STACK_SIZE = 1024;
 
 MEMORY
 {
