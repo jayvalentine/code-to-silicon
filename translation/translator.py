@@ -117,7 +117,8 @@ def getArchitecturalDefinition(stateMachine):
                           + ".")
 
     for local in stateMachine[i].locals():
-      tw.writeLine("variable " + localName(stateMachine[i].name(), local) + "   : signed(31 downto 0);")
+      if local != 0:
+        tw.writeLine("variable " + localName(stateMachine[i].name(), local) + "   : signed(31 downto 0);")
 
     if len(stateMachine[i].locals()) > 0:
       tw.writeBlankLine()
@@ -227,7 +228,8 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
                                                            s.inputs()))))
       for i in s.inputs():
-        tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
+        if i != 0:
+          tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
 
       tw.writeBlankLine()
 
@@ -244,7 +246,8 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeCommentLine("Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
                                                            s.outputs()))))
       for o in s.outputs():
-        tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
+        if o != 0:
+          tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
 
       tw.writeBlankLine()
 
@@ -536,7 +539,11 @@ def reportAcceleratorStart(stateMachines):
   return str(tw)
 
 def localName(stateName, register):
-  return "{:s}_r{:02d}".format(stateName, register)
+  # Use the global constant for r0.
+  if register == 0:
+    return "r00"
+  else:
+    return "{:s}_r{:02d}".format(stateName, register)
 
 # Translates a given instruction into one or more lines of VHDL.
 def translateInstruction(stateName, instruction):
