@@ -96,6 +96,11 @@ def getArchitecturalDefinition(stateMachine):
   # Constant r0, which is a hardwired 0 value.
   tw.writeLine("constant r00          : signed(31 downto 0) := x\"00000000\";")
 
+  # Output the 'offset' signal. This is used for calculating offsets for IO of bytes and halfwords.
+  tw.writeCommentLine("Offset.")
+  tw.writeLine("signal offset         :  Integer;")
+  tw.writeBlankLine()
+
   # Begin behavioural definition.
   tw.decreaseIndent()
   tw.writeBlankLine()
@@ -213,18 +218,30 @@ def getArchitecturalDefinition(stateMachine):
 
       # If the instruction is a read, we need to set the read strobe high.
       # If the instruction is a write, we need to set the write strobe high AND set the data out line.
+      if inst.width() == 1:
+        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 8;")
+      elif inst.width() == 2:
+        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 16;")
+
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
       else:
-        tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
+        if inst.width() == 1:
+          tw.writeLine("m_data_out <= (others => '0');")
+          tw.writeLine("m_data_out((offset+7) downto offset) <= std_logic_vector(unsigned(r{:02d}))(7 downto 0);".format(inst.rD()))
+        elif inst.width() == 2:
+          tw.writeLine("m_data_out <= (others => '0');")
+          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}))(15 downto 0);".format(inst.rD()))
+        elif inst.width() == 4:
+          tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
 
         # Set up the write enable.
         tw.writeLine("m_wr <= \"0000\";")
         if inst.width() == 1:
           tw.writeLine("m_wr(to_integer(" + expr + ") mod 4) <= '1';")
         elif inst.width() == 2:
-          tw.writeLine("m_wr((to_integer(" + expr + ") mod 2)*4) <= '1';")
-          tw.writeLine("m_wr(((to_integer(" + expr + ") mod 2)*4)+1) <= '1';")
+          tw.writeLine("m_wr((to_integer(" + expr + ") mod 2)*2) <= '1';")
+          tw.writeLine("m_wr(((to_integer(" + expr + ") mod 2)*2)+1) <= '1';")
         elif inst.width() == 4:
           tw.writeLine("m_wr <= \"1111\";")
         else:
@@ -297,7 +314,20 @@ def getArchitecturalDefinition(stateMachine):
         inst = s.instruction()
 
         tw.writeCommentLine("Read data into r{:02d}.".format(inst.rD()))
-        tw.writeLine("r{:02d}".format(inst.rD()) + " <= signed(m_data_in);")
+
+        if inst.width() == 1:
+          tw.writeCommentLine("Loading byte.")
+          tw.writeLine("r{:02d} <= (others => '0');")
+          tw.writeLine("r{:02d}(7 downto 0) <= signed(m_data_in)((offset+7) downto offset);")
+        elif inst.width() == 2:
+          tw.writeCommentLine("Loading halfword.")
+          tw.writeLine("r{:02d} <= (others => '0');")
+          tw.writeLine("r{:02d}(15 downto 0) <= signed(m_data_in)((offset+15) downto offset);")
+        elif inst.width() == 4:
+          tw.writeLine("r{:02d}".format(inst.rD()) + " <= signed(m_data_in);")
+        else:
+          raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
+
         tw.writeBlankLine()
 
       tw.writeLine("int_state <= " + s.getTransition("M_RDY").name() + ";")
