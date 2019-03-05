@@ -99,7 +99,7 @@ def main(argv):
   speedups = []
   baseCycles = None
 
-  for i in range(3):
+  for i in range(21):
     metrics = testing.runTest(logger, "sha256", i, sim)
 
     if i == 0:
@@ -108,8 +108,10 @@ def main(argv):
       baseCycles = metrics["cycles"]
 
     else:
-      s = baseCycles / metrics["cycles"]
-      speedups.append(s)
+      if metrics["cycles"] != None:
+        s = baseCycles / metrics["cycles"]
+        speedups.append(s)
+      
       coreCounts.append(metrics["coreCount"])
 
       # Plot 'population scatter' of inputs vs outputs.
@@ -117,8 +119,9 @@ def main(argv):
       plot.savefig("figures/autogen/pop-{:02d}-cores.png".format(metrics["coreCount"]))
 
   # Display a plot of speedup against core count.
-  plot.plot(coreCounts, speedups)
-  plot.savefig("figures/autogen/speedup-sha256.png")
+  if sim:
+    plot.plot(coreCounts, speedups)
+    plot.savefig("figures/autogen/speedup-sha256.png")
 
   # Now build the report (unless we've been asked not to)!
   if report:

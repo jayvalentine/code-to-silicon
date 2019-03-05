@@ -60,13 +60,17 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
-        vivadoResults = runVivadoSimulation(logger)
-        if vivadoResults["passed"]:
-            logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
-        else:
-            logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
+      vivadoResults = runVivadoSimulation(logger)
+      if vivadoResults["passed"]:
+          logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
+      else:
+          logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
     else:
-        logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
+      vivadoResults = {
+        "passed": None,
+        "cycles": None
+      }
+      logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
 
     # Move back to the root directory.
     os.chdir(origDir)
