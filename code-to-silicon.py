@@ -120,8 +120,14 @@ def main(argv):
 
       # Plot 'population scatter' of inputs vs outputs.
       plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
+      plot.xlim([0, 32])
+      plot.ylim([0, 32])
       plot.savefig("figures/autogen/pop-{:02d}-cores.png".format(metrics["coreCount"]))
       plot.clf()
+
+      # Plot regression of heuristic cost against actual cost.
+      plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
+      plot.savefig("figures/autogen/cost-{:02d}-cores.png".format(metrics["coreCount"]))
 
       # Store average inputs and outputs.
       coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
@@ -133,9 +139,11 @@ def main(argv):
     plot.savefig("figures/autogen/speedup-sha256.png")
     plot.clf()
 
+  # Plot average inputs/outputs against core count.
   plot.plot(coreCounts, coreInputsAvg)
   plot.plot(coreCounts, coreOutputsAvg)
-
+  plot.xlim([1, coreCounts[-1]])
+  plot.ylim([0, 32])
   plot.savefig("figures/autogen/avg-outputs.png")
   plot.clf()
 

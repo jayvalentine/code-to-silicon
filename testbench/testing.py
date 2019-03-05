@@ -80,7 +80,9 @@ def runTest(logger, testName, numStateMachines, runSimulation):
       "cycles": vivadoResults["cycles"],
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
-      "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected))
+      "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected)),
+      "heuristicCost": list(map(lambda sm: sm.block().cost(), selected)),
+      "actualCost": list(map(lambda sm: sm.cost(), selected)),
     }
 
     return metrics
