@@ -43,7 +43,7 @@ class StateMachine:
     return self._usedRegisters
 
   def cost(self):
-    return (len(self.inputRegisters()) + len(self.outputRegisters()) + len(self)) - len(self._block)
+    return (len(self.inputRegisters()) + len(self.outputRegisters()) + len(self)) / len(self._block)
 
   def replacementInstructions(self):
     replace = []
