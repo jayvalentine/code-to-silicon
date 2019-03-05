@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+import time
 
 import templating
 from toolchain import compiler, memory, vivado
@@ -46,7 +47,12 @@ def runTest(logger, testName, numStateMachines, runSimulation):
     compileApplication(logger)
 
     # Analyse generated code and produce statemachines.
+    start = time.time()
     selected = generateStateMachines(logger, numStateMachines)
+    end = time.time()
+
+    logger.info("Analysis completed in " + str(round(end-start, 4)) + "s.")
+
     actualNum = len(selected)
 
     # Compile test harness files.
@@ -77,6 +83,7 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 
     # Return metrics to caller.
     metrics = {
+      "analysisTime": (end-start),
       "cycles": vivadoResults["cycles"],
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
