@@ -99,7 +99,7 @@ def main(argv):
   speedups = []
   baseCycles = None
 
-  for i in range(21):
+  for i in range(31):
     metrics = testing.runTest(logger, "sha256", i, sim)
 
     if i == 0:
@@ -111,7 +111,7 @@ def main(argv):
       if metrics["cycles"] != None:
         s = baseCycles / metrics["cycles"]
         speedups.append(s)
-      
+
       coreCounts.append(metrics["coreCount"])
 
       # Plot 'population scatter' of inputs vs outputs.

@@ -3,6 +3,15 @@ import text
 ADD_FORMAT = "{:s} := {:s} + {:s};"
 ADDI_FORMAT = "{:s} := {:s} + to_signed({:s}, 32);"
 
+RSUB_FORMAT = "{:s} := {:s} - {:s};"
+
+CMPU_FORMAT_A = "{:s} := unsigned({:s}) - unsigned({:s});"
+CMPU_FORMAT_B_1 = "if unsigned({:s}) > unsigned({:s}) then"
+CMPU_FORMAT_B_2 = "    {:s}(31) := '1';"
+CMPU_FORMAT_B_3 = "else"
+CMPU_FORMAT_B_4 = "    {:s}(31) := '0';"
+CMPU_FORMAT_B_5 = "end if;"
+
 AND_FORMAT = "{:s} := {:s} and {:s};"
 ANDI_FORMAT = "{:s} := {:s} and to_signed({:s}, 32);"
 
@@ -632,6 +641,27 @@ def translateInstruction(stateName, instruction):
     lines.append(ADDI_FORMAT.format(localName(stateName, instruction.rD()),
                                     localName(stateName, instruction.rA()),
                                     immediate))
+
+  elif mnemonic == "rsubk":
+    lines.append(RSUB_FORMAT.format(localName(stateName, instruction.rD()),
+                                    localName(stateName, instruction.rB()),
+                                    localName(stateName, instruction.rA())))
+
+  elif mnemonic == "cmpu":
+    lines.append(CMPU_FORMAT_A.format(localName(stateName, instruction.rD()),
+                                      localName(stateName, instruction.rB()),
+                                      localName(stateName, instruction.rA())))
+
+    lines.append(CMPU_FORMAT_B_1.format(localName(stateName, instruction.rA()),
+                                        localName(stateName, instruction.rB())))
+
+    lines.append(CMPU_FORMAT_B_2.format(localName(stateName, instruction.rD())))
+
+    lines.append(CMPU_FORMAT_B_3)
+
+    lines.append(CMPU_FORMAT_B_4.format(localName(stateName, instruction.rD())))
+
+    lines.append(CMPU_FORMAT_B_5)
 
   elif mnemonic == "mul":
     # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
