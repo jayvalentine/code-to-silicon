@@ -74,7 +74,9 @@ def runTest(logger, testName, numStateMachines, runSimulation):
     # Return metrics to caller.
     metrics = {
       "cycles": vivadoResults["cycles"],
-      "coreCount": len(selected)
+      "coreCount": len(selected),
+      "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
+      "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected))
     }
 
     return metrics
