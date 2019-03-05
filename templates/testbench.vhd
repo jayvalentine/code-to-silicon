@@ -298,9 +298,9 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     signal reg_to_accel_30         : std_logic_vector(31 downto 0);
     signal reg_to_accel_31         : std_logic_vector(31 downto 0);
 
-    signal m_rdy                    : std_logic;
-    signal m_rd                     : std_logic;
-    signal m_wr                     : std_logic_vector(3 downto 0);
+    signal m_rdy                    : std_logic := '0';
+    signal m_rd                     : std_logic := '0';
+    signal m_wr                     : std_logic_vector(3 downto 0) := "ZZZZ";
 
     signal m_addr                   : STD_LOGIC_VECTOR(31 downto 0);
     signal m_data_to_accel          : STD_LOGIC_VECTOR(31 downto 0);

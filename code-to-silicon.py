@@ -4,6 +4,8 @@ import os
 import getopt
 import sys
 
+import matplotlib.pyplot as plot
+
 from testbench import testing
 
 HELP = """Usage: code-to-silicon.py <options>
@@ -93,7 +95,26 @@ def main(argv):
   if not os.path.isdir("figures/autogen"):
       os.makedirs("figures/autogen")
 
-  testing.runTest(logger, "sha256", 10, sim)
+  coreCounts = []
+  speedups = []
+  baseCycles = None
+
+  for i in range(11):
+    metrics = testing.runTest(logger, "sha256", i, sim)
+
+    if i == 0:
+      speedups.append(1.0)
+      coreCounts.append(0)
+      baseCycles = metrics["cycles"]
+
+    else:
+      s = baseCycles / metrics["cycles"]
+      speedups.append(s)
+      coreCounts.append(metrics["coreCount"])
+
+  # Display a plot of speedup against core count.
+  plot.plot(coreCounts, speedups)
+  plot.show()
 
   # Now build the report (unless we've been asked not to)!
   if report:

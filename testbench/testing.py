@@ -13,6 +13,9 @@ TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
 
 TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
+
+CYCLES_MSG_FORMAT = re.compile("CYCLES: (\d+)")
+
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
@@ -57,7 +60,8 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
-        if runVivadoSimulation(logger):
+        vivadoResults = runVivadoSimulation(logger)
+        if vivadoResults["passed"]:
             logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
         else:
             logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
@@ -66,6 +70,14 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 
     # Move back to the root directory.
     os.chdir(origDir)
+
+    # Return metrics to caller.
+    metrics = {
+      "cycles": vivadoResults["cycles"],
+      "coreCount": len(selected)
+    }
+
+    return metrics
 
 def compileApplication(logger):
     compiler.compile(logger, ["application.c"], "application.s")
@@ -243,6 +255,8 @@ def runVivadoSimulation(logger):
 
   mem = {}
 
+  cycles = None
+
   # Write the full output to a log file.
   with open("simulate.log", 'w') as logfile:
     logfile.write(output[1])
@@ -257,6 +271,10 @@ def runVivadoSimulation(logger):
         passed = True
       elif m.groups()[0] == FAILED:
         passed = False
+      else:
+        cm = CYCLES_MSG_FORMAT.match(m.groups()[0])
+        if cm != None:
+          cycles = int(cm.groups()[0])
 
     else:
       m = MEM_MSG_FORMAT.match(l)
@@ -273,4 +291,9 @@ def runVivadoSimulation(logger):
   if passed == None:
     raise Exception("Could not determine result of test.")
 
-  return passed
+  results = {
+    "passed": passed,
+    "cycles": cycles
+  }
+
+  return results
