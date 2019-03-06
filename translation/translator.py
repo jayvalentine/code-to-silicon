@@ -1,9 +1,14 @@
 import text
 
-ADD_FORMAT = "{:s} := {:s} + {:s};"
-ADDI_FORMAT = "{:s} := {:s} + to_signed({:s}, 32);"
+ADDK_FORMAT = "{:s} := unsigned({:s}) + unsigned({:s});"
 
-RSUB_FORMAT = "{:s} := {:s} - {:s};"
+ADD_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s});"
+
+ADDC_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s}) + carry;"
+
+ADDI_FORMAT = "{:s} := unsigned({:s}) + unsigned(to_signed({:s}, 32));"
+
+RSUB_FORMAT = "{:s} := unsigned({:s}) - unsigned({:s});"
 
 CMPU_FORMAT_A = "{:s} := unsigned({:s}) - unsigned({:s});"
 CMPU_FORMAT_B_1 = "if unsigned({:s}) > unsigned({:s}) then"
@@ -11,6 +16,13 @@ CMPU_FORMAT_B_2 = "    {:s}(31) := '1';"
 CMPU_FORMAT_B_3 = "else"
 CMPU_FORMAT_B_4 = "    {:s}(31) := '0';"
 CMPU_FORMAT_B_5 = "end if;"
+
+CMP_FORMAT_A = "{:s} := unsigned({:s}) - unsigned({:s});"
+CMP_FORMAT_B_1 = "if {:s} > {:s} then"
+CMP_FORMAT_B_2 = "    {:s}(31) := '1';"
+CMP_FORMAT_B_3 = "else"
+CMP_FORMAT_B_4 = "    {:s}(31) := '0';"
+CMP_FORMAT_B_5 = "end if;"
 
 AND_FORMAT = "{:s} := {:s} and {:s};"
 ANDI_FORMAT = "{:s} := {:s} and to_signed({:s}, 32);"
@@ -25,6 +37,8 @@ SRL_FORMAT = "{:s} := {:s} srl 1;"
 
 MUL_FORMAT = "{:s} := {:s} * {:s};"
 MULI_FORMAT = "{:s} := {:s} * to_signed({:s}, 32);"
+
+IDIV_FORMAT = "{:s} := {:s} / {:s};"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -110,6 +124,11 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("signal offset         :  Integer;")
   tw.writeBlankLine()
 
+  # Carry signal. This is used in addition and subtraction operations.
+  tw.writeCommentLine("Carry.")
+  tw.writeLine("signal carry          : unsigned(1 downto 0);")
+  tw.writeBlankLine()
+
   # Begin behavioural definition.
   tw.decreaseIndent()
   tw.writeBlankLine()
@@ -140,6 +159,16 @@ def getArchitecturalDefinition(stateMachine):
   # Output the 'temp64' variable. This is used by operations which produce a 64-bit result (e.g. multiply)
   tw.writeCommentLine("Temporary 64-bit variable.")
   tw.writeLine("variable temp64      : signed(63 downto 0);")
+  tw.writeBlankLine()
+
+  # Output the 'temp33' variable. This is used by operations which can overflow.
+  tw.writeCommentLine("Temporary 33-bit variable.")
+  tw.writeLine("variable temp33      : unsigned(32 downto 0);")
+  tw.writeBlankLine()
+
+  # Output the 'temp_carry' variable. This is used to store the carry flag during computations.
+  tw.writeCommentLine("Temporary carry flag.")
+  tw.writeLine("variable temp_carry  : unsigned(1 downto 0);")
   tw.writeBlankLine()
 
   # Start the process body.
@@ -269,6 +298,10 @@ def getArchitecturalDefinition(stateMachine):
           tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
 
       tw.writeBlankLine()
+      tw.writeCommentLine("Set local carry variable.")
+      tw.writeLine("temp_carry := carry;")
+
+      tw.writeBlankLine()
 
       # Now write translations of all the instructions in the block.
       for inst in s.instructions():
@@ -285,6 +318,10 @@ def getArchitecturalDefinition(stateMachine):
       for o in s.outputs():
         if o != 0:
           tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
+
+      tw.writeBlankLine()
+      tw.writeCommentLine("Set carry flag register.")
+      tw.writeLine("carry <= temp_carry;")
 
       tw.writeBlankLine()
 
@@ -627,6 +664,7 @@ def translateInstruction(stateName, instruction):
 
   lines = []
   needsTemp = False
+  setCarry = False
 
   if instruction.imm() != None:
     immediate = str(instruction.imm())
@@ -634,9 +672,23 @@ def translateInstruction(stateName, instruction):
     immediate = "%%SYM_" + instruction.label() + "%%"
 
   if mnemonic == "addk":
-    lines.append(ADD_FORMAT.format(localName(stateName, instruction.rD()),
+    lines.append(ADDK_FORMAT.format(localName(stateName, instruction.rD()),
                                    localName(stateName, instruction.rA()),
                                    localName(stateName, instruction.rB())))
+  elif mnemonic == "add":
+    lines.append(ADD_FORMAT.format("temp33",
+                                   localName(stateName, instruction.rA()),
+                                   localName(stateName, instruction.rB())))
+
+    setCarry = True
+
+  elif mnemonic == "addc":
+    lines.append(ADDC_FORMAT.format("temp33",
+                                    localName(stateName, instruction.rA()),
+                                    localName(stateName, instruction.rB())))
+
+    setCarry = True
+
   elif mnemonic == "addik":
     lines.append(ADDI_FORMAT.format(localName(stateName, instruction.rD()),
                                     localName(stateName, instruction.rA()),
@@ -663,6 +715,22 @@ def translateInstruction(stateName, instruction):
 
     lines.append(CMPU_FORMAT_B_5)
 
+  elif mnemonic == "cmp":
+    lines.append(CMP_FORMAT_A.format(localName(stateName, instruction.rD()),
+                                     localName(stateName, instruction.rB()),
+                                     localName(stateName, instruction.rA())))
+
+    lines.append(CMP_FORMAT_B_1.format(localName(stateName, instruction.rA()),
+                                       localName(stateName, instruction.rB())))
+
+    lines.append(CMP_FORMAT_B_2.format(localName(stateName, instruction.rD())))
+
+    lines.append(CMP_FORMAT_B_3)
+
+    lines.append(CMP_FORMAT_B_4.format(localName(stateName, instruction.rD())))
+
+    lines.append(CMP_FORMAT_B_5)
+
   elif mnemonic == "mul":
     # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
     # and then put the lower 32 bits of that variable into the destination register.
@@ -682,6 +750,11 @@ def translateInstruction(stateName, instruction):
                                    immediate))
 
     needsTemp = True
+
+  elif mnemonic == "idiv":
+    lines.append(IDIV_FORMAT.format(localName(stateName, instruction.rD()),
+                                    localName(stateName, instruction.rB()),
+                                    localName(stateName, instruction.rA())))
 
   elif mnemonic == "and":
     lines.append(AND_FORMAT.format(localName(stateName, instruction.rD()),
@@ -722,6 +795,14 @@ def translateInstruction(stateName, instruction):
 
   if needsTemp:
     lines.append(localName(stateName, instruction.rD()) + " := temp64(31 downto 0);")
+
+  if setCarry:
+    lines.append(localName(stateName, instruction.rD()) + " := temp33(31 downto 0);")
+    lines.append("if temp33(32) = '1' then")
+    lines.append("    temp_carry := to_unsigned(1, 2);")
+    lines.append("else")
+    lines.append("    temp_carry := to_unsigned(0, 2);")
+    lines.append("end if;")
 
   return lines
 
