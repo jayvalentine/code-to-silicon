@@ -48,7 +48,7 @@ FloatArith:
   - fint
   - fsqrt
 
-Branch:
+CondBranch:
   - beq
   - beqi
   - bge
@@ -61,16 +61,20 @@ Branch:
   - blti
   - bne
   - bnei
+
+Branch:
   - br
   - bri
   - brk
   - brki
 
-DelayBranch:
+CondDelayBranch:
   - bltid
-  - brid
   - brlid
   - bneid
+
+DelayBranch:
+  - brid
 
 Return:
   - rtbd

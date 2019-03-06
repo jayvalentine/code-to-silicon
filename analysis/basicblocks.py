@@ -247,17 +247,14 @@ class BasicBlock:
     #
     # First step: for each input, construct a set of lists that track it to its next input.
     for r in outputs:
-      print(r)
       t = _track(self, r, [])
 
       removeRegister = True
       for visited in t:
-        print("Analysing lifetime of r{:02d} for block {:s}.".format(r, self._name))
         if not _isOutBeforeIn(r, visited[1:]):
           removeRegister = False
 
       if removeRegister:
-        print("Register r{:02d} pruned from outputs of block {:s}.".format(r, self._name))
         outputs.remove(r)
 
     return outputs
@@ -341,17 +338,16 @@ def _track(block, register, visited):
 def _isOutBeforeIn(register, visited):
   output = False
   for block in visited:
-    print("Visited {:s}.".format(block.name()))
     if block.getNext()[1] and not output:
-      print("Unknown successor in block {:s}. Assuming r{:02d} as input.".format(block.name(), register))
-      return False
+      if register in range(3, 5) or register in range(11, 13):
+        pass
+      else:
+        return False
 
     if output == False and register in block.inputs():
-      print("Detected r{:02d} as input to block {:s}.".format(register, block.name()))
       return False
 
     if register in block.rawOutputs():
-      print("Detected r{:02d} as output from block {:s}.".format(register, block.name()))
       output = True
 
   return True
@@ -448,7 +444,7 @@ def linkBasicBlocks(logger, blocks):
 
     b = blocks[i]
 
-    # We should never see a basic block which doesn't end with a control flow instruction.
+    runOn = True
     lastInstruction = b.last()
     if lastInstruction != None and not lastInstruction.isBasicBlockBoundary():
       raise ValueError("Expected control flow instruction as end of block " + b.name() + ", got " + str(lastInstruction))
@@ -456,6 +452,8 @@ def linkBasicBlocks(logger, blocks):
     # If this is a normal branch instruction, find the block we're branching to.
     if lastInstruction != None:
       if lastInstruction.isBranch():
+        runOn = False
+
         branchLabel = lastInstruction.label()
 
         # If the label starts with '.', it's relative to the current location.
@@ -486,7 +484,13 @@ def linkBasicBlocks(logger, blocks):
           else:
             b.addNext(blocksWithLabel[0])
 
+        # If the branch is conditional, we also need to link to the block after this one.]
+        if lastInstruction.isConditional():
+          runOn = True
+
       elif lastInstruction.isReturn():
+        runOn = False
+
         # Get the name of the function this block is in.
         currentFunction = b.function()
 
@@ -525,8 +529,8 @@ def linkBasicBlocks(logger, blocks):
         # We can't know if we've found all return sites for this function, so add an unknown next.
         b.addUnknownNext()
 
-    # Otherwise this basic block simply runs into another one. Find the next block.
-    else:
+    # This basic block simply runs into another one. Find the next block.
+    if runOn:
       nextLine = b.lines()[-1] + 1
 
       foundBlock = None

@@ -215,11 +215,26 @@ class ControlFlowInstruction(Instruction):
   def isReturn(self):
     return False
 
+  def isConditional(self):
+    return False
+
   def setDelay(self, instruction):
     self._delaySlotInstruction = instruction
 """
 Branch instructions. These are a subset of CF instructions which transfer control to another
 point in the program, designated by a label.
+
+br
+bri
+brk
+brki
+"""
+class BranchInstruction(ControlFlowInstruction):
+  def isBranch(self):
+    return True
+
+"""
+Conditional branch instructions. These are branches which are taken depending on some condition.
 
 beq
 beqi
@@ -233,26 +248,30 @@ blt
 blti
 bne
 bnei
-br
-bri
-brk
-brki
 """
-class BranchInstruction(ControlFlowInstruction):
-  def isBranch(self):
+class ConditionalBranchInstruction(BranchInstruction):
+  def isConditional(self):
     return True
 
 """
 Delay branch instructions. These are branch instructions with a 'delay slot', i.e. an instruction which
 is executed before control is transferred to the branch target.
 
-bltid
 brid
-brlid
-bneid
 """
 class DelayBranchInstruction(BranchInstruction):
   def hasDelay(self):
+    return True
+
+"""
+Conditional delay branch instructions.
+
+bltid
+brlid
+bneid
+"""
+class ConditionalDelayBranchInstruction(DelayBranchInstruction):
+  def isConditional(self):
     return True
 
 """
@@ -414,8 +433,12 @@ def parseInstruction(instructionString):
     instructionClass = FloatArithmeticInstruction
   elif category == "Branch":
     instructionClass = BranchInstruction
+  elif category == "CondBranch":
+    instructionClass = ConditionalBranchInstruction
   elif category == "DelayBranch":
     instructionClass = DelayBranchInstruction
+  elif category == "CondDelayBranch":
+    instructionClass = ConditionalDelayBranchInstruction
   elif category == "Return":
     instructionClass = ReturnInstruction
   elif category == "Input":

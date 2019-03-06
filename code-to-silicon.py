@@ -92,8 +92,10 @@ def main(argv):
   # Set the logger's actual level now that we've parsed the options.
   logger.setLevel(verbosity)
 
-  if not os.path.isdir("figures/autogen"):
-      os.makedirs("figures/autogen")
+  if os.path.isdir("figures/autogen"):
+    os.rmdir("figures/autogen")
+
+  os.makedirs("figures/autogen")
 
   coreCounts = []
   speedups = []
@@ -101,7 +103,7 @@ def main(argv):
   coreOutputsAvg = []
   baseCycles = None
 
-  cores = [1, 4, 9, 16, 25, 36, 49, 64]
+  cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
   for i in cores:
     metrics = testing.runTest(logger, "sha256", i, sim)
