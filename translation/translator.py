@@ -6,7 +6,9 @@ ADD_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s});"
 
 ADDC_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s}) + carry;"
 
-ADDI_FORMAT = "{:s} := unsigned({:s}) + unsigned(to_signed({:s}, 32));"
+ADDIK_FORMAT = "{:s} := unsigned({:s}) + unsigned(to_signed({:s}, 32));"
+
+ADDI_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned(to_signed({:s}, 32));"
 
 RSUB_FORMAT = "{:s} := unsigned({:s}) - unsigned({:s});"
 
@@ -23,6 +25,9 @@ CMP_FORMAT_B_2 = "    {:s}(31) := '1';"
 CMP_FORMAT_B_3 = "else"
 CMP_FORMAT_B_4 = "    {:s}(31) := '0';"
 CMP_FORMAT_B_5 = "end if;"
+
+SEXT8_FORMAT_A = "{:s} := (others => {:s}(7));"
+SEXT8_FORMAT_B = "{:s}(6 downto 0) := {:s}(6 downto 0);"
 
 AND_FORMAT = "{:s} := {:s} and {:s};"
 ANDI_FORMAT = "{:s} := {:s} and to_signed({:s}, 32);"
@@ -690,9 +695,16 @@ def translateInstruction(stateName, instruction):
     setCarry = True
 
   elif mnemonic == "addik":
-    lines.append(ADDI_FORMAT.format(localName(stateName, instruction.rD()),
+    lines.append(ADDIK_FORMAT.format(localName(stateName, instruction.rD()),
                                     localName(stateName, instruction.rA()),
                                     immediate))
+
+  elif mnemonic == "addi":
+    lines.append(ADDI_FORMAT.format("temp33",
+                                    localName(stateName, instruction.rA()),
+                                    immediate))
+
+    setCarry = True
 
   elif mnemonic == "rsubk":
     lines.append(RSUB_FORMAT.format(localName(stateName, instruction.rD()),
@@ -730,6 +742,13 @@ def translateInstruction(stateName, instruction):
     lines.append(CMP_FORMAT_B_4.format(localName(stateName, instruction.rD())))
 
     lines.append(CMP_FORMAT_B_5)
+
+  elif mnemonic == "sext8":
+    lines.append(SEXT8_FORMAT_A.format(localName(stateName, instruction.rD()),
+                                       localName(stateName, instruction.rA())))
+
+    lines.append(SEXT8_FORMAT_B.format(localName(stateName, instruction.rD()),
+                                       localName(stateName, instruction.rA())))
 
   elif mnemonic == "mul":
     # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
