@@ -156,11 +156,12 @@ def main(argv):
       plot.clf()
 
     # Plot average inputs/outputs against core count.
-    plot.plot(coreCounts, coreInputsAvg)
-    plot.plot(coreCounts, coreOutputsAvg)
+    plot.plot(coreCounts, coreInputsAvg, label="Input")
+    plot.plot(coreCounts, coreOutputsAvg, label="Output")
+    plot.legend(loc = "upper left")
     plot.xlim([1, coreCounts[-1]])
     plot.ylim([0, 32])
-    plot.savefig("figures/autogen/avg-outputs-{:s}.png".format(analysis))
+    plot.savefig("figures/autogen/avg-io-{:s}.png".format(analysis))
     plot.clf()
 
   # Plot analysis times against core count.

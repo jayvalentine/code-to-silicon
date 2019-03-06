@@ -22,6 +22,8 @@ class BasicBlock:
     self._unknownNext = False
     self._unknownPrev = False
 
+    self._outputs = None
+
   def __str__(self):
     s = "Basic Block: " + self._name + " in function " + self._function
 
@@ -195,6 +197,12 @@ class BasicBlock:
     return outputs
 
   def outputs(self):
+    if self._outputs == None:
+      raise ValueError("Block outputs not yet defined.")
+
+    return self._outputs
+
+  def setOutputs(self):
     outputs = self.rawOutputs()
 
     for l in sorted(list(self._instructions.keys())):
@@ -241,7 +249,8 @@ class BasicBlock:
     # see if we can prune any outputs. Note that we assume any unknown successor to take all registers
     # as inputs (this is the most pessimistic approach but also the only safe one).
     if self._unknownNext:
-      return outputs
+      self._outputs = outputs
+      return
 
     # Now we can do some more expensive pruning. Consider:
     # A register is an output from a block B iff
@@ -260,7 +269,7 @@ class BasicBlock:
       if removeRegister:
         outputs.remove(r)
 
-    return outputs
+    self._outputs = outputs
 
   def inputs(self):
     inputs = []
@@ -570,5 +579,8 @@ def linkBasicBlocks(logger, blocks):
 
       logger.debug("Found next block for " + b.name() + ": " + foundBlock.name() + ".")
       b.addNext(foundBlock)
+
+  for block in blocks:
+    block.setOutputs()
 
   return blocks
