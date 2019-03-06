@@ -22,7 +22,7 @@ FAILED = "!!!FAILED!!!"
 
 MEM_MSG_FORMAT = re.compile("Note: BRAM: READ DETECTED: ([0-9A-F]+) ([0-9A-F]+)")
 
-def runTest(logger, testName, numStateMachines, runSimulation):
+def runTest(logger, testName, numStateMachines, runSimulation, analysisType):
     # Get test and temp directory paths.
     testDir = os.path.join(TESTING_DIR, testName)
     tempDir = os.path.join(testDir, "temp")
@@ -48,7 +48,7 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 
     # Analyse generated code and produce statemachines.
     start = time.time()
-    selected = generateStateMachines(logger, numStateMachines)
+    selected = generateStateMachines(logger, numStateMachines, analysisType)
     end = time.time()
 
     logger.info("Analysis completed in " + str(round(end-start, 4)) + "s.")
@@ -97,7 +97,7 @@ def runTest(logger, testName, numStateMachines, runSimulation):
 def compileApplication(logger):
     compiler.compile(logger, ["application.c"], "application.s")
 
-def generateStateMachines(logger, num):
+def generateStateMachines(logger, num, analysisType):
   logger.info("Reading application file...")
   with open("application.s", 'r') as file:
     stream = parser.parse(file.readlines())
@@ -115,21 +115,40 @@ def generateStateMachines(logger, num):
   # Get basic blocks from stream.
   blocks = basicblocks.extractBasicBlocks(logger, stream)
 
-  blocksSorted = sorted(blocks, key=lambda b: b.cost())
+  if analysisType == "expensive":
+    logger.info("Performing expensive block selection analysis.")
+    stateMachines = []
 
-  if len(blocksSorted) <= num:
-    logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
-    selected = blocksSorted
-  else:
-    selected = blocksSorted[:num]
+    # Convert all state machines.
+    for b in blocks:
+      sm = statemachine.getStateMachine(b)
+      stateMachines.append(sm)
+
+    # Select from converted state machines.
+    stateMachines = sorted(stateMachines, key=lambda sm: sm.cost())
+
+    if len(stateMachines) < num:
+      logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
+    else:
+      stateMachines = stateMachines[:num]
+
+  elif analysisType == "heuristic":
+    logger.info("Performing heuristic block selection analysis.")
+    blocksSorted = sorted(blocks, key=lambda b: b.cost())
+
+    if len(blocksSorted) <= num:
+      logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
+      selected = blocksSorted
+    else:
+      selected = blocksSorted[:num]
+
+    stateMachines = []
+    for b in selected:
+      sm = statemachine.getStateMachine(b)
+      stateMachines.append(sm)
 
   # Sort in textual order.
-  selected = sorted(selected, key=lambda b: b.lines()[0])
-
-  stateMachines = []
-  for b in selected:
-    sm = statemachine.getStateMachine(b)
-    stateMachines.append(sm)
+  stateMachines = sorted(stateMachines, key=lambda sm: sm.block().lines()[0])
 
   id = 0
   change = 0

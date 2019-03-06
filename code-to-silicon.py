@@ -98,59 +98,78 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  coreCounts = []
-  speedups = []
-  coreInputsAvg = []
-  coreOutputsAvg = []
-  baseCycles = None
-
   cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
-  for i in cores:
-    metrics = testing.runTest(logger, "fannkuch", i, sim)
+  analysisTimes = {}
 
-    if i == 0:
-      speedups.append(1.0)
-      coreCounts.append(0)
-      baseCycles = metrics["cycles"]
-      coreInputsAvg.append(0)
-      coreOutputsAvg.append(0)
+  analysisTypes = ["heuristic", "expensive"]
 
-    else:
-      if metrics["cycles"] != None:
-        s = baseCycles / metrics["cycles"]
-        speedups.append(s)
+  for analysis in analysisTypes:
+    coreCounts = []
+    speedups = []
+    coreInputsAvg = []
+    coreOutputsAvg = []
+    baseCycles = None
 
-      coreCounts.append(metrics["coreCount"])
+    for i in cores:
+      metrics = testing.runTest(logger, "fannkuch", i, sim, analysis)
 
-      # Plot 'population scatter' of inputs vs outputs.
-      plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
-      plot.xlim([0, 32])
-      plot.ylim([0, 32])
-      plot.savefig("figures/autogen/pop-{:02d}-cores.png".format(metrics["coreCount"]))
+      if analysis not in analysisTimes.keys():
+        analysisTimes[analysis] = []
+
+      analysisTimes[analysis].append(metrics["analysisTime"])
+
+      if i == 0:
+        speedups.append(1.0)
+        coreCounts.append(0)
+        baseCycles = metrics["cycles"]
+        coreInputsAvg.append(0)
+        coreOutputsAvg.append(0)
+
+      else:
+        if metrics["cycles"] != None:
+          s = baseCycles / metrics["cycles"]
+          speedups.append(s)
+
+        coreCounts.append(metrics["coreCount"])
+
+        # Plot 'population scatter' of inputs vs outputs.
+        plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
+        plot.xlim([0, 32])
+        plot.ylim([0, 32])
+        plot.savefig("figures/autogen/pop-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
+        plot.clf()
+
+        # Plot regression of heuristic cost against actual cost.
+        plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
+        plot.savefig("figures/autogen/cost-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
+        plot.clf()
+
+        # Store average inputs and outputs.
+        coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
+        coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
+
+    # Display a plot of speedup against core count.
+    if sim:
+      plot.plot(coreCounts, speedups)
+      plot.savefig("figures/autogen/speedup-fannkuch-{:s}.png".format(analysis))
       plot.clf()
 
-      # Plot regression of heuristic cost against actual cost.
-      plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
-      plot.savefig("figures/autogen/cost-{:02d}-cores.png".format(metrics["coreCount"]))
-      plot.clf()
-
-      # Store average inputs and outputs.
-      coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
-      coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
-
-  # Display a plot of speedup against core count.
-  if sim:
-    plot.plot(coreCounts, speedups)
-    plot.savefig("figures/autogen/speedup-sha256.png")
+    # Plot average inputs/outputs against core count.
+    plot.plot(coreCounts, coreInputsAvg)
+    plot.plot(coreCounts, coreOutputsAvg)
+    plot.xlim([1, coreCounts[-1]])
+    plot.ylim([0, 32])
+    plot.savefig("figures/autogen/avg-outputs-{:s}.png".format(analysis))
     plot.clf()
 
-  # Plot average inputs/outputs against core count.
-  plot.plot(coreCounts, coreInputsAvg)
-  plot.plot(coreCounts, coreOutputsAvg)
-  plot.xlim([1, coreCounts[-1]])
-  plot.ylim([0, 32])
-  plot.savefig("figures/autogen/avg-outputs.png")
+  # Plot analysis times against core count.
+  for analysis in analysisTypes:
+    plot.plot(coreCounts, analysisTimes[analysis], label=analysis)
+
+  plot.legend(loc="upper left")
+  plot.xlim([0, coreCounts[-1]])
+  plot.savefig("figures/autogen/analysis-times.png")
   plot.clf()
 
   # Now build the report (unless we've been asked not to)!
