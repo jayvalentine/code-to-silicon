@@ -140,6 +140,9 @@ class BasicBlock:
   def addUnknownNext(self):
     self._unknownNext = True
 
+  def getNext(self):
+    return (self._next, self._unknownNext)
+
   def lines(self):
     return sorted(list(self._instructions.keys()))
 
@@ -171,8 +174,25 @@ class BasicBlock:
 
     return (sum(widths)/len(widths))
 
-  def outputs(self):
+  def rawOutputs(self):
     outputs = []
+
+    for l in sorted(list(self._instructions.keys())):
+      i = self._instructions[l]
+
+      # There is no destination register for an output instruction,
+      # as they don't write any values.
+      if not isinstance(i, instructions.OutputInstruction):
+        if i.rD() != None and i.rD() not in outputs:
+          outputs.append(i.rD())
+
+    if 0 in outputs:
+      outputs.remove(0)
+
+    return outputs
+
+  def outputs(self):
+    outputs = self.rawOutputs()
 
     for l in sorted(list(self._instructions.keys())):
       i = self._instructions[l]
@@ -213,6 +233,32 @@ class BasicBlock:
       for r in range(5, 13):
         if r in outputs:
           outputs.remove(r)
+
+    # If this block has a successor we do not know, stop, as there is no point trying to
+    # see if we can prune any outputs. Note that we assume any unknown successor to take all registers
+    # as inputs (this is the most pessimistic approach but also the only safe one).
+    if self._unknownNext:
+      return outputs
+
+    # Now we can do some more expensive pruning. Consider:
+    # A register is an output from a block B iff
+    #   a. it is an input to some block B' which is a successor of B
+    #   b. it is not the output of some block B* which is on the path between B and B'.
+    #
+    # First step: for each input, construct a set of lists that track it to its next input.
+    for r in outputs:
+      print(r)
+      t = _track(self, r, [])
+
+      removeRegister = True
+      for visited in t:
+        print("Analysing lifetime of r{:02d} for block {:s}.".format(r, self._name))
+        if not _isOutBeforeIn(r, visited[1:]):
+          removeRegister = False
+
+      if removeRegister:
+        print("Register r{:02d} pruned from outputs of block {:s}.".format(r, self._name))
+        outputs.remove(r)
 
     return outputs
 
@@ -258,6 +304,57 @@ class BasicBlock:
       used.remove(0)
 
     return used
+
+# Given a block and a register, return all blocks which are direct successors which do not have
+# that register as an input.
+# In addition, return a flag if this block has a successor which is unknown to us (i.e. it is not a block we are analysing).
+def _track(block, register, visited):
+  # Stop if we've seen this block before, as this implies a loop.
+  if block in visited:
+    visited.append(block)
+    return [visited]
+
+  # Stop if this block has no successors.
+  if len(block.getNext()[0]) == 0:
+    visited.append(block)
+    return [visited]
+
+  # Stop if this block is at the end of a function and we're tracking a volatile register.
+  if register in range(5, 13) and block.last() != None and block.last().isReturn():
+    visited.append(block)
+    return [visited]
+
+  # We've now visited this block.
+  visited.append(block)
+
+  # For every block that is a successor of the current one:
+  #
+  # get all the lists returned by track() for that block.
+  # Create a new list of lists.
+  allVisited = []
+  for b_next in block.getNext()[0]:
+    l = _track(b_next, register, visited.copy())
+    allVisited += l
+
+  return allVisited
+
+def _isOutBeforeIn(register, visited):
+  output = False
+  for block in visited:
+    print("Visited {:s}.".format(block.name()))
+    if block.getNext()[1] and not output:
+      print("Unknown successor in block {:s}. Assuming r{:02d} as input.".format(block.name(), register))
+      return False
+
+    if output == False and register in block.inputs():
+      print("Detected r{:02d} as input to block {:s}.".format(register, block.name()))
+      return False
+
+    if register in block.rawOutputs():
+      print("Detected r{:02d} as output from block {:s}.".format(register, block.name()))
+      output = True
+
+  return True
 
 def extractBasicBlocks(logger, stream):
   blocks = []
