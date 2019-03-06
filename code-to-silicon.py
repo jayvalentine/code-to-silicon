@@ -11,9 +11,12 @@ from testbench import testing
 
 HELP = """Usage: code-to-silicon.py <options>
           Options:
-            --nosim:    avoid running Vivado simulations.
-            --nosynth:  avoid running synthesis and analysis in Vivado.
-            --noreport: avoid building LaTeX reort.
+            --nosim:           avoid running Vivado simulations.
+            --nosynth:         avoid running synthesis and analysis in Vivado.
+            --noreport:        avoid building LaTeX reort.
+            --verbosity=level  logging level.
+            --analysis=mode    analysis complexity.
+            --pruning=mode     block output pruning mode.
             --help, -h: display this message."""
 
 class Logger:
@@ -68,7 +71,7 @@ def main(argv):
 
   # Parse command line arguments.
   try:
-    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "verbosity=", "analysis=", "help"])
+    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "verbosity=", "analysis=", "pruning=", "help"])
   except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -93,12 +96,19 @@ def main(argv):
       analysis = str(arg)
       if analysis not in ["heuristic", "expensive", "both"]:
         logger.error("Invalid analysis mode " + analysis)
+        sys.exit(2)
 
       analysisTypes = ["heuristic", "expensive"]
       if analysis == "heuristic":
         analysisTypes = ["heuristic"]
       elif analysis == "expensive":
         analysisTypes = ["expensive"]
+
+    elif opt == "--pruning":
+      mode = str(arg)
+      if mode not in ["naive", "volatile", "complete"]:
+        logger.error("Invalid pruning mode " + mode)
+        sys.exit(2)
 
   # Set the logger's actual level now that we've parsed the options.
   logger.setLevel(verbosity)
@@ -120,7 +130,7 @@ def main(argv):
     baseCycles = None
 
     for i in cores:
-      metrics = testing.runTest(logger, "fannkuch", i, sim, analysis)
+      metrics = testing.runTest(logger, "fannkuch", i, sim, analysis, mode)
 
       if analysis not in analysisTimes.keys():
         analysisTimes[analysis] = []

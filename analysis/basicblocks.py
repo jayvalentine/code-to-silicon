@@ -192,7 +192,7 @@ class BasicBlock:
 
     return self._outputs
 
-  def setOutputs(self):
+  def setInputs(self):
     outputs = []
 
     for l in sorted(list(self._instructions.keys())):
@@ -213,6 +213,7 @@ class BasicBlock:
     if 0 in self._inputs:
       self._inputs.remove(0)
 
+  def setMemoryAccessDensity(self):
     numInstructions = 0
     numMemoryAccess = 0
 
@@ -223,6 +224,7 @@ class BasicBlock:
     
     self._memoryAccessDensity = (float(numMemoryAccess)/float(numInstructions))
 
+  def setAverageComputationWidth(self):
     widths = []
 
     currentWidth = 0.0
@@ -239,19 +241,11 @@ class BasicBlock:
 
     self._averageComputationWidth = (sum(widths)/len(widths))
 
-    outputs = self.rawOutputs()
+  def setOutputs(self, mode):
+    self._outputs = self.rawOutputs()
 
-    for l in sorted(list(self._instructions.keys())):
-      i = self._instructions[l]
-
-      # There is no destination register for an output instruction,
-      # as they don't write any values.
-      if not isinstance(i, instructions.OutputInstruction):
-        if i.rD() != None and i.rD() not in outputs:
-          outputs.append(i.rD())
-
-    if 0 in outputs:
-      outputs.remove(0)
+    if mode == "naive":
+      return
 
     # We've got all registers written to in this function,
     # now we need to see if we can do some pruning.
@@ -278,16 +272,16 @@ class BasicBlock:
     # block. Therefore, if the last instruction in this block is a return, we can exclude r5-r12.
     if self.last() != None and self.last().isReturn():
       for r in range(5, 13):
-        if r in outputs:
-          outputs.remove(r)
+        if r in self._outputs:
+          self._outputs.remove(r)
+
+    if mode == "volatile":
+      return
 
     # If this block has a successor we do not know, stop, as there is no point trying to
     # see if we can prune any outputs. Note that we assume any unknown successor to take all registers
     # as inputs (this is the most pessimistic approach but also the only safe one).
     if self._unknownNext:
-      io_density = (len(outputs) + len(self.inputs())) / len(self._instructions)
-      self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
-      self._outputs = outputs
       return
 
     # Now we can do some more expensive pruning. Consider:
@@ -296,7 +290,7 @@ class BasicBlock:
     #   b. it is not the output of some block B* which is on the path between B and B'.
     #
     # First step: for each input, construct a set of lists that track it to its next input.
-    for r in outputs:
+    for r in self._outputs:
       t = _track(self, r, [])
 
       removeRegister = True
@@ -305,9 +299,9 @@ class BasicBlock:
           removeRegister = False
 
       if removeRegister:
-        outputs.remove(r)
+        self._outputs.remove(r)
 
-    self._outputs = outputs
+  def setCost(self):
     io_density = (len(self._outputs) + len(self.inputs())) / len(self._instructions)
     self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
 
@@ -382,7 +376,7 @@ def _isOutBeforeIn(register, visited):
 
   return True
 
-def extractBasicBlocks(logger, stream):
+def extractBasicBlocks(logger, stream, mode):
   blocks = []
 
   currentBlock = None
@@ -484,9 +478,9 @@ def extractBasicBlocks(logger, stream):
       blocks += blockToSplit.splitAtLine(lineToSplit)
       logger.debug("Block " + blockToSplit.name() + " split at line " + str(lineToSplit) + ".")
 
-  return linkBasicBlocks(logger, blocks)
+  return linkBasicBlocks(logger, blocks, mode)
 
-def linkBasicBlocks(logger, blocks):
+def linkBasicBlocks(logger, blocks, mode):
   for i in range(len(blocks)):
     # A basic block can be linked to another in one of two ways:
     # 1. a branch instruction
@@ -599,6 +593,10 @@ def linkBasicBlocks(logger, blocks):
       b.addNext(foundBlock)
 
   for block in blocks:
-    block.setOutputs()
+    block.setOutputs(mode)
+    block.setInputs()
+    block.setMemoryAccessDensity()
+    block.setAverageComputationWidth()
+    block.setCost()
 
   return blocks
