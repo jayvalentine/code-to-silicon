@@ -66,6 +66,9 @@ class BasicBlock:
     for l in sorted(list(self._instructions.keys())):
       s += "\t{:04d}: {:s}\n".format(l, str(self._instructions[l]))
 
+    if self._last != None:
+      s += "\t{:04d}: {:s}\n".format(self._lastLine, str(self._last))
+
     return s
 
   def __getitem__(self, key):
@@ -411,27 +414,50 @@ def extractBasicBlocks(logger, stream):
 
   blocks = list(filter(lambda b: len(b) > 0, blocks))
 
-  splitBlocks = []
+  done = False
 
-  for block in blocks:
-    split = False
+  while not done:
+    blockToSplit = None
+    lineToSplit = None
 
-    if block.last() != None:
-      if block.last().isBranch():
-        branchLabel = block.last().label()
+    for block in blocks:
+      #print(block)
+      if block.last() != None:
+        # If this block has a branch instruction as the last,
+        # there's a chance it may be a relative jump.
+        if block.last().isBranch():
+          branchLabel = block.last().label()
 
-        if branchLabel[0] == ".":
-          offset = int(branchLabel[1:])//4
-          line = block.lastLine() + offset
+          if branchLabel[0] == ".":
+            offset = int(branchLabel[1:])//4
+            lineToSplit = block.lastLine() + offset
 
-          splitBlocks += block.splitAtLine(line)
-          logger.debug("Block " + block.name() + " split at line " + str(line) + ".")
-          split = True
+            blockToSplit = None
+            if lineToSplit in block.lines()[1:]:
+              blockToSplit = block
+            else:
+              # Find a block that contains this line.
+              found = list(filter(lambda b: lineToSplit in b.lines()[1:], blocks))
+              if len(found) > 1:
+                raise ValueError("Location of relative branch " + branchLabel + " is ambiguous.")
+              
+              if len(found) > 0:
+                blockToSplit = found[0]
 
-    if not split:
-      splitBlocks.append(block)
+            # Exit for loop.
+            if blockToSplit != None:
+              break
 
-  return linkBasicBlocks(logger, splitBlocks)
+    # We've gone through the whole list and not found a block to split.
+    # Go no further, mark as done.
+    if blockToSplit == None:
+      done = True
+    else:
+      blocks.remove(blockToSplit)
+      blocks += blockToSplit.splitAtLine(lineToSplit)
+      logger.debug("Block " + blockToSplit.name() + " split at line " + str(lineToSplit) + ".")
+
+  return linkBasicBlocks(logger, blocks)
 
 def linkBasicBlocks(logger, blocks):
   for i in range(len(blocks)):

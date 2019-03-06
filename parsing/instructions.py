@@ -11,7 +11,7 @@ CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
 REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
 IMMEDIATE_FORMAT_RE = re.compile("(-?\d+)")
 LABEL_FORMAT_RE = re.compile("(\$?\w+)")
-REL_LABEL_FORMAT_RE = re.compile("(\.-?\d+)")
+REL_LABEL_FORMAT_RE = re.compile("(\.[-+]\d+)")
 
 INSTRUCTION_STRING_TEMPLATE = "{:10}{:24}"
 
