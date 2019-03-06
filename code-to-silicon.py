@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import shutil
 import getopt
 import sys
 
@@ -93,7 +94,7 @@ def main(argv):
   logger.setLevel(verbosity)
 
   if os.path.isdir("figures/autogen"):
-    os.rmdir("figures/autogen")
+    shutil.rmtree("figures/autogen")
 
   os.makedirs("figures/autogen")
 
@@ -106,7 +107,7 @@ def main(argv):
   cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
   for i in cores:
-    metrics = testing.runTest(logger, "sha256", i, sim)
+    metrics = testing.runTest(logger, "fannkuch", i, sim)
 
     if i == 0:
       speedups.append(1.0)
