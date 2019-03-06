@@ -15,7 +15,7 @@ def help():
   logger.debug("GCC: " + out[0])
 
 def compile(logger, files, output):
-  out = common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-funroll-all-loops", "-ffixed-30", "-ffixed-31", "-Os"] + ["-o", output] + files)
+  out = common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-ffixed-30", "-ffixed-31", "-Os"] + ["-o", output] + files)
 
   logger.debug("GCC: " + out[0])
 
@@ -32,7 +32,7 @@ def makeHex(logger, objfile, hexfile):
   logger.debug("OBJCOPY: " + out[0])
 
 def disassembleElf(logger, elffile, asmfile):
-  out = common.run_command(OBJDUMP, ["-d", elffile])
+  out = common.run_command(OBJDUMP, ["-S", "-d", elffile])
 
   with open(asmfile, 'w') as file:
     file.write(out[1])
