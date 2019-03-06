@@ -1,26 +1,26 @@
 import text
 
-ADDK_FORMAT = "{:s} := unsigned({:s}) + unsigned({:s});"
+ADDK_FORMAT = "{:s} := {:s} + {:s};"
 
-ADD_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s});"
+ADD_FORMAT = "{:s} := '0' & {:s} + unsigned({:s});"
 
-ADDC_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s}) + carry;"
+ADDC_FORMAT = "{:s} := '0' & {:s} + {:s} + carry;"
 
-ADDIK_FORMAT = "{:s} := unsigned({:s}) + unsigned(std_logic_vector(to_signed({:s}, 32)));"
+ADDIK_FORMAT = "{:s} := {:s} + unsigned(to_signed({:s}, 32));"
 
-ADDI_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned(std_logic_vector(to_signed({:s}, 32)));"
+ADDI_FORMAT = "{:s} := '0' & {:s} + unsigned(to_signed({:s}, 32));"
 
-RSUB_FORMAT = "{:s} := unsigned({:s}) - unsigned({:s});"
+RSUB_FORMAT = "{:s} := {:s} - {:s};"
 
-CMPU_FORMAT_A = "{:s} := unsigned({:s}) - unsigned({:s});"
-CMPU_FORMAT_B_1 = "if unsigned({:s}) > unsigned({:s}) then"
+CMPU_FORMAT_A = "{:s} := {:s} - {:s};"
+CMPU_FORMAT_B_1 = "if {:s} > {:s} then"
 CMPU_FORMAT_B_2 = "    {:s}(31) := '1';"
 CMPU_FORMAT_B_3 = "else"
 CMPU_FORMAT_B_4 = "    {:s}(31) := '0';"
 CMPU_FORMAT_B_5 = "end if;"
 
-CMP_FORMAT_A = "{:s} := unsigned({:s}) - unsigned({:s});"
-CMP_FORMAT_B_1 = "if {:s} > {:s} then"
+CMP_FORMAT_A = "{:s} := {:s} - {:s};"
+CMP_FORMAT_B_1 = "if signed({:s}) > signed({:s}) then"
 CMP_FORMAT_B_2 = "    {:s}(31) := '1';"
 CMP_FORMAT_B_3 = "else"
 CMP_FORMAT_B_4 = "    {:s}(31) := '0';"
@@ -30,20 +30,20 @@ SEXT8_FORMAT_A = "{:s} := (others => {:s}(7));"
 SEXT8_FORMAT_B = "{:s}(6 downto 0) := {:s}(6 downto 0);"
 
 AND_FORMAT = "{:s} := {:s} and {:s};"
-ANDI_FORMAT = "{:s} := {:s} and to_signed({:s}, 32);"
+ANDI_FORMAT = "{:s} := {:s} and unsigned(to_signed({:s}, 32));"
 
 OR_FORMAT = "{:s} := {:s} or {:s};"
-ORI_FORMAT = "{:s} := {:s} or to_signed({:s}, 32);"
+ORI_FORMAT = "{:s} := {:s} or unsigned(to_signed({:s}, 32));"
 
 XOR_FORMAT = "{:s} := {:s} xor {:s};"
-XORI_FORMAT = "{:s} := {:s} xor to_signed({:s}, 32);"
+XORI_FORMAT = "{:s} := {:s} xor unsigned(to_signed({:s}, 32));"
 
 SRL_FORMAT = "{:s} := {:s} srl 1;"
 
-MUL_FORMAT = "{:s} := {:s} * {:s};"
-MULI_FORMAT = "{:s} := {:s} * to_signed({:s}, 32);"
+MUL_FORMAT = "{:s} := unsigned(signed({:s}) * signed({:s}));"
+MULI_FORMAT = "{:s} := unsigned(signed({:s}) * to_signed({:s}, 32));"
 
-IDIV_FORMAT = "{:s} := {:s} / {:s};"
+IDIV_FORMAT = "{:s} := unsigned(signed({:s}) / signed({:s}));"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -119,7 +119,7 @@ def getArchitecturalDefinition(stateMachine):
   # Declaration of internal registers.
   for r in stateMachine.usedRegisters():
     if r != 0:
-      tw.writeLine("signal " + "r{:02d}".format(r) + "          : signed(31 downto 0);")
+      tw.writeLine("signal " + "r{:02d}".format(r) + "          : unsigned(31 downto 0);")
 
   # Constant r0, which is a hardwired 0 value.
   tw.writeLine("constant r00          : signed(31 downto 0) := x\"00000000\";")
@@ -156,14 +156,14 @@ def getArchitecturalDefinition(stateMachine):
 
     for local in stateMachine[i].locals():
       if local != 0:
-        tw.writeLine("variable " + localName(stateMachine[i].name(), local) + "   : signed(31 downto 0);")
+        tw.writeLine("variable " + localName(stateMachine[i].name(), local) + "   : unsigned(31 downto 0);")
 
     if len(stateMachine[i].locals()) > 0:
       tw.writeBlankLine()
 
   # Output the 'temp64' variable. This is used by operations which produce a 64-bit result (e.g. multiply)
   tw.writeCommentLine("Temporary 64-bit variable.")
-  tw.writeLine("variable temp64      : signed(63 downto 0);")
+  tw.writeLine("variable temp64      : unsigned(63 downto 0);")
   tw.writeBlankLine()
 
   # Output the 'temp33' variable. This is used by operations which can overflow.
