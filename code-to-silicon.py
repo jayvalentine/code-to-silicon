@@ -68,7 +68,7 @@ def main(argv):
 
   # Parse command line arguments.
   try:
-    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "verbosity=", "help"])
+    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "verbosity=", "analysis=", "help"])
   except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -89,6 +89,16 @@ def main(argv):
       if verbosity < 0 or verbosity > 3:
         logger.error("Invalid verbosity level " + str(verbosity))
         sys.exit(2)
+    elif opt == "--analysis":
+      analysis = str(arg)
+      if analysis not in ["heuristic", "expensive", "both"]:
+        logger.error("Invalid analysis mode " + analysis)
+
+      analysisTypes = ["heuristic", "expensive"]
+      if analysis == "heuristic":
+        analysisTypes = ["heuristic"]
+      elif analysis == "expensive":
+        analysisTypes = ["expensive"]
 
   # Set the logger's actual level now that we've parsed the options.
   logger.setLevel(verbosity)
@@ -101,8 +111,6 @@ def main(argv):
   cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
   analysisTimes = {}
-
-  analysisTypes = ["heuristic", "expensive"]
 
   for analysis in analysisTypes:
     coreCounts = []
