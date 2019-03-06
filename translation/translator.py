@@ -6,9 +6,9 @@ ADD_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s});"
 
 ADDC_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned({:s}) + carry;"
 
-ADDIK_FORMAT = "{:s} := unsigned({:s}) + unsigned(to_signed({:s}, 32));"
+ADDIK_FORMAT = "{:s} := unsigned({:s}) + unsigned(std_logic_vector(to_signed({:s}, 32)));"
 
-ADDI_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned(to_signed({:s}, 32));"
+ADDI_FORMAT = "{:s} := '0' & unsigned({:s}) + unsigned(std_logic_vector(to_signed({:s}, 32)));"
 
 RSUB_FORMAT = "{:s} := unsigned({:s}) - unsigned({:s});"
 
