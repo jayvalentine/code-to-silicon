@@ -179,12 +179,8 @@ intmax_t fannkuch(intnative_t n)
 }
 
 int resultA;
-int resultB;
-int resultC;
 
 void application(void)
 {
   resultA = (int)fannkuch(1);
-  resultB = (int)fannkuch(2);
-  resultC = (int)fannkuch(3);
 }

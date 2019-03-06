@@ -18,14 +18,7 @@ void test(void)
   {
     failed = 1;
   }
-  if (resultB != 1)
-  {
-    failed = 1;
-  }
-  if (resultC != 2)
-  {
-    failed = 1;
-  }
+
 
   if (failed != 0)
   {
