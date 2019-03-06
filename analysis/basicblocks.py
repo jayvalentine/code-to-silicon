@@ -1,3 +1,5 @@
+import math
+
 from parsing import instructions
 
 class BasicBlock:
@@ -23,6 +25,11 @@ class BasicBlock:
     self._unknownPrev = False
 
     self._outputs = None
+
+    self._inputs = []
+    self._memoryAccessDensity = None
+    self._averageComputationWidth = None
+    self._cost = None
 
   def __str__(self):
     s = "Basic Block: " + self._name + " in function " + self._function
@@ -92,11 +99,10 @@ class BasicBlock:
     return self._label
 
   def cost(self):
-    io_density = (len(self.outputs()) + len(self.inputs())) / len(self._instructions)
-    mem_density = self.memoryAccessDensity()
-    avg_width = self.averageComputationWidth()
-
-    return (io_density + mem_density) / avg_width
+    if self._cost == None:
+      raise ValueError("Cost not defined.")
+    
+    return self._cost
 
   def setLast(self, line, instruction):
     self._last = instruction
@@ -152,32 +158,16 @@ class BasicBlock:
     return sorted(list(self._instructions.keys()))
 
   def memoryAccessDensity(self):
-    numInstructions = 0
-    numMemoryAccess = 0
+    if self._memoryAccessDensity == None:
+      raise ValueError("Memory access density not defined.")
 
-    for l in self._instructions.keys():
-      numInstructions += 1
-      if self._instructions[l].isMemoryAccess():
-        numMemoryAccess += 1
-
-    return (float(numMemoryAccess)/float(numInstructions))
+    return self._memoryAccessDensity
 
   def averageComputationWidth(self):
-    widths = []
+    if self._averageComputationWidth == None:
+      raise ValueError("Average computation width not defined.")
 
-    currentWidth = 0.0
-    for l in sorted(list(self._instructions.keys())):
-      if self._instructions[l].isBasicBlockBoundary():
-        if currentWidth > 0.0:
-          widths.append(currentWidth)
-        currentWidth = 0.0
-      else:
-        currentWidth += 1.0
-
-    if currentWidth > 0.0:
-      widths.append(currentWidth)
-
-    return (sum(widths)/len(widths))
+    return self._averageComputationWidth
 
   def rawOutputs(self):
     outputs = []
@@ -203,6 +193,52 @@ class BasicBlock:
     return self._outputs
 
   def setOutputs(self):
+    outputs = []
+
+    for l in sorted(list(self._instructions.keys())):
+      i = self._instructions[l]
+      if i.rA() != None and i.rA() not in self._inputs and i.rA() not in outputs:
+        self._inputs.append(i.rA())
+
+      if i.rB() != None and i.rB() not in self._inputs and i.rB() not in outputs:
+        self._inputs.append(i.rB())
+
+      if isinstance(i, instructions.OutputInstruction):
+        self._inputs.append(i.rD())
+      else:
+        if i.rD() != None and i.rD() not in outputs:
+          outputs.append(i.rD())
+
+    # r0 can be ignored as it is hardwired to 0.
+    if 0 in self._inputs:
+      self._inputs.remove(0)
+
+    numInstructions = 0
+    numMemoryAccess = 0
+
+    for l in self._instructions.keys():
+      numInstructions += 1
+      if self._instructions[l].isMemoryAccess():
+        numMemoryAccess += 1
+    
+    self._memoryAccessDensity = (float(numMemoryAccess)/float(numInstructions))
+
+    widths = []
+
+    currentWidth = 0.0
+    for l in sorted(list(self._instructions.keys())):
+      if self._instructions[l].isBasicBlockBoundary():
+        if currentWidth > 0.0:
+          widths.append(currentWidth)
+        currentWidth = 0.0
+      else:
+        currentWidth += 1.0
+
+    if currentWidth > 0.0:
+      widths.append(currentWidth)
+
+    self._averageComputationWidth = (sum(widths)/len(widths))
+
     outputs = self.rawOutputs()
 
     for l in sorted(list(self._instructions.keys())):
@@ -249,6 +285,8 @@ class BasicBlock:
     # see if we can prune any outputs. Note that we assume any unknown successor to take all registers
     # as inputs (this is the most pessimistic approach but also the only safe one).
     if self._unknownNext:
+      io_density = (len(outputs) + len(self.inputs())) / len(self._instructions)
+      self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
       self._outputs = outputs
       return
 
@@ -270,31 +308,11 @@ class BasicBlock:
         outputs.remove(r)
 
     self._outputs = outputs
+    io_density = (len(self._outputs) + len(self.inputs())) / len(self._instructions)
+    self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
 
   def inputs(self):
-    inputs = []
-
-    outputs = []
-
-    for l in sorted(list(self._instructions.keys())):
-      i = self._instructions[l]
-      if i.rA() != None and i.rA() not in inputs and i.rA() not in outputs:
-        inputs.append(i.rA())
-
-      if i.rB() != None and i.rB() not in inputs and i.rB() not in outputs:
-        inputs.append(i.rB())
-
-      if isinstance(i, instructions.OutputInstruction):
-        inputs.append(i.rD())
-      else:
-        if i.rD() != None and i.rD() not in outputs:
-          outputs.append(i.rD())
-
-    # r0 can be ignored as it is hardwired to 0.
-    if 0 in inputs:
-      inputs.remove(0)
-
-    return inputs
+    return self._inputs
 
   def used(self):
     used = []
