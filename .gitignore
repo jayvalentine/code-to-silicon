@@ -9,6 +9,7 @@
 # Generic logfiles:
 *.log
 *.txt
+*.csv
 
 # Maybe don't want to accidentally commit documents:
 *.pdf
