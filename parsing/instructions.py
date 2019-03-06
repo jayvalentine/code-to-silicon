@@ -103,6 +103,9 @@ class Instruction(streams.StreamItem):
   def label(self):
     return self._label
 
+  def setLabel(self, newLabel):
+    self._label = newLabel
+
   def isInstruction(self):
     return True
 

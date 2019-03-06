@@ -98,6 +98,12 @@ class BasicBlock:
   def label(self):
     return self._label
 
+  def startLine(self):
+    if len(self.lines()) > 0:
+      return self.lines()[0]
+
+    return self._lastLine
+
   def cost(self):
     if self._cost == None:
       raise ValueError("Cost not defined.")
@@ -130,6 +136,9 @@ class BasicBlock:
     return self._last
 
   def lastLine(self):
+    if self._last == None:
+      return self.lines()[-1]
+
     if self._lastLine == None:
       raise ValueError("Last line of block not set.")
 
@@ -222,7 +231,10 @@ class BasicBlock:
       if self._instructions[l].isMemoryAccess():
         numMemoryAccess += 1
     
-    self._memoryAccessDensity = (float(numMemoryAccess)/float(numInstructions))
+    if numInstructions == 0:
+      self._memoryAccessDensity = 0
+    else:
+      self._memoryAccessDensity = (float(numMemoryAccess)/float(numInstructions))
 
   def setAverageComputationWidth(self):
     widths = []
@@ -239,7 +251,10 @@ class BasicBlock:
     if currentWidth > 0.0:
       widths.append(currentWidth)
 
-    self._averageComputationWidth = (sum(widths)/len(widths))
+    if len(widths) == 0:
+      self._averageComputationWidth = 0
+    else:
+      self._averageComputationWidth = (sum(widths)/len(widths))
 
   def setOutputs(self, mode):
     self._outputs = self.rawOutputs()
@@ -302,8 +317,12 @@ class BasicBlock:
         self._outputs.remove(r)
 
   def setCost(self):
-    io_density = (len(self._outputs) + len(self.inputs())) / len(self._instructions)
-    self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
+    # We don't want to convert empty basic blocks, so their cost is effectively infinite.
+    if len(self._instructions) == 0:
+      self._cost = math.inf
+    else:
+      io_density = (len(self._outputs) + len(self.inputs())) / len(self._instructions)
+      self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
 
   def inputs(self):
     return self._inputs
@@ -433,50 +452,7 @@ def extractBasicBlocks(logger, stream, mode):
   if len(currentBlock) > 0:
     blocks.append(currentBlock)
 
-  blocks = list(filter(lambda b: len(b) > 0, blocks))
-
-  done = False
-
-  while not done:
-    blockToSplit = None
-    lineToSplit = None
-
-    for block in blocks:
-      #print(block)
-      if block.last() != None:
-        # If this block has a branch instruction as the last,
-        # there's a chance it may be a relative jump.
-        if block.last().isBranch():
-          branchLabel = block.last().label()
-
-          if branchLabel[0] == ".":
-            offset = int(branchLabel[1:])//4
-            lineToSplit = block.lastLine() + offset
-
-            blockToSplit = None
-            if lineToSplit in block.lines()[1:]:
-              blockToSplit = block
-            else:
-              # Find a block that contains this line.
-              found = list(filter(lambda b: lineToSplit in b.lines()[1:], blocks))
-              if len(found) > 1:
-                raise ValueError("Location of relative branch " + branchLabel + " is ambiguous.")
-              
-              if len(found) > 0:
-                blockToSplit = found[0]
-
-            # Exit for loop.
-            if blockToSplit != None:
-              break
-
-    # We've gone through the whole list and not found a block to split.
-    # Go no further, mark as done.
-    if blockToSplit == None:
-      done = True
-    else:
-      blocks.remove(blockToSplit)
-      blocks += blockToSplit.splitAtLine(lineToSplit)
-      logger.debug("Block " + blockToSplit.name() + " split at line " + str(lineToSplit) + ".")
+  blocks = list(filter(lambda b: len(b) > 0 or b.last() != None, blocks))
 
   return linkBasicBlocks(logger, blocks, mode)
 
@@ -503,33 +479,15 @@ def linkBasicBlocks(logger, blocks, mode):
 
         branchLabel = lastInstruction.label()
 
-        # If the label starts with '.', it's relative to the current location.
-        if branchLabel[0] == ".":
-          # Get the line specified by the relative label.
-          offset = int(branchLabel[1:]) // 4
-          line = b.lastLine() + offset
+        blocksWithLabel = list(filter(lambda b: b.label() == branchLabel, blocks))
 
-          foundBlock = None
-          for otherB in blocks:
-            startLine = otherB.lines()[0]
-            if startLine == line:
-              foundBlock = otherB
-
-          if foundBlock == None:
-            logger.warn("No target found for relative jump " + branchLabel + " in block " + b.name() + ".")
-          else:
-            logger.debug("Found next block for " + b.name() + ": " + foundBlock.name() + " from relative label " + branchLabel + ".")
-            b.addNext(foundBlock)
+        if len(blocksWithLabel) > 1:
+          raise ValueError("Label " + branchLabel + " is ambiguous (" + str(len(blocksWithLabel)) + " matches)")
+        elif len(blocksWithLabel) < 1:
+          logger.warn("Unknown label: " + branchLabel)
+          b.addUnknownNext()
         else:
-          blocksWithLabel = list(filter(lambda b: b.label() == branchLabel, blocks))
-
-          if len(blocksWithLabel) > 1:
-            raise ValueError("Label " + branchLabel + " is ambiguous (" + str(len(blocksWithLabel)) + " matches)")
-          elif len(blocksWithLabel) < 1:
-            logger.warn("Unknown label: " + branchLabel)
-            b.addUnknownNext()
-          else:
-            b.addNext(blocksWithLabel[0])
+          b.addNext(blocksWithLabel[0])
 
         # If the branch is conditional, we also need to link to the block after this one.]
         if lastInstruction.isConditional():
@@ -565,7 +523,7 @@ def linkBasicBlocks(logger, blocks, mode):
           foundBlock = None
           while foundBlock == None:
             for searchBlock in blocks:
-              if searchBlock.lines()[0] == returnLine:
+              if searchBlock.startLine() == returnLine:
                 foundBlock = searchBlock
 
             returnLine += 1
@@ -578,12 +536,12 @@ def linkBasicBlocks(logger, blocks, mode):
 
     # This basic block simply runs into another one. Find the next block.
     if runOn:
-      nextLine = b.lines()[-1] + 1
+      nextLine = b.lastLine()
 
       foundBlock = None
       while foundBlock == None:
         for otherB in blocks:
-          startLine = otherB.lines()[0]
+          startLine = otherB.startLine()
           if startLine == nextLine:
             foundBlock = otherB
 

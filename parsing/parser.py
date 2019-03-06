@@ -38,6 +38,24 @@ def parseStreamItems(stream):
   for line in stream:
     s.add(parseStreamItem(line))
 
+  searching = True
+  while searching:
+    relativeFound = False
+    for i in range(len(s)):
+      if s[i].isInstruction() and s[i].isBasicBlockBoundary():
+        if s[i].label() != None and s[i].label()[0] == '.':
+          labelTarget = i + (int(s[i].label()[1:])//4)
+          labelTargetName = "newlabel_line{:04d}".format(i)
+          s[i].setLabel(labelTargetName)
+          relativeFound = True
+          break
+
+    if relativeFound:
+      s.insert(labelTarget, labels.Label(labelTargetName))
+      searching = True
+    else:
+      searching = False
+
   return s
 
 def parseStreamItem(streamItem):

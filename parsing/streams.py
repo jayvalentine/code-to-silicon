@@ -39,6 +39,12 @@ class Stream:
 
     self._items.append(item)
 
+  def insert(self, line, item):
+    if not isinstance(item, StreamItem):
+      raise TypeError("Object of type " + str(type(item)) + " cannot be added to a stream.")
+    
+    self._items.insert(line, item)
+
   def instructionCount(self):
     instructions = 0
 

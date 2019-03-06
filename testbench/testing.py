@@ -2,6 +2,7 @@ import os
 import shutil
 import re
 import time
+import math
 
 import templating
 from toolchain import compiler, memory, vivado
@@ -102,7 +103,7 @@ def generateStateMachines(logger, num, analysisType, mode):
   with open("application.s", 'r') as file:
     stream = parser.parse(file.readlines())
 
-  with open("application.s", 'w') as file:
+  with open("application_parsed.s", 'w') as file:
     file.write(str(stream))
 
   logger.info("Read " + str(stream.instructionCount())
@@ -114,6 +115,9 @@ def generateStateMachines(logger, num, analysisType, mode):
 
   # Get basic blocks from stream.
   blocks = basicblocks.extractBasicBlocks(logger, stream, mode)
+
+  # Filter any blocks we don't want to convert.
+  blocks = list(filter(lambda b: b.cost() != math.inf, blocks))
 
   if analysisType == "expensive":
     logger.info("Performing expensive block selection analysis.")
@@ -148,7 +152,7 @@ def generateStateMachines(logger, num, analysisType, mode):
       stateMachines.append(sm)
 
   # Sort in textual order.
-  stateMachines = sorted(stateMachines, key=lambda sm: sm.block().lines()[0])
+  stateMachines = sorted(stateMachines, key=lambda sm: sm.block().startLine())
 
   id = 0
   change = 0
