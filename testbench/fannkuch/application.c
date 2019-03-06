@@ -25,16 +25,15 @@
 // intptr_t should be the native integer type on most sane systems.
 typedef intptr_t intnative_t;
 
+intnative_t factorial_Lookup_Table[4] = {
+  1,
+  2,
+  6,
+  24
+};
+
 intmax_t fannkuch(intnative_t n)
 {
-  // Create and initialize factorial_Lookup_Table.
-  intnative_t factorial_Lookup_Table[n+1];
-  factorial_Lookup_Table[0]=1;
-  for(intnative_t i=0; ++i<=n;)
-  {
-    factorial_Lookup_Table[i]=i*factorial_Lookup_Table[i-1];
-  }
-
   // Determine the block_Size to use. If n! is less than
   // PREFERRED_NUMBER_OF_BLOCKS_TO_USE then just use a single block to prevent
   // block_Size from being set to 0. This also causes smaller values of n to
@@ -112,7 +111,8 @@ intmax_t fannkuch(intnative_t n)
           // temp_Permutation.
           if (first_Value > 2)
           {
-            intnative_t low_Index=1, high_Index=first_Value-1;
+            intnative_t low_Index = 1;
+            intnative_t high_Index = first_Value-1;
 
             // Note that this loop is written so that it will run at
             // most 16 times so that compilers will be more willing
@@ -178,7 +178,13 @@ intmax_t fannkuch(intnative_t n)
   return (intmax_t)(maximum_Flip_Count);
 }
 
+int resultA;
+int resultB;
+int resultC;
+
 void application(void)
 {
-  volatile intmax_t maxFlips = fannkuch(4);
+  resultA = (int)fannkuch(1);
+  resultB = (int)fannkuch(2);
+  resultC = (int)fannkuch(3);
 }
