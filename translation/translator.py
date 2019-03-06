@@ -122,7 +122,7 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeLine("signal " + "r{:02d}".format(r) + "          : unsigned(31 downto 0);")
 
   # Constant r0, which is a hardwired 0 value.
-  tw.writeLine("constant r00          : signed(31 downto 0) := x\"00000000\";")
+  tw.writeLine("constant r00          : unsigned(31 downto 0) := x\"00000000\";")
 
   # Output the 'offset' signal. This is used for calculating offsets for IO of bytes and halfwords.
   tw.writeCommentLine("Offset.")
