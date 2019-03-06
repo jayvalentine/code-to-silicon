@@ -369,6 +369,9 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     signal bram_addr                : std_logic_vector(31 downto 0);
     signal waiting_for_data         : std_logic := '0';
 
+    signal bram_inst_addr           : std_logic_vector(31 downto 0);
+    signal waiting_for_inst         : std_logic := '0';
+
     function byte_to_hex(b: std_logic_vector(7 downto 0)) return string is
         variable upper : character;
         variable lower : character;
@@ -692,6 +695,17 @@ begin
 
                 bram_addr <= BRAM_PORT_DATA_addr;
                 waiting_for_data <= '1';
+            end if;
+
+	    -- Report any reads on the instruction bus.
+            if BRAM_PORT_INST_en = '1' and clk = '1' then
+                if waiting_for_inst = '1' then
+                    report "BRAM: INST READ DETECTED: " & std_logic_vec_to_hex(bram_inst_addr) & " " & std_logic_vec_to_hex(BRAM_PORT_INST_dout);
+                    waiting_for_inst <= '0';
+                end if;
+
+                bram_inst_addr <= BRAM_PORT_INST_addr;
+                waiting_for_inst <= '1';
             end if;
 
             -- Trap if we reach the test_failed function, and report the test failure.

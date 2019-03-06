@@ -118,7 +118,7 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
+  cores = [0]#, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
   analysisTimes = {}
 

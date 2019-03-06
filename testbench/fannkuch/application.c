@@ -180,5 +180,5 @@ intmax_t fannkuch(intnative_t n)
 
 void application(void)
 {
-  volatile intmax_t maxFlips = fannkuch(10);
+  volatile intmax_t maxFlips = fannkuch(4);
 }
