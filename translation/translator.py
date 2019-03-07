@@ -247,17 +247,19 @@ def getArchitecturalDefinition(stateMachine):
     # If this is a wait state, set up the memory transaction (either a read or a write).
     elif s.isWaitState():
       inst = s.instruction()
+
       # Figure out what the expression is for the memory address.
       # It's either rA+imm or rA+rB.
       if inst.imm() != None:
-        expr = "(r{reg:02d} + to_signed({imm:d}, 32))".format(reg = inst.rA(), imm = inst.imm())
+        expr = "(r{reg:02d} + unsigned(to_signed({imm:d}, 32)))".format(reg = inst.rA(), imm = inst.imm())
       elif inst.label() != None:
-        expr = "(r{reg:02d} + to_signed({imm:s}, 32))".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
+        expr = "(r{reg:02d} + unsigned(to_signed({imm:s}, 32)))".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
       else:
         expr = "(r{regA:02d} + r{regB:02d})".format(regA = inst.rA(), regB = inst.rB())
 
       tw.writeCommentLine(str(inst))
-      tw.writeLine("m_addr <= std_logic_vector(unsigned(" + expr + "));")
+      tw.writeCommentLine("Set up memory access.")
+      tw.writeLine("m_addr <= std_logic_vector(" + expr + ");")
 
       # If the instruction is a read, we need to set the read strobe high.
       # If the instruction is a write, we need to set the write strobe high AND set the data out line.
@@ -271,10 +273,10 @@ def getArchitecturalDefinition(stateMachine):
       else:
         if inst.width() == 1:
           tw.writeLine("m_data_out <= (others => '0');")
-          tw.writeLine("m_data_out((offset+7) downto offset) <= std_logic_vector(unsigned(r{:02d}))(7 downto 0);".format(inst.rD()))
+          tw.writeLine("m_data_out((offset+7) downto offset) <= std_logic_vector(unsigned(r{:02d}(7 downto 0)));".format(inst.rD()))
         elif inst.width() == 2:
           tw.writeLine("m_data_out <= (others => '0');")
-          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}))(15 downto 0);".format(inst.rD()))
+          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD()))
         elif inst.width() == 4:
           tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
 
@@ -364,18 +366,19 @@ def getArchitecturalDefinition(stateMachine):
       if s.instruction().isRead():
         inst = s.instruction()
 
+        tw.writeCommentLine(str(inst))
         tw.writeCommentLine("Read data into r{:02d}.".format(inst.rD()))
 
         if inst.width() == 1:
           tw.writeCommentLine("Loading byte.")
-          tw.writeLine("r{:02d} <= (others => '0');")
-          tw.writeLine("r{:02d}(7 downto 0) <= signed(m_data_in)((offset+7) downto offset);")
+          tw.writeLine("r{:02d} <= (others => '0');".format(inst.rD()))
+          tw.writeLine("r{:02d}(7 downto 0) <= unsigned(m_data_in((offset+7) downto offset));".format(inst.rD()))
         elif inst.width() == 2:
           tw.writeCommentLine("Loading halfword.")
-          tw.writeLine("r{:02d} <= (others => '0');")
-          tw.writeLine("r{:02d}(15 downto 0) <= signed(m_data_in)((offset+15) downto offset);")
+          tw.writeLine("r{:02d} <= (others => '0');".format(inst.rD()))
+          tw.writeLine("r{:02d}(15 downto 0) <= unsigned(m_data_in((offset+15) downto offset));".format(inst.rD()))
         elif inst.width() == 4:
-          tw.writeLine("r{:02d}".format(inst.rD()) + " <= signed(m_data_in);")
+          tw.writeLine("r{:02d}".format(inst.rD()) + " <= unsigned(m_data_in);")
         else:
           raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
 

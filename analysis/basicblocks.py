@@ -322,8 +322,7 @@ class BasicBlock:
     if len(self._instructions) == 0:
       self._cost = math.inf
     else:
-      io_density = (len(self._outputs) + len(self.inputs())) / len(self._instructions)
-      self._cost = (io_density + self._memoryAccessDensity) / math.sqrt(self._averageComputationWidth)
+      self._cost = (len(self._outputs) + len(self._inputs)) / (len(self._outputs) + len(self._inputs) + len(self._instructions))
 
   def inputs(self):
     return self._inputs
