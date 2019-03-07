@@ -641,7 +641,7 @@ def reportAcceleratorStart(stateMachines):
   tw.increaseIndent()
 
   for sm in stateMachines:
-    tw.writeLine("if " + sm.name() + "_sel = '1' and accel_started = '0' then")
+    tw.writeLine("if " + sm.name() + "_sel = '1' and " + sm.name() + "_done = '0' and accel_started = '0' then")
     tw.increaseIndent()
     tw.writeLine("report \"TESTBENCH: " + sm.name() + " EXECUTION START.\";")
     tw.writeLine("accel_started <= '1';")
