@@ -213,7 +213,8 @@ class BasicBlock:
         self._inputs.append(i.rB())
 
       if isinstance(i, instructions.OutputInstruction):
-        self._inputs.append(i.rD())
+        if i.rD() != None and i.rD() not in self._inputs:
+          self._inputs.append(i.rD())
       else:
         if i.rD() != None and i.rD() not in outputs:
           outputs.append(i.rD())
