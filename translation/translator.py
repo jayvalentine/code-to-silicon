@@ -233,7 +233,7 @@ def getArchitecturalDefinition(stateMachine):
     # If this is a start state, get inputs into the state machine's internal registers.
     if s.isStartState():
       for r in stateMachine.inputRegisters():
-        tw.writeLine("r{reg:02d} <= signed(in_r{reg:02d});".format(reg=r))
+        tw.writeLine("r{reg:02d} <= unsigned(in_r{reg:02d});".format(reg=r))
       tw.writeBlankLine()
 
     # If this is an end state, put outputs from the state machine's internal registers.
