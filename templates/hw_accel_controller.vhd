@@ -203,8 +203,6 @@ begin
                     end if;
 
                 when S_DONE =>
-                    wakeup <= "11";
-
                     if sleep = '0' then
                         int_state <= S_WAITING_FOR_MB;
                     end if;

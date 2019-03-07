@@ -107,7 +107,7 @@ class BasicBlock:
   def cost(self):
     if self._cost == None:
       raise ValueError("Cost not defined.")
-    
+
     return self._cost
 
   def setLast(self, line, instruction):
@@ -230,7 +230,7 @@ class BasicBlock:
       numInstructions += 1
       if self._instructions[l].isMemoryAccess():
         numMemoryAccess += 1
-    
+
     if numInstructions == 0:
       self._memoryAccessDensity = 0
     else:
@@ -382,9 +382,7 @@ def _isOutBeforeIn(register, visited):
   output = False
   for block in visited:
     if block.getNext()[1] and not output:
-      if register in range(3, 5) or register in range(11, 13):
-        pass
-      else:
+      if register not in range(3, 5) and register not in range(11, 13):
         return False
 
     if output == False and register in block.inputs():
@@ -536,7 +534,7 @@ def linkBasicBlocks(logger, blocks, mode):
 
     # This basic block simply runs into another one. Find the next block.
     if runOn:
-      nextLine = b.lastLine()
+      nextLine = b.lastLine() + 1
 
       foundBlock = None
       while foundBlock == None:
@@ -550,9 +548,16 @@ def linkBasicBlocks(logger, blocks, mode):
       logger.debug("Found next block for " + b.name() + ": " + foundBlock.name() + ".")
       b.addNext(foundBlock)
 
+  # Set inputs for ALL BLOCKS first, before doing anything else.
+  for block in blocks:
+    block.setInputs()
+
+  # Set outputs for ALL BLOCKS.
   for block in blocks:
     block.setOutputs(mode)
-    block.setInputs()
+
+  # Set metrics and cost for ALL BLOCKS.
+  for block in blocks:
     block.setMemoryAccessDensity()
     block.setAverageComputationWidth()
     block.setCost()

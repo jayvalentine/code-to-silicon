@@ -622,6 +622,7 @@ def getControllerStateMachinesDone(stateMachines):
     tw.writeLine("if " + sm.name() + "_done = '1' then")
     tw.increaseIndent()
     tw.writeLine("int_state <= S_DONE;")
+    tw.writeLine("wakeup <= \"11\";")
     tw.decreaseIndent()
     tw.writeLine("end if;")
 
