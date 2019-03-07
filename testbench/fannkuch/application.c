@@ -69,7 +69,7 @@ intmax_t fannkuch(intnative_t n)
       {
         temp_Permutation[j]=current_Permutation[j];
       }
-      
+
       for(intnative_t j=0; j<=i; ++j)
       {
         current_Permutation[j]= j+d<=i ? temp_Permutation[j+d] : temp_Permutation[j+d-i-1];
@@ -79,7 +79,7 @@ intmax_t fannkuch(intnative_t n)
 
     // Iterate over each permutation in the block.
     const intnative_t last_Permutation_Index_In_Block = initial_Permutation_Index_For_Block + block_Size - 1;
-    
+
     for(intnative_t permutation_Index=initial_Permutation_Index_For_Block; ; ++permutation_Index)
     {
       // If the first value in the current_Permutation is not 1 (0) then
@@ -182,5 +182,5 @@ int resultA;
 
 void application(void)
 {
-  resultA = (int)fannkuch(1);
+  resultA = (int)fannkuch(2);
 }
