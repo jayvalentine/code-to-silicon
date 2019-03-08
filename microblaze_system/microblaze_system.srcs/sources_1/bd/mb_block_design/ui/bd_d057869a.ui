@@ -22,10 +22,10 @@ preplace netloc Conn3 1 0 2 -60J -890 NJ
 preplace netloc microblaze_0_ILMB 1 1 1 910
 preplace netloc rst_1 1 0 3 -50 -710 930 -390 1230
 preplace netloc microblaze_0_M_AXI_DP 1 1 3 900J -1050 NJ -1050 NJ
+preplace netloc microblaze_0_Suspend 1 1 3 940 -580 NJ -580 1550J
 preplace netloc Wakeup_0_1 1 0 1 N
 preplace netloc lmb_bram_if_cntlr_0_BRAM_PORT 1 3 1 N
 preplace netloc lmb_bram_if_cntlr_1_BRAM_PORT 1 3 1 N
-preplace netloc microblaze_0_Sleep 1 1 3 940J -580 NJ -580 1550J
 preplace netloc Conn 1 2 1 1230
 preplace netloc microblaze_0_DLMB 1 1 1 910
 preplace netloc clk_100MHz_1 1 0 3 -60 -720 920J -400 1220
