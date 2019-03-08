@@ -366,6 +366,7 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     constant clk_period             : time := 10ns;
     signal clk_hold                 : std_logic := '0';
     signal cycles                   : Integer := 0;
+    signal core_start               : Integer := 0;
 
     signal accel_started            : std_logic := '0';
     signal sleep_mode               : std_logic := '0';
