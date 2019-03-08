@@ -13,6 +13,7 @@ from translation import translator
 
 TESTING_DIR = os.path.abspath("testbench")
 TEMPLATE_DIR = os.path.abspath("templates")
+SIM_DIR = os.path.abspath("microblaze_system/microblaze_system.sim/sim_1")
 
 TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
 
@@ -33,6 +34,10 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
         shutil.rmtree(tempDir)
 
     os.makedirs(tempDir)
+
+    # If the simulation directory exists, delete it.
+    if os.path.isdir(SIM_DIR):
+      shutil.rmtree(SIM_DIR)
 
     # Copy everything in the test dir into the temp dir.
     files = [f for f in os.listdir(testDir) if os.path.isfile(os.path.join(testDir, f))]

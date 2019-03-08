@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<bd:repository xmlns:bd="http://www.xilinx.com/bd" bd:BoundaryCRC="0x11690ED1AC4BECF5" bd:device="xc7a200tfbg676-2" bd:isValidated="true" bd:synthFlowMode="Hierarchical" bd:tool_version="2018.2.1" bd:top="mb_block_design" bd:version="1.00.a">
+<bd:repository xmlns:bd="http://www.xilinx.com/bd" bd:BoundaryCRC="0x813B465123BBF4E0" bd:device="xc7a200tfbg676-2" bd:isValidated="true" bd:synthFlowMode="Hierarchical" bd:tool_version="2018.2.1" bd:top="mb_block_design" bd:version="1.00.a">
 
   <spirit:component xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009">
     <spirit:vendor>xilinx.com</spirit:vendor>
@@ -546,6 +546,18 @@
             <spirit:direction>out</spirit:direction>
           </spirit:wire>
         </spirit:port>
+        <spirit:port>
+          <spirit:name>Hibernate_0</spirit:name>
+          <spirit:wire>
+            <spirit:direction>out</spirit:direction>
+          </spirit:wire>
+        </spirit:port>
+        <spirit:port>
+          <spirit:name>Sleep_1</spirit:name>
+          <spirit:wire>
+            <spirit:direction>out</spirit:direction>
+          </spirit:wire>
+        </spirit:port>
       </spirit:ports>
     </spirit:model>
     <spirit:addressSpaces>
@@ -701,6 +713,16 @@
         <spirit:name>microblaze_0_Suspend</spirit:name>
         <spirit:internalPortReference spirit:componentRef="microblaze_0" spirit:portRef="Suspend"/>
         <spirit:externalPortReference spirit:portRef="Sleep_0"/>
+      </spirit:adHocConnection>
+      <spirit:adHocConnection>
+        <spirit:name>microblaze_0_Hibernate</spirit:name>
+        <spirit:internalPortReference spirit:componentRef="microblaze_0" spirit:portRef="Hibernate"/>
+        <spirit:externalPortReference spirit:portRef="Hibernate_0"/>
+      </spirit:adHocConnection>
+      <spirit:adHocConnection>
+        <spirit:name>microblaze_0_Sleep</spirit:name>
+        <spirit:internalPortReference spirit:componentRef="microblaze_0" spirit:portRef="Sleep"/>
+        <spirit:externalPortReference spirit:portRef="Sleep_1"/>
       </spirit:adHocConnection>
     </spirit:adHocConnections>
     <spirit:hierConnections>

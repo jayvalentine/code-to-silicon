@@ -63,7 +63,7 @@ class StateMachine:
     replace.append(instructions.OutputInstruction("swi", 31, None, 30, 0, None, 4))
 
     # Go to sleep until wakeup signal from controller.
-    replace.append(instructions.SystemInstruction("mbar", None, None, None, 16, None, None))
+    replace.append(instructions.SystemInstruction("mbar", None, None, None, 24, None, None))
 
     # Read the output registers from the right ports.
     for output in self.outputRegisters():

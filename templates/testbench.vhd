@@ -204,6 +204,8 @@ architecture Behavioral of testbench_%%TESTNAME%% is
             M_AXI_DP_0_wstrb : out STD_LOGIC_VECTOR ( 3 downto 0 );
             M_AXI_DP_0_wvalid : out STD_LOGIC;
             Sleep_0 : out STD_LOGIC;
+            Sleep_1 : out STD_LOGIC;
+            Hibernate_0 : out STD_LOGIC;
             Wakeup_0 : in STD_LOGIC_VECTOR ( 0 to 1 );
             clk_100MHz : in STD_LOGIC;
             rst : in STD_LOGIC
@@ -355,6 +357,8 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     signal BRAM_PORT_DATA_we   : STD_LOGIC_VECTOR ( 0 to 3 );
 
     signal Sleep_0             : STD_LOGIC;
+    signal Sleep_1             : STD_LOGIC;
+    signal Hibernate_0         : STD_LOGIC;
     signal Wakeup_0            : STD_LOGIC_VECTOR ( 0 to 1 );
 
 %%STATEMACHINE_SIGNALS%%
@@ -611,7 +615,9 @@ begin
         BRAM_PORT_DATA_we       => BRAM_PORT_DATA_we,
 
         Sleep_0                 => Sleep_0,
-        Wakeup_0                => Wakeup_0
+        Wakeup_0                => Wakeup_0,
+        Sleep_1                 => Sleep_1,
+        Hibernate_0             => Hibernate_0
     );
 
     mem_uut : memory port map
