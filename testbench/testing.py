@@ -31,13 +31,13 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
 
     # If the temp directory already exists, delete it.
     if os.path.isdir(tempDir):
-        shutil.rmtree(tempDir)
+        shutil.rmtree(tempDir, ignore_errors=True)
 
     os.makedirs(tempDir)
 
     # If the simulation directory exists, delete it.
     if os.path.isdir(SIM_DIR):
-      shutil.rmtree(SIM_DIR)
+      shutil.rmtree(SIM_DIR, ignore_errors=True)
 
     # Copy everything in the test dir into the temp dir.
     files = [f for f in os.listdir(testDir) if os.path.isfile(os.path.join(testDir, f))]
@@ -299,10 +299,6 @@ def runVivadoSimulation(logger):
   mem = {}
 
   cycles = None
-
-  # Write the full output to a log file.
-  with open("simulate.log", 'w') as logfile:
-    logfile.write(output[1])
 
   output_lines = output[1].splitlines()
   for l in output_lines:
