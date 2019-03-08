@@ -667,20 +667,6 @@ begin
         report "TESTBENCH: TEST %%TESTNAME%% START.";
 
         loop
-            -- Report any writes on the AXI bus.
-            if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
-                report "TESTBENCH: AXI WRITE DETECTED.";
-                report "TESTBENCH: ADDR: " & std_logic_vec_to_hex(M_AXI_DP_0_awaddr);
-                report "TESTBENCH: DATA: " & std_logic_vec_to_hex(M_AXI_DP_0_wdata);
-            end if;
-
-            -- Report any reads on the AXI bus.
-            if M_AXI_DP_0_rvalid = '1' and M_AXI_DP_0_arvalid = '1' then
-                report "TESTBENCH: AXI READ DETECTED.";
-                report "TESTBENCH: ADDR: " & std_logic_vec_to_hex(M_AXI_DP_0_araddr);
-                report "TESTBENCH: DATA: " & std_logic_vec_to_hex(M_AXI_DP_0_rdata);
-            end if;
-
             -- Report if any hardware accelerators have been started or have finished.
 %%REPORT_ACCEL_START%%
 
@@ -691,28 +677,6 @@ begin
             elsif Sleep_0 = '0' and sleep_mode = '1' then
                 report "TESTBENCH: MICROBLAZE WAKEUP.";
                 sleep_mode <= '0';
-            end if;
-
-            -- Report any reads on the data bus.
-            if BRAM_PORT_DATA_en = '1' and BRAM_PORT_DATA_we = "0000" and clk = '1' then
-                if waiting_for_data = '1' then
-                    report "BRAM: READ DETECTED: " & std_logic_vec_to_hex(bram_addr) & " " & std_logic_vec_to_hex(BRAM_PORT_DATA_dout);
-                    waiting_for_data <= '0';
-                end if;
-
-                bram_addr <= BRAM_PORT_DATA_addr;
-                waiting_for_data <= '1';
-            end if;
-
-	    -- Report any reads on the instruction bus.
-            if BRAM_PORT_INST_en = '1' and clk = '1' then
-                if waiting_for_inst = '1' then
-                    report "BRAM: INST READ DETECTED: " & std_logic_vec_to_hex(bram_inst_addr) & " " & std_logic_vec_to_hex(BRAM_PORT_INST_dout);
-                    waiting_for_inst <= '0';
-                end if;
-
-                bram_inst_addr <= BRAM_PORT_INST_addr;
-                waiting_for_inst <= '1';
             end if;
 
             -- Trap if we reach the test_failed function, and report the test failure.

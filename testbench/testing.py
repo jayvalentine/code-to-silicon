@@ -321,12 +321,13 @@ def runVivadoSimulation(logger):
         logger.debug(l)
         mem[int(m.groups()[0], 16)] = m.groups()[1]
 
+  """
   with open("memdump.txt", 'w') as memdump:
     for i in range(0, 2048):
       addr = i*4
       if addr in mem.keys():
         memdump.write("{:08x}: {:s} {:s} {:s} {:s}\n".format(addr, mem[addr][6:], mem[addr][4:6], mem[addr][2:4], mem[addr][0:2]))
-
+  """
   if passed == None:
     raise Exception("Could not determine result of test.")
 

@@ -61,6 +61,9 @@ class Logger:
     self._level = level
 
 def main(argv):
+  # Ensure the vivado project is clean when we start.
+  os.system("git checkout microblaze_system/microblaze_system.xpr")
+
   sim = True
   report = True
   fig = True
@@ -122,7 +125,7 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0, 1]#, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
+  cores = [0, 10]#, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
   analysisTimes = {}
 
@@ -213,9 +216,6 @@ def main(argv):
     os.system("pdflatex REPORT > texbuild.log")
     os.system("biber REPORT > texbuild.log")
     os.system("pdflatex REPORT > texbuild.log")
-
-  # The Vivado project will have been modified. Revert it.
-  os.system("git checkout microblaze_system/microblaze_system.xpr")
 
 if __name__ == "__main__":
   main(sys.argv[1:])

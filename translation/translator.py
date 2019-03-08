@@ -43,7 +43,11 @@ SRL_FORMAT = "{:s} := {:s} srl 1;"
 MUL_FORMAT = "{:s} := unsigned(signed({:s}) * signed({:s}));"
 MULI_FORMAT = "{:s} := unsigned(signed({:s}) * to_signed({:s}, 32));"
 
-IDIV_FORMAT = "{:s} := unsigned(signed({:s}) / signed({:s}));"
+IDIV_FORMAT_A_1 = "if {:s} = x\"00000000\" then"
+IDIV_FORMAT_A_2 = "    {:s} := x\"00000000\";"
+IDIV_FORMAT_B_1 = "else"
+IDIV_FORMAT_B_2 = "    {:s} := unsigned(signed({:s}) / signed({:s}));"
+IDIV_FORMAT_B_3 = "end if;"
 
 def translateStateMachine(stateMachine):
   s = ""
@@ -265,13 +269,10 @@ def getArchitecturalDefinition(stateMachine):
     else:
       tw.writeCommentLine("State with no transitions.")
       tw.writeLine("null;")
-    
+
     tw.decreaseIndent()
 
   tw.writeLine("end case;")
-
-  tw.decreaseIndent()
-  tw.writeLine("end if;")
 
   tw.writeBlankLine()
   tw.writeCommentLine("Perform an operation depending on the state we're in.")
@@ -394,6 +395,9 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("when others => null;")
   tw.writeLine("end case;")
 
+  tw.decreaseIndent()
+
+  tw.writeLine("end if;")
   tw.decreaseIndent()
 
   tw.writeLine("else")
@@ -775,9 +779,15 @@ def translateInstruction(stateName, instruction):
     needsTemp = True
 
   elif mnemonic == "idiv":
-    lines.append(IDIV_FORMAT.format(localName(stateName, instruction.rD()),
-                                    localName(stateName, instruction.rB()),
-                                    localName(stateName, instruction.rA())))
+    lines.append(IDIV_FORMAT_A_1.format(localName(stateName, instruction.rB())))
+    lines.append(IDIV_FORMAT_A_2.format(localName(stateName, instruction.rD())))
+
+    lines.append(IDIV_FORMAT_B_1)
+    lines.append(IDIV_FORMAT_B_2.format(localName(stateName, instruction.rD()),
+                                        localName(stateName, instruction.rB()),
+                                        localName(stateName, instruction.rA())))
+
+    lines.append(IDIV_FORMAT_B_3)
 
   elif mnemonic == "and":
     lines.append(AND_FORMAT.format(localName(stateName, instruction.rD()),
