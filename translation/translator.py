@@ -206,11 +206,7 @@ def getArchitecturalDefinition(stateMachine):
   tw.increaseIndent()
 
   # Rising clock edge condition.
-  # If we're in a memory state, set the address and correct strobe.
-  # If we're in a computation state, do some computation.
-  # If we're in a start state, get some inputs.
-  # If we're in an end state, write some outputs.
-  # If we're in the reset state, move to the first state.
+  # Transition to next state for all states that have a clock transition.
   tw.writeLine("if rising_edge(clk) then")
   tw.increaseIndent()
 
@@ -222,129 +218,28 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("int_state <= " + stateMachine[0].name() + ";")
   tw.decreaseIndent()
 
-  # Other states.
   for i in range(len(stateMachine)):
     s = stateMachine[i]
 
-    tw.writeBlankLine()
-    tw.writeLine("when " + s.name() + " =>")
-    tw.increaseIndent()
-
-    # If this is a start state, get inputs into the state machine's internal registers.
-    if s.isStartState():
-      for r in stateMachine.inputRegisters():
-        tw.writeLine("r{reg:02d} <= unsigned(in_r{reg:02d});".format(reg=r))
-      tw.writeBlankLine()
-
-    # If this is an end state, put outputs from the state machine's internal registers.
-    # Also set the done flag.
-    elif s.isEndState():
-      for r in stateMachine.outputRegisters():
-        tw.writeLine("out_r{reg:02d} <= std_logic_vector(r{reg:02d});".format(reg=r))
-      tw.writeLine("done <= '1';")
-      tw.writeBlankLine()
-
-    # If this is a wait state, set up the memory transaction (either a read or a write).
-    elif s.isWaitState():
-      inst = s.instruction()
-
-      # Figure out what the expression is for the memory address.
-      # It's either rA+imm or rA+rB.
-      if inst.imm() != None:
-        expr = "(r{reg:02d} + unsigned(to_signed({imm:d}, 32)))".format(reg = inst.rA(), imm = inst.imm())
-      elif inst.label() != None:
-        expr = "(r{reg:02d} + unsigned(to_signed({imm:s}, 32)))".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
-      else:
-        expr = "(r{regA:02d} + r{regB:02d})".format(regA = inst.rA(), regB = inst.rB())
-
-      tw.writeCommentLine(str(inst))
-      tw.writeCommentLine("Set up memory access.")
-      tw.writeLine("m_addr <= std_logic_vector(" + expr + ");")
-
-      # If the instruction is a read, we need to set the read strobe high.
-      # If the instruction is a write, we need to set the write strobe high AND set the data out line.
-      if inst.width() == 1:
-        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 8;")
-      elif inst.width() == 2:
-        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 16;")
-
-      if inst.isRead():
-        tw.writeLine("m_rd <= '1';")
-      else:
-        if inst.width() == 1:
-          tw.writeLine("m_data_out <= (others => '0');")
-          tw.writeLine("m_data_out((offset+7) downto offset) <= std_logic_vector(unsigned(r{:02d}(7 downto 0)));".format(inst.rD()))
-        elif inst.width() == 2:
-          tw.writeLine("m_data_out <= (others => '0');")
-          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD()))
-        elif inst.width() == 4:
-          tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
-
-        # Set up the write enable.
-        tw.writeLine("m_wr <= \"0000\";")
-        if inst.width() == 1:
-          tw.writeLine("m_wr(to_integer(" + expr + ") mod 4) <= '1';")
-        elif inst.width() == 2:
-          tw.writeLine("m_wr((to_integer(" + expr + ") mod 2)*2) <= '1';")
-          tw.writeLine("m_wr(((to_integer(" + expr + ") mod 2)*2)+1) <= '1';")
-        elif inst.width() == 4:
-          tw.writeLine("m_wr <= \"1111\";")
-        else:
-          raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
-
-      tw.writeBlankLine()
-
-    # Otherwise, this is a computation state, and we need to emit translations of
-    # each instruction.
-    else:
-      # First get all inputs to the block.
-      tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
-                                                           s.inputs()))))
-      for i in s.inputs():
-        if i != 0:
-          tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
-
-      tw.writeBlankLine()
-      tw.writeCommentLine("Set local carry variable.")
-      tw.writeLine("temp_carry := carry;")
-
-      tw.writeBlankLine()
-
-      # Now write translations of all the instructions in the block.
-      for inst in s.instructions():
-        tw.writeCommentLine(str(inst))
-        for line in translateInstruction(s.name(), inst):
-          tw.writeLine(line)
-        tw.writeBlankLine()
-
-      tw.writeBlankLine()
-
-      # Finally, write locals to their respective permanent registers.
-      tw.writeCommentLine("Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
-                                                           s.outputs()))))
-      for o in s.outputs():
-        if o != 0:
-          tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
-
-      tw.writeBlankLine()
-      tw.writeCommentLine("Set carry flag register.")
-      tw.writeLine("carry <= temp_carry;")
-
-      tw.writeBlankLine()
-
     # We transition to the next state if this is not a wait state.
     if "CLK" in s.triggers() and s.getTransition("CLK") != s:
+      tw.writeBlankLine()
+      tw.writeLine("when " + s.name() + " =>")
+      tw.increaseIndent()
+      tw.writeCommentLine("Transition to " + s.getTransition("CLK").name() + ".")
       tw.writeLine("int_state <= " + s.getTransition("CLK").name() + ";")
-
-    tw.decreaseIndent()
+      tw.decreaseIndent()
 
   tw.writeLine("when others => null;")
   tw.writeLine("end case;")
 
   tw.decreaseIndent()
+  tw.writeLine("end if;")
+
+  tw.writeBlankLine()
 
   # Now do M_RDY rising edge transitions (i.e. memory accesses.)
-  tw.writeLine("elsif rising_edge(m_rdy) then")
+  tw.writeLine("if rising_edge(m_rdy) then")
 
   tw.increaseIndent()
   tw.writeLine("m_wr <= \"0000\";")
@@ -394,6 +289,129 @@ def getArchitecturalDefinition(stateMachine):
 
   tw.decreaseIndent()
   tw.writeLine("end if;")
+
+  tw.writeBlankLine()
+  tw.writeCommentLine("Perform an operation depending on the state we're in.")
+  tw.writeLine("case int_state is")
+
+  # Other states.
+  for i in range(len(stateMachine)):
+    s = stateMachine[i]
+
+    tw.writeLine("when " + s.name() + " =>")
+    tw.increaseIndent()
+
+    # If this is a start state, get inputs into the state machine's internal registers.
+    if s.isStartState():
+      tw.writeCommentLine("Start state. Read inputs into internal registers.")
+      for r in stateMachine.inputRegisters():
+        tw.writeLine("r{reg:02d} <= unsigned(in_r{reg:02d});".format(reg=r))
+      tw.writeBlankLine()
+
+    # If this is an end state, put outputs from the state machine's internal registers.
+    # Also set the done flag.
+    elif s.isEndState():
+      tw.writeCommentLine("End state. Write internal registers to outputs.")
+      for r in stateMachine.outputRegisters():
+        tw.writeLine("out_r{reg:02d} <= std_logic_vector(r{reg:02d});".format(reg=r))
+      tw.writeLine("done <= '1';")
+      tw.writeBlankLine()
+
+    # If this is a wait state, set up the memory transaction (either a read or a write).
+    elif s.isWaitState():
+      tw.writeCommentLine("Wait state. Set up a memory transaction.")
+      inst = s.instruction()
+
+      # Figure out what the expression is for the memory address.
+      # It's either rA+imm or rA+rB.
+      if inst.imm() != None:
+        expr = "(r{reg:02d} + unsigned(to_signed({imm:d}, 32)))".format(reg = inst.rA(), imm = inst.imm())
+      elif inst.label() != None:
+        expr = "(r{reg:02d} + unsigned(to_signed({imm:s}, 32)))".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
+      else:
+        expr = "(r{regA:02d} + r{regB:02d})".format(regA = inst.rA(), regB = inst.rB())
+
+      tw.writeCommentLine(str(inst))
+      tw.writeLine("m_addr <= std_logic_vector(" + expr + ");")
+
+      # If the instruction is a read, we need to set the read strobe high.
+      # If the instruction is a write, we need to set the write strobe high AND set the data out line.
+      if inst.width() == 1:
+        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 8;")
+      elif inst.width() == 2:
+        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 16;")
+
+      if inst.isRead():
+        tw.writeLine("m_rd <= '1';")
+      else:
+        if inst.width() == 1:
+          tw.writeLine("m_data_out <= (others => '0');")
+          tw.writeLine("m_data_out((offset+7) downto offset) <= std_logic_vector(unsigned(r{:02d}(7 downto 0)));".format(inst.rD()))
+        elif inst.width() == 2:
+          tw.writeLine("m_data_out <= (others => '0');")
+          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD()))
+        elif inst.width() == 4:
+          tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
+
+        # Set up the write enable.
+        tw.writeLine("m_wr <= \"0000\";")
+        if inst.width() == 1:
+          tw.writeLine("m_wr(to_integer(" + expr + ") mod 4) <= '1';")
+        elif inst.width() == 2:
+          tw.writeLine("m_wr((to_integer(" + expr + ") mod 2)*2) <= '1';")
+          tw.writeLine("m_wr(((to_integer(" + expr + ") mod 2)*2)+1) <= '1';")
+        elif inst.width() == 4:
+          tw.writeLine("m_wr <= \"1111\";")
+        else:
+          raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
+
+      tw.writeBlankLine()
+
+    # Otherwise, this is a computation state, and we need to emit translations of
+    # each instruction.
+    else:
+      tw.writeCommentLine("Computation state. Compute values and store in internal registers.")
+      # First get all inputs to the block.
+      tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
+                                                           s.inputs()))))
+      for i in s.inputs():
+        if i != 0:
+          tw.writeLine(localName(s.name(), i) + " := " + "r{:02d}".format(i) + ";")
+
+      tw.writeBlankLine()
+      tw.writeCommentLine("Set local carry variable.")
+      tw.writeLine("temp_carry := carry;")
+
+      tw.writeBlankLine()
+
+      # Now write translations of all the instructions in the block.
+      for inst in s.instructions():
+        tw.writeCommentLine(str(inst))
+        for line in translateInstruction(s.name(), inst):
+          tw.writeLine(line)
+        tw.writeBlankLine()
+
+      tw.writeBlankLine()
+
+      # Finally, write locals to their respective permanent registers.
+      tw.writeCommentLine("Outputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
+                                                           s.outputs()))))
+      for o in s.outputs():
+        if o != 0:
+          tw.writeLine("r{:02d}".format(o) + " <= " + localName(s.name(), o) + ";")
+
+      tw.writeBlankLine()
+      tw.writeCommentLine("Set carry flag register.")
+      tw.writeLine("carry <= temp_carry;")
+
+      tw.writeBlankLine()
+
+    tw.decreaseIndent()
+
+  tw.writeLine("when others => null;")
+  tw.writeLine("end case;")
+
+  tw.decreaseIndent()
 
   tw.decreaseIndent()
 

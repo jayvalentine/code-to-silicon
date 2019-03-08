@@ -190,12 +190,15 @@ class ComputationState(State):
 
   def inputs(self):
     inputs = []
+    outputs = []
 
     for i in self._instructions:
-      if i.rA() != None and i.rA() not in inputs:
+      if i.rA() != None and i.rA() not in inputs and i.rA() not in outputs:
         inputs.append(i.rA())
-      if i.rB() != None and i.rB() not in inputs:
+      if i.rB() != None and i.rB() not in inputs and i.rB() not in outputs:
         inputs.append(i.rB())
+      if i.rD() != None and i.rD() not in outputs:
+        outputs.append(i.rD())
 
     return inputs
 

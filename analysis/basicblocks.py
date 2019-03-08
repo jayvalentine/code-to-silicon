@@ -242,7 +242,7 @@ class BasicBlock:
 
     currentWidth = 0.0
     for l in sorted(list(self._instructions.keys())):
-      if self._instructions[l].isBasicBlockBoundary():
+      if self._instructions[l].isMemoryAccess():
         widths.append(1.0)
         currentWidth = 0.0
       else:
