@@ -306,6 +306,16 @@ class BasicBlock:
     #
     # First step: for each input, construct a set of lists that track it to its next input.
     for r in self._outputs:
+      neededForBranch = False
+
+      # Determine if this register is needed for a branch at the end of this block.
+      if self._last != None:
+        i = self._last
+        if i.rA() != None and i.rA() == r:
+          neededForBranch = True
+        if i.rB() != None and i.rB() == r:
+          neededForBranch = True
+
       t = _track(self, r, [])
 
       removeRegister = True
@@ -313,7 +323,7 @@ class BasicBlock:
         if not _isOutBeforeIn(r, visited[1:]):
           removeRegister = False
 
-      if removeRegister:
+      if removeRegister and not neededForBranch:
         self._outputs.remove(r)
 
   def setCost(self):

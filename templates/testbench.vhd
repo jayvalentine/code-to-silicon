@@ -727,7 +727,7 @@ begin
                 exit;
             end if;
 
-            wait for clk_period/2;
+            wait for clk_period;
         end loop;
 
         report "TESTBENCH: CYCLES: " & Integer'image(cycles);
