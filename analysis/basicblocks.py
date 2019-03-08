@@ -243,8 +243,7 @@ class BasicBlock:
     currentWidth = 0.0
     for l in sorted(list(self._instructions.keys())):
       if self._instructions[l].isBasicBlockBoundary():
-        if currentWidth > 0.0:
-          widths.append(currentWidth)
+        widths.append(1.0)
         currentWidth = 0.0
       else:
         currentWidth += 1.0
@@ -323,6 +322,8 @@ class BasicBlock:
       self._cost = math.inf
     else:
       self._cost = (len(self._outputs) + len(self._inputs)) / (len(self._outputs) + len(self._inputs) + len(self._instructions))
+      #self._cost += self.memoryAccessDensity()
+      self._cost /= self.averageComputationWidth()
 
   def inputs(self):
     return self._inputs
