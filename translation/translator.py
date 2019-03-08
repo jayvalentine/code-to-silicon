@@ -202,7 +202,6 @@ def getArchitecturalDefinition(stateMachine):
   tw.decreaseIndent()
 
   tw.writeLine("elsif sel = '1' then")
-
   tw.increaseIndent()
 
   # Rising clock edge condition.
@@ -221,40 +220,12 @@ def getArchitecturalDefinition(stateMachine):
   for i in range(len(stateMachine)):
     s = stateMachine[i]
 
-    # We transition to the next state if this is not a wait state.
-    if "CLK" in s.triggers() and s.getTransition("CLK") != s:
-      tw.writeBlankLine()
-      tw.writeLine("when " + s.name() + " =>")
-      tw.increaseIndent()
-      tw.writeCommentLine("Transition to " + s.getTransition("CLK").name() + ".")
-      tw.writeLine("int_state <= " + s.getTransition("CLK").name() + ";")
-      tw.decreaseIndent()
+    tw.writeBlankLine()
+    tw.writeLine("when " + s.name() + " =>")
+    tw.increaseIndent()
 
-  tw.writeLine("when others => null;")
-  tw.writeLine("end case;")
-
-  tw.decreaseIndent()
-  tw.writeLine("end if;")
-
-  tw.writeBlankLine()
-
-  # Now do M_RDY rising edge transitions (i.e. memory accesses.)
-  tw.writeLine("if rising_edge(m_rdy) then")
-
-  tw.increaseIndent()
-  tw.writeLine("m_wr <= \"0000\";")
-  tw.writeLine("m_rd <= '0';")
-  tw.writeBlankLine()
-
-  firstState = True
-  tw.writeLine("case int_state is")
-
-  for i in range(len(stateMachine)):
-    s = stateMachine[i]
-
-    if s.isWaitState():
-      tw.writeLine("when " + s.name() + " =>")
-
+    if "M_RDY" in s.triggers():
+      tw.writeLine("if m_rdy = '1' then")
       tw.increaseIndent()
 
       # If the wait is a READ, we need to get the data from memory into the correct register.
@@ -279,12 +250,24 @@ def getArchitecturalDefinition(stateMachine):
 
         tw.writeBlankLine()
 
+      tw.writeCommentLine("Transition to " + s.getTransition("M_RDY").name() + ".")
       tw.writeLine("int_state <= " + s.getTransition("M_RDY").name() + ";")
 
-      tw.writeBlankLine()
       tw.decreaseIndent()
+      tw.writeLine("end if;")
 
-  tw.writeLine("when others => null;")
+    # We transition to the next state if this is not a wait state.
+    elif "CLK" in s.triggers() and s.getTransition("CLK") != s:
+      tw.writeCommentLine("Transition to " + s.getTransition("CLK").name() + ".")
+      tw.writeLine("int_state <= " + s.getTransition("CLK").name() + ";")
+
+
+    else:
+      tw.writeCommentLine("State with no transitions.")
+      tw.writeLine("null;")
+    
+    tw.decreaseIndent()
+
   tw.writeLine("end case;")
 
   tw.decreaseIndent()
@@ -410,8 +393,6 @@ def getArchitecturalDefinition(stateMachine):
 
   tw.writeLine("when others => null;")
   tw.writeLine("end case;")
-
-  tw.decreaseIndent()
 
   tw.decreaseIndent()
 
