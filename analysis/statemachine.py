@@ -56,7 +56,7 @@ class StateMachine:
     # through the -ffixed option.
     for i in self.inputRegisters():
       if i != controllerPointer and i != tempRegister:
-        replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, (input)*4, None, 4))
+        replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, i*4, None, 4))
 
     # Write to the special controller register that will start our desired state machine.
     replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, tempRegister, self._id, None, None))
