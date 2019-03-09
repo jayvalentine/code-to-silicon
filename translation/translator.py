@@ -130,7 +130,7 @@ def getArchitecturalDefinition(stateMachine):
 
   # Output the 'offset' signal. This is used for calculating offsets for IO of bytes and halfwords.
   tw.writeCommentLine("Offset.")
-  tw.writeLine("signal offset         :  Integer;")
+  tw.writeLine("signal offset         :  Integer range 0 to 31;")
   tw.writeBlankLine()
 
   # Carry signal. This is used in addition and subtraction operations.
@@ -275,6 +275,7 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("end case;")
 
   tw.writeBlankLine()
+  tw.writeLine("report \"TESTBENCH: " + stateMachine.name() + ": \"" + "& STATE'image(int_state);")
   tw.writeCommentLine("Perform an operation depending on the state we're in.")
   tw.writeLine("case int_state is")
 
@@ -321,9 +322,9 @@ def getArchitecturalDefinition(stateMachine):
       # If the instruction is a read, we need to set the read strobe high.
       # If the instruction is a write, we need to set the write strobe high AND set the data out line.
       if inst.width() == 1:
-        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 8;")
+        tw.writeLine("offset <= ((to_integer((" + expr + ")) rem 4) * 8);")
       elif inst.width() == 2:
-        tw.writeLine("offset <= (to_integer(" + expr + ") mod 4) * 16;")
+        tw.writeLine("offset <= ((to_integer((" + expr + ")) rem 4) * 16);")
 
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
