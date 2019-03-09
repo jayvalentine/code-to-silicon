@@ -275,7 +275,6 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("end case;")
 
   tw.writeBlankLine()
-  tw.writeLine("report \"TESTBENCH: " + stateMachine.name() + ": \"" + "& STATE'image(int_state);")
   tw.writeCommentLine("Perform an operation depending on the state we're in.")
   tw.writeLine("case int_state is")
 
@@ -657,8 +656,10 @@ def reportAcceleratorStart(stateMachines):
     tw.decreaseIndent()
     tw.writeLine("elsif " + sm.name() + "_done = '1' and accel_started = '1' then")
     tw.increaseIndent()
+    tw.writeLine("core_cycles := core_cycles + (cycles - core_start);")
     tw.writeLine("report \"TESTBENCH: " + sm.name() + " EXECUTION COMPLETE: \" & Integer'image(cycles - core_start) & \" CYCLES.\";")
     tw.writeLine("accel_started <= '0';")
+    tw.writeLine("overhead_start <= cycles;")
     tw.decreaseIndent()
     tw.writeLine("end if;")
     tw.writeBlankLine()

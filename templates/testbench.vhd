@@ -1,3 +1,4 @@
+
 ----------------------------------------------------------------------------------
 -- Company:
 -- Engineer:
@@ -367,8 +368,11 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     signal clk_hold                 : std_logic := '0';
     signal cycles                   : Integer := 0;
     signal core_start               : Integer := 0;
-
+    signal mb_start                 : Integer := 0;
+    signal overhead_start           : Integer := 0;
+    signal transfer_start           : Integer := 0;
     signal accel_started            : std_logic := '0';
+    signal transfer_started         : std_logic := '0';
     signal sleep_mode               : std_logic := '0';
 
     signal bram_addr                : std_logic_vector(31 downto 0);
@@ -658,6 +662,11 @@ begin
     test_proc : process
         file f_file : text;
         variable f_line : line;
+
+        variable mb_cycles : Integer := 0;
+        variable core_cycles : Integer := 0;
+        variable overhead_cycles : Integer := 0;
+        variable transfer_cycles : Integer := 0;
     begin
         rst <= '1';
         clk_hold <= '0';
@@ -665,18 +674,44 @@ begin
         rst <= '0';
 
         report "TESTBENCH: TEST %%TESTNAME%% START.";
+        mb_start <= cycles;
 
         loop
             -- Report if any hardware accelerators have been started or have finished.
 %%REPORT_ACCEL_START%%
 
+            if M_AXI_DP_0_awvalid = '1' and M_AXI_DP_0_wvalid  = '1' then
+                if transfer_started = '0' and M_AXI_DP_0_awaddr /= x"44A00000" then
+                    report "TESTBENCH: AXI REGISTER TRANSFER START.";
+                    transfer_started <= '1';
+                    transfer_start <= cycles;
+                elsif M_AXI_DP_0_awaddr = x"44A00000" and transfer_started = '1' then
+                    report "TESTBENCH: AXI REGISTER TRANSFER END.";
+                    transfer_started <= '0';
+                    transfer_cycles := transfer_cycles + (cycles - transfer_start);
+                end if;
+	    elsif M_AXI_DP_0_arvalid = '1' and M_AXI_DP_0_rvalid = '1' then
+                if transfer_started = '0' and M_AXI_DP_0_araddr /= x"44A00000" then
+                    report "TESTBENCH: AXI REGISTER TRANSFER START.";
+                    transfer_started <= '1';
+                    transfer_start <= cycles;
+                elsif M_AXI_DP_0_araddr = x"44A00000" and transfer_started = '1' then
+                    report "TESTBENCH: AXI REGISTER TRANSFER END.";
+                    transfer_started <= '0';
+                    transfer_cycles := transfer_cycles + (cycles - transfer_start);
+		end if;
+            end if;
+
             -- Report the MicroBlaze core going to sleep or waking up.
             if Sleep_0 = '1' and sleep_mode = '0' then
                 report "TESTBENCH: MICROBLAZE SLEEP.";
                 sleep_mode <= '1';
+                mb_cycles := mb_cycles + (cycles - mb_start);
             elsif Sleep_0 = '0' and sleep_mode = '1' then
                 report "TESTBENCH: MICROBLAZE WAKEUP.";
                 sleep_mode <= '0';
+                overhead_cycles := overhead_cycles + (cycles - overhead_start);
+                mb_start <= cycles;
             end if;
 
             -- Trap if we reach the test_failed function, and report the test failure.
@@ -694,7 +729,13 @@ begin
             wait for clk_period;
         end loop;
 
-        report "TESTBENCH: CYCLES: " & Integer'image(cycles);
+        mb_cycles := mb_cycles + (cycles - mb_start);
+
+        report "TESTBENCH: CYCLES:         " & Integer'image(cycles);
+        report "TESTBENCH: MICROBLAZE:     " & Integer'image(mb_cycles);
+        report "TESTBENCH: AXI TRANSFER:   " & Integer'image(transfer_cycles);
+        report "TESTBENCH: CORES:          " & Integer'image(core_cycles);
+        report "TESTBENCH: SLEEP OVERHEAD: " & Integer'image(overhead_cycles);
         wait;
     end process test_proc;
 end Behavioral;
