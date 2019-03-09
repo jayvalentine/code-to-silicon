@@ -331,9 +331,9 @@ class BasicBlock:
     if len(self._instructions) == 0:
       self._cost = math.inf
     else:
-      self._cost = (len(self._outputs) + len(self._inputs)) / (len(self._outputs) + len(self._inputs) + len(self._instructions))
-      #self._cost += self.memoryAccessDensity()
-      self._cost /= self.averageComputationWidth()
+      io_overhead = len(self._outputs) + len(self._inputs)
+      predicted_parallelism = len(self._instructions) / self.averageComputationWidth()
+      self._cost = io_overhead * predicted_parallelism
 
   def inputs(self):
     return self._inputs
