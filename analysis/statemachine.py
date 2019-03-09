@@ -54,7 +54,7 @@ class StateMachine:
     # Write the input registers to the right ports.
     # We just exclude r13 and r31 because we ensure that the compiler doesn't use those registers
     # through the -ffixed option.
-    for i in self.inputRegisters():
+    for i in sorted(self.inputRegisters()):
       if i != controllerPointer and i != tempRegister:
         replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, (input)*4, None, 4))
 
@@ -66,7 +66,7 @@ class StateMachine:
     replace.append(instructions.SystemInstruction("mbar", None, None, None, 24, None, None))
 
     # Read the output registers from the right ports.
-    for o in self.outputRegisters():
+    for o in sorted(self.outputRegisters()):
       if o != controllerPointer and o != tempRegister:
         replace.append(instructions.InputInstruction("lwi", controllerPointer, None, o, o*4, None, 4))
 
