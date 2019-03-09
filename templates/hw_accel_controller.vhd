@@ -195,14 +195,12 @@ begin
 %%STATEMACHINES_DONE%%
 
                 when S_READY =>
-                    M_AXI_DP_0_awready <= '0';
-                    M_AXI_DP_0_wready <= '0';
+                    M_AXI_DP_0_awready <= '1';
+                    M_AXI_DP_0_wready <= '1';
 
                     if M_AXI_DP_0_awvalid = '1' then
                         addr_fifo(addr_fifo_tail) <= M_AXI_DP_0_awaddr;
                         addr_fifo_tail <= addr_fifo_tail + 1;
-
-                        M_AXI_DP_0_awready <= '1';
                     end if;
 
                     -- Write transaction.
@@ -211,10 +209,6 @@ begin
 %%WRITE_REG_TO_ACCEL%%
                         end case;
 
-                        M_AXI_DP_0_wready <= '1';
-                    end if;
-
-                    if M_AXI_DP_0_bready = '1' then
                         M_AXI_DP_0_bresp <= "00";
                         M_AXI_DP_0_bvalid <= '1';
                     end if;
@@ -225,20 +219,20 @@ begin
                     end if;
 
                 when S_WAITING_FOR_MB =>
-                    M_AXI_DP_0_arready <= '0';
-                    M_AXI_DP_0_rvalid <= '0';
+                    M_AXI_DP_0_arready <= '1';
+                    M_AXI_DP_0_rvalid <= '1';
 
                     if M_AXI_DP_0_arvalid = '1' then
                         addr_fifo(addr_fifo_tail) <= M_AXI_DP_0_araddr;
                         addr_fifo_tail <= addr_fifo_tail + 1;
-
-                        M_AXI_DP_0_arready <= '1';
                     end if;
 
-                    if M_AXI_DP_0_rready = '1' then
-                        case addr_fifo(addr_fifo_head) is
+                    case addr_fifo(addr_fifo_head) is
 %%READ_REG_FROM_ACCEL%%
-                        end case;
+                    end case;
+
+                    if M_AXI_DP_0_rready = '1' then
+                        addr_fifo_head <= addr_fifo_head + 1;
 
                         M_AXI_DP_0_rvalid <= '1';
                         M_AXI_DP_0_rresp <= "00";
