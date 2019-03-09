@@ -14,7 +14,7 @@ void test(void)
 {
   int failed = 0;
 
-  if (resultA != 0)
+  if (resultA != 4)
   {
     failed = 1;
   }

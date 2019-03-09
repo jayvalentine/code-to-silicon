@@ -182,5 +182,5 @@ int resultA;
 
 void application(void)
 {
-  resultA = (int)fannkuch(2);
+  resultA = (int)fannkuch(3);
 }
