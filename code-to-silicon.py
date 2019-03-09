@@ -125,13 +125,16 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0, 10]#, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
+  cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
   analysisTimes = {}
 
   outputLines = []
 
   testName = "fannkuch"
+
+  with open("results.csv", 'w+') as results:
+    results.write("testname,analysistype,pruningmode,cores,cycles,analysistime\n")
 
   for analysis in analysisTypes:
     coreCounts = []
@@ -178,8 +181,9 @@ def main(argv):
         # Store average inputs and outputs.
         coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
         coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
-
-      outputLines.append(",".join([testName, analysis, mode, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]))
+      
+      with open("results.csv", 'a') as results:
+        results.write(",".join([testName, analysis, mode, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
 
     # Display a plot of speedup against core count.
     if sim and fig:
@@ -206,10 +210,6 @@ def main(argv):
     plot.xlim([0, coreCounts[-1]])
     plot.savefig("figures/autogen/analysis-times.png")
     plot.clf()
-
-  with open("results.csv", 'w') as csv:
-    for l in outputLines:
-      csv.write(l + "\n")
 
   # Now build the report (unless we've been asked not to)!
   if report:
