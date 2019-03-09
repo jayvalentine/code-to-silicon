@@ -129,7 +129,7 @@ architecture hw_accel_controller_behav of hw_accel_controller is
 
     signal int_state : STATE := S_READY;
 begin
-    control_proc : process(clk, rst, m_rd, m_wr)
+    control_proc : process(clk, rst, m_rd, m_wr, LMB_M_0_ready, LMB_M_0_readdbus)
     begin
         if rst = '1' then
             int_state <= S_READY;
@@ -161,15 +161,16 @@ begin
                 LMB_M_0_writestrobe <= '0';
             end if;
 
+            if LMB_M_0_ready = '1' then
+                m_rdy <= '1';
+            else
+                m_rdy <= '0';
+            end if;
+
+            m_data_to_accel <= LMB_M_0_readdbus;
+
             if rising_edge(clk) then
 %%UNRESET_STATEMACHINES%%
-
-                if LMB_M_0_ready = '1' then
-                    m_data_to_accel <= LMB_M_0_readdbus;
-                    m_rdy <= '1';
-                else
-                    m_rdy <= '0';
-                end if;
 
                 wakeup <= "00";
 
