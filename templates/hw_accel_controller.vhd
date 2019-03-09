@@ -127,7 +127,14 @@ architecture hw_accel_controller_behav of hw_accel_controller is
         S_READY
     );
 
+    type FIFO is array (0 to 30) of std_logic_vector (31 downto 0);
+
     signal int_state : STATE := S_READY;
+
+    signal addr_fifo : FIFO;
+    signal addr_fifo_head : Integer range 0 to 30 := 0;
+    signal addr_fifo_tail : Integer range 0 to 30 := 0;
+
 begin
     control_proc : process(clk, rst, m_rd, m_wr, LMB_M_0_ready, LMB_M_0_readdbus)
     begin
@@ -188,14 +195,23 @@ begin
 %%STATEMACHINES_DONE%%
 
                 when S_READY =>
-                    M_AXI_DP_0_awready <= '1';
-                    M_AXI_DP_0_wready <= '1';
+                    M_AXI_DP_0_awready <= '0';
+                    M_AXI_DP_0_wready <= '0';
+
+                    if M_AXI_DP_0_awvalid = '1' then
+                        addr_fifo(addr_fifo_tail) <= M_AXI_DP_0_awaddr;
+                        addr_fifo_tail <= addr_fifo_tail + 1;
+
+                        M_AXI_DP_0_awready <= '1';
+                    end if;
 
                     -- Write transaction.
-                    if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
-                        case M_AXI_DP_0_awaddr is
+                    if M_AXI_DP_0_wvalid = '1' then
+                        case addr_fifo(addr_fifo_head) is
 %%WRITE_REG_TO_ACCEL%%
                         end case;
+
+                        M_AXI_DP_0_wready <= '1';
                     end if;
 
                     if M_AXI_DP_0_bready = '1' then
@@ -209,10 +225,18 @@ begin
                     end if;
 
                 when S_WAITING_FOR_MB =>
-                    M_AXI_DP_0_arready <= '1';
+                    M_AXI_DP_0_arready <= '0';
+                    M_AXI_DP_0_rvalid <= '0';
+
+                    if M_AXI_DP_0_arvalid = '1' then
+                        addr_fifo(addr_fifo_tail) <= M_AXI_DP_0_araddr;
+                        addr_fifo_tail <= addr_fifo_tail + 1;
+
+                        M_AXI_DP_0_arready <= '1';
+                    end if;
 
                     if M_AXI_DP_0_rready = '1' then
-                        case M_AXI_DP_0_araddr is
+                        case addr_fifo(addr_fifo_head) is
 %%READ_REG_FROM_ACCEL%%
                         end case;
 
