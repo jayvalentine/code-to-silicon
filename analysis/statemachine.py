@@ -48,30 +48,30 @@ class StateMachine:
   def replacementInstructions(self):
     replace = []
 
-    # Get start address of hardware accelerator ports.
-    # This symbol will be defined in the linker script.
-    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 31, None, "HW_ACCEL_PORT", None))
+    controllerPointer = 13
+    tempRegister = 31
 
     # Write the input registers to the right ports.
-    # For now we just exclude r31.
-    for input in self.inputRegisters():
-      if input != 31:
-        replace.append(instructions.OutputInstruction("swi", 31, None, input, (input)*4, None, 4))
+    # We just exclude r13 and r31 because we ensure that the compiler doesn't use those registers
+    # through the -ffixed option.
+    for i in self.inputRegisters():
+      if i != controllerPointer and i != tempRegister:
+        replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, (input)*4, None, 4))
 
     # Write to the special controller register that will start our desired state machine.
-    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, 30, (2**self._id), None, None))
-    replace.append(instructions.OutputInstruction("swi", 31, None, 30, 0, None, 4))
+    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, tempRegister, self._id, None, None))
+    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 0, None, 4))
 
     # Go to sleep until wakeup signal from controller.
     replace.append(instructions.SystemInstruction("mbar", None, None, None, 24, None, None))
 
     # Read the output registers from the right ports.
-    for output in self.outputRegisters():
-      if output != 31:
-        replace.append(instructions.InputInstruction("lwi", 31, None, output, (output)*4, None, 4))
+    for o in self.outputRegisters():
+      if o != controllerPointer and o != tempRegister:
+        replace.append(instructions.InputInstruction("lwi", controllerPointer, None, o, o*4, None, 4))
 
     # Read the special port at offset 0 to reset the controller.
-    replace.append(instructions.InputInstruction("lwi", 31, None, 0, 0, None, 4))
+    replace.append(instructions.InputInstruction("lwi", controllerPointer, None, 0, 0, None, 4))
 
     return replace
 

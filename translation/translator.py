@@ -511,7 +511,7 @@ def getControllerWriteRegisters(stateMachines):
   for i in range(0, 32):
     if i < len(stateMachines):
       tw.writeCommentLine("Select accelerator " + stateMachines[i].name() + ".")
-      tw.writeLine("when x\"{:08x}\" =>".format(2**stateMachines[i].id()))
+      tw.writeLine("when x\"{:08x}\" =>".format(stateMachines[i].id()))
       tw.increaseIndent()
       tw.writeLine(stateMachines[i].name() + "_sel <= '1';")
       tw.writeLine("int_state <= S_WAITING_FOR_CORE;")
