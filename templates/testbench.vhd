@@ -732,7 +732,7 @@ begin
         mb_cycles := mb_cycles + (cycles - mb_start);
 
         report "TESTBENCH: CYCLES:         " & Integer'image(cycles);
-        report "TESTBENCH: MICROBLAZE:     " & Integer'image(mb_cycles);
+        report "TESTBENCH: MICROBLAZE:     " & Integer'image(mb_cycles - transfer_cycles);
         report "TESTBENCH: AXI TRANSFER:   " & Integer'image(transfer_cycles);
         report "TESTBENCH: CORES:          " & Integer'image(core_cycles);
         report "TESTBENCH: SLEEP OVERHEAD: " & Integer'image(overhead_cycles);
