@@ -256,10 +256,11 @@ class BasicBlock:
     else:
       self._averageComputationWidth = (sum(widths)/len(widths))
 
-  def setOutputs(self, mode):
+  def setOutputs(self, logger, mode):
     self._outputs = self.rawOutputs()
 
     if mode == "naive":
+      logger.debug("Pruning mode 'naive' completed for block " + self._name + ".")
       return
 
     # We've got all registers written to in this function,
@@ -291,6 +292,7 @@ class BasicBlock:
           self._outputs.remove(r)
 
     if mode == "volatile":
+      logger.debug("Pruning mode 'volatile' completed for block " + self._name + ".")
       return
 
     # If this block has a successor we do not know, stop, as there is no point trying to
@@ -325,6 +327,8 @@ class BasicBlock:
 
       if removeRegister and not neededForBranch:
         self._outputs.remove(r)
+
+    logger.debug("Pruning mode 'complete' completed for block " + self._name + ".")
 
   def setCost(self):
     # We don't want to convert empty basic blocks, so their cost is effectively infinite.
@@ -565,7 +569,7 @@ def linkBasicBlocks(logger, blocks, mode):
 
   # Set outputs for ALL BLOCKS.
   for block in blocks:
-    block.setOutputs(mode)
+    block.setOutputs(logger, mode)
 
   # Set metrics and cost for ALL BLOCKS.
   for block in blocks:
