@@ -29,6 +29,9 @@ CMP_FORMAT_B_5 = "end if;"
 SEXT8_FORMAT_A = "{:s} := (others => {:s}(7));"
 SEXT8_FORMAT_B = "{:s}(6 downto 0) := {:s}(6 downto 0);"
 
+SEXT16_FORMAT_A = "{:s} := (others => {:s}(15));"
+SEXT16_FORMAT_B = "{:s}(14 downto 0) := {:s}(14 downto 0);"
+
 AND_FORMAT = "{:s} := {:s} and {:s};"
 ANDI_FORMAT = "{:s} := {:s} and unsigned(to_signed({:s}, 32));"
 
@@ -39,6 +42,8 @@ XOR_FORMAT = "{:s} := {:s} xor {:s};"
 XORI_FORMAT = "{:s} := {:s} xor unsigned(to_signed({:s}, 32));"
 
 SRL_FORMAT = "{:s} := {:s} srl 1;"
+
+SRA_FORMAT = "{:s} := {:s} sra 1;"
 
 MUL_FORMAT = "{:s} := unsigned(signed({:s}) * signed({:s}));"
 MULI_FORMAT = "{:s} := unsigned(signed({:s}) * to_signed({:s}, 32));"
@@ -772,6 +777,13 @@ def translateInstruction(stateName, instruction):
     lines.append(SEXT8_FORMAT_B.format(localName(stateName, instruction.rD()),
                                        localName(stateName, instruction.rA())))
 
+  elif mnemonic == "sext16":
+    lines.append(SEXT8_FORMAT_A.format(localName(stateName, instruction.rD()),
+                                       localName(stateName, instruction.rA())))
+
+    lines.append(SEXT8_FORMAT_B.format(localName(stateName, instruction.rD()),
+                                       localName(stateName, instruction.rA())))
+
   elif mnemonic == "mul":
     # A 32-bit multiply produces a 64-bit result, so we put the result in a 64-bit temporary variable
     # and then put the lower 32 bits of that variable into the destination register.
@@ -835,6 +847,10 @@ def translateInstruction(stateName, instruction):
 
   elif mnemonic == "srl":
     lines.append(SRL_FORMAT.format(localName(stateName, instruction.rD()),
+                                   localName(stateName, instruction.rA())))
+
+  elif mnemonic == "sra":
+    lines.append(SRA_FORMAT.format(localName(stateName, instruction.rD()),
                                    localName(stateName, instruction.rA())))
 
   else:
