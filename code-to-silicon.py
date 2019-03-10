@@ -68,6 +68,8 @@ def main(argv):
   report = True
   fig = True
 
+  tests = ["fannkuch", "sha256", "fft", "sum_squares"]
+
   # Logging level WARNING.
   verbosity = Logger.WARNING
 
@@ -76,7 +78,7 @@ def main(argv):
 
   # Parse command line arguments.
   try:
-    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "verbosity=", "analysis=", "pruning=", "help"])
+    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "verbosity=", "analysis=", "pruning=", "tests=", "help"])
   except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -113,9 +115,18 @@ def main(argv):
 
     elif opt == "--pruning":
       mode = str(arg)
-      if mode not in ["naive", "volatile", "complete"]:
+      if mode not in ["naive", "volatile", "dependency"]:
         logger.error("Invalid pruning mode " + mode)
         sys.exit(2)
+
+    elif opt == "--tests":
+      testsNew = str(arg).split(",")
+      for t in testsNew:
+        if t not in tests:
+          logger.error("Invalid test '" + t + "'.")
+          sys.exit(2)
+
+      tests = testsNew
 
   # Set the logger's actual level now that we've parsed the options.
   logger.setLevel(verbosity)
@@ -131,85 +142,84 @@ def main(argv):
 
   outputLines = []
 
-  testName = "fannkuch"
-
   with open("results.csv", 'w+') as results:
     results.write("testname,analysistype,pruningmode,cores,cycles,analysistime\n")
 
-  for analysis in analysisTypes:
-    coreCounts = []
-    speedups = []
-    coreInputsAvg = []
-    coreOutputsAvg = []
-    baseCycles = None
-
-    for i in cores:
-      metrics = testing.runTest(logger, testName, i, sim, analysis, mode)
-
-      if analysis not in analysisTimes.keys():
-        analysisTimes[analysis] = []
-
-      analysisTimes[analysis].append(metrics["analysisTime"])
-
-      if i == 0:
-        speedups.append(1.0)
-        coreCounts.append(0)
-        baseCycles = metrics["cycles"]
-        coreInputsAvg.append(0)
-        coreOutputsAvg.append(0)
-
-      else:
-        if metrics["cycles"] != None:
-          s = baseCycles / metrics["cycles"]
-          speedups.append(s)
-
-        coreCounts.append(metrics["coreCount"])
-
-        # Plot 'population scatter' of inputs vs outputs.
-        if fig:
-          plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
-          plot.xlim([0, 32])
-          plot.ylim([0, 32])
-          plot.savefig("figures/autogen/pop-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
-          plot.clf()
-
-          # Plot regression of heuristic cost against actual cost.
-          plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
-          plot.savefig("figures/autogen/cost-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
-          plot.clf()
-
-        # Store average inputs and outputs.
-        coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
-        coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
-      
-      with open("results.csv", 'a') as results:
-        results.write(",".join([testName, analysis, mode, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
-
-    # Display a plot of speedup against core count.
-    if sim and fig:
-      plot.plot(coreCounts, speedups)
-      plot.savefig("figures/autogen/speedup-fannkuch-{:s}.png".format(analysis))
-      plot.clf()
-
-    # Plot average inputs/outputs against core count.
-    if fig:
-      plot.plot(coreCounts, coreInputsAvg, label="Input")
-      plot.plot(coreCounts, coreOutputsAvg, label="Output")
-      plot.legend(loc = "upper left")
-      plot.xlim([1, coreCounts[-1]])
-      plot.ylim([0, 32])
-      plot.savefig("figures/autogen/avg-io-{:s}.png".format(analysis))
-      plot.clf()
-
-  # Plot analysis times against core count.
-  if fig:
+  for testName in tests:
     for analysis in analysisTypes:
-      plot.plot(coreCounts, analysisTimes[analysis], label=analysis)
+      coreCounts = []
+      speedups = []
+      coreInputsAvg = []
+      coreOutputsAvg = []
+      baseCycles = None
 
-    plot.legend(loc="upper left")
-    plot.xlim([0, coreCounts[-1]])
-    plot.savefig("figures/autogen/analysis-times.png")
-    plot.clf()
+      for i in cores:
+        metrics = testing.runTest(logger, testName, i, sim, analysis, mode)
+
+        if analysis not in analysisTimes.keys():
+          analysisTimes[analysis] = []
+
+        analysisTimes[analysis].append(metrics["analysisTime"])
+
+        if i == 0:
+          speedups.append(1.0)
+          coreCounts.append(0)
+          baseCycles = metrics["cycles"]
+          coreInputsAvg.append(0)
+          coreOutputsAvg.append(0)
+
+        else:
+          if metrics["cycles"] != None:
+            s = baseCycles / metrics["cycles"]
+            speedups.append(s)
+
+          coreCounts.append(metrics["coreCount"])
+
+          # Plot 'population scatter' of inputs vs outputs.
+          if fig:
+            plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
+            plot.xlim([0, 32])
+            plot.ylim([0, 32])
+            plot.savefig("figures/autogen/pop-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
+            plot.clf()
+
+            # Plot regression of heuristic cost against actual cost.
+            plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
+            plot.savefig("figures/autogen/cost-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
+            plot.clf()
+
+          # Store average inputs and outputs.
+          coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
+          coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
+        
+        with open("results.csv", 'a') as results:
+          results.write(",".join([testName, analysis, mode, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
+
+      # Display a plot of speedup against core count.
+      if sim and fig:
+        plot.plot(coreCounts, speedups)
+        plot.savefig("figures/autogen/speedup-fannkuch-{:s}.png".format(analysis))
+        plot.clf()
+
+      # Plot average inputs/outputs against core count.
+      if fig:
+        plot.plot(coreCounts, coreInputsAvg, label="Input")
+        plot.plot(coreCounts, coreOutputsAvg, label="Output")
+        plot.legend(loc = "upper left")
+        plot.xlim([1, coreCounts[-1]])
+        plot.ylim([0, 32])
+        plot.savefig("figures/autogen/avg-io-{:s}.png".format(analysis))
+        plot.clf()
+
+    # Plot analysis times against core count.
+    if fig:
+      for analysis in analysisTypes:
+        plot.plot(coreCounts, analysisTimes[analysis], label=analysis)
+
+      plot.legend(loc="upper left")
+      plot.xlim([0, coreCounts[-1]])
+      plot.savefig("figures/autogen/analysis-times.png")
+      plot.clf()
 
   # Now build the report (unless we've been asked not to)!
   if report:
