@@ -141,18 +141,17 @@ def main(argv):
 
   cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
 
-  analysisTimes = {}
-
   outputLines = []
 
   with open("results.csv", 'w+') as results:
     results.write("testname,analysistype,pruningmode,cores,cycles,analysistime\n")
 
   for testName in tests:
+    analysisTimes = {}
+    speedups = {}
     for selection in selectionModes:
       for pruning in pruningModes:
         coreCounts = []
-        speedups = {}
         coreInputsAvg = []
         coreOutputsAvg = []
         baseCycles = None
@@ -217,7 +216,7 @@ def main(argv):
           plot.legend(loc = "upper left")
           plot.xlim([1, coreCounts[-1]])
           plot.ylim([0, 32])
-          plot.savefig("figures/autogen/avg-io-{:s}.png".format(selection + "-" + pruning))
+          plot.savefig("figures/autogen/avg-io-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
           plot.clf()
 
     # Plot analysis times against core count.
@@ -228,7 +227,7 @@ def main(argv):
 
       plot.legend(loc="upper left")
       plot.xlim([0, coreCounts[-1]])
-      plot.savefig("figures/autogen/analysis-times.png")
+      plot.savefig("figures/autogen/analysis-times-{:s}.png".format(testName))
       plot.clf()
 
       # Display a plot of speedup against core count.
