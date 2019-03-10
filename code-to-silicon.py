@@ -68,6 +68,9 @@ def main(argv):
   report = True
   fig = True
 
+  pruningModes = ["naive", "volatile", "dependency"]
+  selectionModes = ["heuristic", "expensive"]
+
   tests = ["fannkuch", "sha256", "fft", "sum_squares"]
 
   # Logging level WARNING.
@@ -78,7 +81,7 @@ def main(argv):
 
   # Parse command line arguments.
   try:
-    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "verbosity=", "analysis=", "pruning=", "tests=", "help"])
+    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "verbosity=", "selection=", "pruning=", "tests=", "help"])
   except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -101,23 +104,23 @@ def main(argv):
       if verbosity < 0 or verbosity > 3:
         logger.error("Invalid verbosity level " + str(verbosity))
         sys.exit(2)
-    elif opt == "--analysis":
-      analysis = str(arg)
-      if analysis not in ["heuristic", "expensive", "both"]:
-        logger.error("Invalid analysis mode " + analysis)
-        sys.exit(2)
+    elif opt == "--selection":
+      modesNew = str(arg).split(",")
+      for m in modesNew:
+        if m not in selectionModes:
+          logger.error("Invalid selection mode '" + m + "'.")
+          sys.exit(2)
 
-      analysisTypes = ["heuristic", "expensive"]
-      if analysis == "heuristic":
-        analysisTypes = ["heuristic"]
-      elif analysis == "expensive":
-        analysisTypes = ["expensive"]
+      selectionModes = modesNew
 
     elif opt == "--pruning":
-      mode = str(arg)
-      if mode not in ["naive", "volatile", "dependency"]:
-        logger.error("Invalid pruning mode " + mode)
-        sys.exit(2)
+      modesNew = str(arg).split(",")
+      for m in modesNew:
+        if m not in pruningModes:
+          logger.error("Invalid pruning mode '" + m + "'.")
+          sys.exit(2)
+
+      pruningModes = modesNew
 
     elif opt == "--tests":
       testsNew = str(arg).split(",")
@@ -146,80 +149,96 @@ def main(argv):
     results.write("testname,analysistype,pruningmode,cores,cycles,analysistime\n")
 
   for testName in tests:
-    for analysis in analysisTypes:
-      coreCounts = []
-      speedups = []
-      coreInputsAvg = []
-      coreOutputsAvg = []
-      baseCycles = None
+    for selection in selectionModes:
+      for pruning in pruningModes:
+        coreCounts = []
+        speedups = {}
+        coreInputsAvg = []
+        coreOutputsAvg = []
+        baseCycles = None
 
-      for i in cores:
-        metrics = testing.runTest(logger, testName, i, sim, analysis, mode)
+        for i in cores:
+          metrics = testing.runTest(logger, testName, i, sim, selection, pruning)
 
-        if analysis not in analysisTimes.keys():
-          analysisTimes[analysis] = []
+          if selection not in analysisTimes.keys():
+            analysisTimes[selection] = {}
 
-        analysisTimes[analysis].append(metrics["analysisTime"])
+          if pruning not in analysisTimes[selection].keys():
+            analysisTimes[selection][pruning] = []
 
-        if i == 0:
-          speedups.append(1.0)
-          coreCounts.append(0)
-          baseCycles = metrics["cycles"]
-          coreInputsAvg.append(0)
-          coreOutputsAvg.append(0)
+          if selection not in speedups.keys():
+            speedups[selection] = {}
 
-        else:
-          if metrics["cycles"] != None:
-            s = baseCycles / metrics["cycles"]
-            speedups.append(s)
+          if pruning not in speedups[selection].keys():
+            speedups[selection][pruning] = []
 
-          coreCounts.append(metrics["coreCount"])
+          analysisTimes[selection][pruning].append(metrics["analysisTime"])
 
-          # Plot 'population scatter' of inputs vs outputs.
-          if fig:
-            plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
-            plot.xlim([0, 32])
-            plot.ylim([0, 32])
-            plot.savefig("figures/autogen/pop-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
-            plot.clf()
+          if i == 0:
+            speedups[selection][pruning].append(1.0)
+            coreCounts.append(0)
+            baseCycles = metrics["cycles"]
+            coreInputsAvg.append(0)
+            coreOutputsAvg.append(0)
 
-            # Plot regression of heuristic cost against actual cost.
-            plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
-            plot.savefig("figures/autogen/cost-{:02d}-cores-{:s}.png".format(metrics["coreCount"], analysis))
-            plot.clf()
+          else:
+            if metrics["cycles"] != None:
+              s = baseCycles / metrics["cycles"]
+              speedups[selection][pruning].append(s)
 
-          # Store average inputs and outputs.
-          coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
-          coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
+            coreCounts.append(metrics["coreCount"])
+
+            # Plot 'population scatter' of inputs vs outputs.
+            if fig:
+              plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
+              plot.xlim([0, 32])
+              plot.ylim([0, 32])
+              plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+              plot.clf()
+
+              # Plot regression of heuristic cost against actual cost.
+              plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
+              plot.savefig("figures/autogen/cost-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+              plot.clf()
+
+            # Store average inputs and outputs.
+            coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
+            coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
+          
+          with open("results.csv", 'a') as results:
+            results.write(",".join([testName, selection, pruning, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
+
         
-        with open("results.csv", 'a') as results:
-          results.write(",".join([testName, analysis, mode, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
 
-      # Display a plot of speedup against core count.
-      if sim and fig:
-        plot.plot(coreCounts, speedups)
-        plot.savefig("figures/autogen/speedup-fannkuch-{:s}.png".format(analysis))
-        plot.clf()
-
-      # Plot average inputs/outputs against core count.
-      if fig:
-        plot.plot(coreCounts, coreInputsAvg, label="Input")
-        plot.plot(coreCounts, coreOutputsAvg, label="Output")
-        plot.legend(loc = "upper left")
-        plot.xlim([1, coreCounts[-1]])
-        plot.ylim([0, 32])
-        plot.savefig("figures/autogen/avg-io-{:s}.png".format(analysis))
-        plot.clf()
+        # Plot average inputs/outputs against core count.
+        if fig:
+          plot.plot(coreCounts, coreInputsAvg, label="Input")
+          plot.plot(coreCounts, coreOutputsAvg, label="Output")
+          plot.legend(loc = "upper left")
+          plot.xlim([1, coreCounts[-1]])
+          plot.ylim([0, 32])
+          plot.savefig("figures/autogen/avg-io-{:s}.png".format(selection + "-" + pruning))
+          plot.clf()
 
     # Plot analysis times against core count.
     if fig:
-      for analysis in analysisTypes:
-        plot.plot(coreCounts, analysisTimes[analysis], label=analysis)
+      for selection in selectionModes:
+        for mode in pruningModes:
+          plot.plot(coreCounts, analysisTimes[selection][mode], label=selection + ", " + mode)
 
       plot.legend(loc="upper left")
       plot.xlim([0, coreCounts[-1]])
       plot.savefig("figures/autogen/analysis-times.png")
       plot.clf()
+
+      # Display a plot of speedup against core count.
+      if sim:
+        for selection in selectionModes:
+          for pruning in pruningModes:
+            plot.plot(coreCounts, speedups[selection][pruning], label=selection + ", " + pruning)
+
+        plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
+        plot.clf()
 
   # Now build the report (unless we've been asked not to)!
   if report:
