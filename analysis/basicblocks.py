@@ -299,6 +299,7 @@ class BasicBlock:
     # see if we can prune any outputs. Note that we assume any unknown successor to take all registers
     # as inputs (this is the most pessimistic approach but also the only safe one).
     if self._unknownNext:
+      logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
       return
 
     # Now we can do some more expensive pruning. Consider:
@@ -318,15 +319,19 @@ class BasicBlock:
         if i.rB() != None and i.rB() == r:
           neededForBranch = True
 
-      t = _track(self, r, [])
+      if not neededForBranch:
+        t = _track(self, r, [])
 
-      removeRegister = True
-      for visited in t:
-        if not _isOutBeforeIn(r, visited[1:]):
-          removeRegister = False
+        t = sorted(t, key=lambda v: -len(v))
 
-      if removeRegister and not neededForBranch:
-        self._outputs.remove(r)
+        removeRegister = True
+        for visited in t:
+          if not _isOutBeforeIn(r, visited[1:]):
+            removeRegister = False
+            break
+
+        if removeRegister:
+          self._outputs.remove(r)
 
     logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
 
@@ -376,6 +381,11 @@ def _track(block, register, visited):
 
   # Stop if this block is at the end of a function and we're tracking a volatile register.
   if register in range(5, 13) and block.last() != None and block.last().isReturn():
+    visited.append(block)
+    return [visited]
+
+  # Stop if the tracked register is an input to this block.
+  if register in block.inputs():
     visited.append(block)
     return [visited]
 
