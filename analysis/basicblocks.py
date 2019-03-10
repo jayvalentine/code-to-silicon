@@ -328,7 +328,7 @@ class BasicBlock:
       if removeRegister and not neededForBranch:
         self._outputs.remove(r)
 
-    logger.debug("Pruning mode 'complete' completed for block " + self._name + ".")
+    logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
 
   def setCost(self):
     # We don't want to convert empty basic blocks, so their cost is effectively infinite.
