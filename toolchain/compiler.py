@@ -11,24 +11,18 @@ SYM_FORMAT = re.compile("\s*\d+: ([0-9a-f]{8})\s+\d+ \w+\s+\w+\s+\w+\s+\S+ (\w+)
 
 def help():
   out = common.run_command(GCC, ["--help"])
-
   logger.debug("GCC: " + out[0])
 
 def compile(logger, files, output):
   out = common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-ffixed-13", "-ffixed-31", "-O2"] + ["-o", output] + files)
-
   logger.debug("GCC: " + out[0])
 
 def link(logger, files, output):
   out = common.run_command(GCC, ["-Wl,-T../../link.x,-Map=link.map", "-nostartfiles", "-mlittle-endian"] + ["-o", output] + files)
-
   logger.debug("GCC: " + out[0])
 
 def makeHex(logger, objfile, hexfile):
   out = common.run_command(OBJCOPY, ["-O", "ihex", objfile, hexfile])
-
-  print(out[2])
-
   logger.debug("OBJCOPY: " + out[0])
 
 def disassembleElf(logger, elffile, asmfile):
