@@ -72,6 +72,7 @@ CondDelayBranch:
   - bltid
   - brlid
   - bneid
+  - beqid
 
 DelayBranch:
   - brid
