@@ -512,9 +512,6 @@ def getControllerWriteRegisters(stateMachines):
 
   tw.writeLine("when x\"44A00000\" =>")
   tw.increaseIndent()
-  tw.writeCommentLine("Reset FIFO.")
-  tw.writeLine("addr_fifo_head <= 0;")
-  tw.writeLine("addr_fifo_tail <= 0;")
 
   tw.writeBlankLine()
 
@@ -540,7 +537,6 @@ def getControllerWriteRegisters(stateMachines):
     tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
     tw.increaseIndent()
     tw.writeLine("reg_to_accel_{:02d} <= M_AXI_DP_0_wdata;".format(i))
-    tw.writeLine("addr_fifo_head <= addr_fifo_head + 1;")
     tw.decreaseIndent()
 
   tw.decreaseIndent()
@@ -561,9 +557,6 @@ def getControllerReadRegisters(stateMachines):
 
   tw.writeLine("when x\"44A00000\" =>")
   tw.increaseIndent()
-  tw.writeCommentLine("Reset FIFO.")
-  tw.writeLine("addr_fifo_head <= 0;")
-  tw.writeLine("addr_fifo_tail <= 0;")
   tw.writeBlankLine()
   tw.writeCommentLine("Reset all state machines.")
   for sm in stateMachines:
@@ -579,7 +572,6 @@ def getControllerReadRegisters(stateMachines):
     tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
     tw.increaseIndent()
     tw.writeLine("M_AXI_DP_0_rdata <= reg_from_accel_{:02d};".format(i))
-    tw.writeLine("addr_fifo_head <= addr_fifo_head + 1;")
     tw.decreaseIndent()
 
   tw.decreaseIndent()
