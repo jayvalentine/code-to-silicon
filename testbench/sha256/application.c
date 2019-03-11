@@ -152,7 +152,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 	h[5] = primes[5];
 	h[6] = primes[6];
 	h[7] = primes[7];
-	
+
 	int i, j;
 
 	/* 512-bit chunks is what we will operate on. */
@@ -164,7 +164,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 
 	while (calc_chunk(chunk, &state)) {
 		uint32_t ah[8];
-		
+
 		/*
 		 * create a 64-entry message schedule array w[0..63] of 32-bit words
 		 * (The initial values in w[0..63] don't matter, so many implementations zero them here)
@@ -186,7 +186,7 @@ void calc_sha_256(uint8_t hash[32], const void * input, size_t len)
 			const uint32_t s1 = right_rot(w[i - 2], 17) ^ right_rot(w[i - 2], 19) ^ (w[i - 2] >> 10);
 			w[i] = w[i - 16] + s0 + w[i - 7] + s1;
 		}
-		
+
 		/* Initialize working variables to current hash value: */
 		for (i = 0; i < 8; i++)
 			ah[i] = h[i];

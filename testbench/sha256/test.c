@@ -6,9 +6,9 @@
 // not to combine test_failed and test_passed.
 volatile int dummy;
 
-void test_failed(void) __attribute__((section(".break")));
+void __attribute__((noinline)) test_failed(void) __attribute__((section(".break")));
 
-void test_passed(void) __attribute__((section(".break")));
+void __attribute__((noinline)) test_passed(void) __attribute__((section(".break")));
 
 const uint8_t check[32] = {
   0x1E, 0xA0, 0xF3, 0x15,
@@ -24,21 +24,12 @@ const uint8_t check[32] = {
 void test(void)
 {
   int failed = 0;
-  for (int i = 0; i < 32; i++)
+  for (int i = 0; i < 3; i++)
   {
-    if (result[i] != check[i]) failed = 1;
+    if (check[i] != result[i]) failed = 1;
   }
 
-  if (failed)
-  {
-    // Avoid erroneous failure by ensuring that MicroBlaze won't accidentally prefetch
-    // the test_failed address.
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    asm("nop");
-    test_failed();
-  }
+  if (failed) test_failed();
   test_passed();
 }
 

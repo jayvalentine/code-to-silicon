@@ -8,7 +8,7 @@ add_files -fileset sources_1 controller.vhd
 set_property top testbench_%%TESTNAME%% [get_filesets "sim_1"]
 
 launch_simulation -simset sim_1
-run 1 ms
+run 5 ms
 
 remove_files -fileset sim_1 testbench.vhd
 remove_files -fileset sources_1 memory.vhd

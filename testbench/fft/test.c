@@ -2,9 +2,9 @@
 // not to combine test_failed and test_passed.
 volatile int dummy;
 
-void test_failed(void) __attribute__((section(".break")));
+void __attribute__((noinline)) test_failed(void) __attribute__((section(".break")));
 
-void test_passed(void) __attribute__((section(".break")));
+void __attribute__((noinline)) test_passed(void) __attribute__((section(".break")));
 
 void test(void)
 {
