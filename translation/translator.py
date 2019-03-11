@@ -41,12 +41,12 @@ ORI_FORMAT = "{:s} := {:s} or unsigned(to_signed({:s}, 32));"
 XOR_FORMAT = "{:s} := {:s} xor {:s};"
 XORI_FORMAT = "{:s} := {:s} xor unsigned(to_signed({:s}, 32));"
 
-SRL_FORMAT = "{:s} := {:s} srl 1;"
+SRL_FORMAT = "{:s} := shift_right({:s}, 1);"
 
-SRA_FORMAT = "{:s} := {:s} sra 1;"
+SRA_FORMAT = "{:s} := shift_right(signed({:s}), 1);"
 
-MUL_FORMAT = "{:s} := unsigned(signed({:s}) * signed({:s}));"
-MULI_FORMAT = "{:s} := unsigned(signed({:s}) * to_signed({:s}, 32));"
+MUL_FORMAT = "{:s} := signed({:s}) * signed({:s});"
+MULI_FORMAT = "{:s} := signed({:s}) * {:s};"
 
 IDIV_FORMAT_A_1 = "if {:s} = x\"00000000\" then"
 IDIV_FORMAT_A_2 = "    {:s} := x\"00000000\";"
@@ -172,7 +172,7 @@ def getArchitecturalDefinition(stateMachine):
 
   # Output the 'temp64' variable. This is used by operations which produce a 64-bit result (e.g. multiply)
   tw.writeCommentLine("Temporary 64-bit variable.")
-  tw.writeLine("variable temp64      : unsigned(63 downto 0);")
+  tw.writeLine("variable temp64      : signed(63 downto 0);")
   tw.writeBlankLine()
 
   # Output the 'temp33' variable. This is used by operations which can overflow.
@@ -218,6 +218,11 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("if rising_edge(clk) then")
   tw.increaseIndent()
 
+  tw.writeLine("m_rd <= '0';")
+  tw.writeLine("m_wr <= \"0000\";")
+
+  tw.writeBlankLine()
+
   tw.writeLine("case int_state is")
 
   # Reset state condition.
@@ -258,6 +263,11 @@ def getArchitecturalDefinition(stateMachine):
           raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
 
         tw.writeBlankLine()
+
+        tw.writeLine("m_rd <= '0';")
+
+      else:
+        tw.writeLine("m_wr <= \"0000\";")
 
       tw.writeCommentLine("Transition to " + s.getTransition("M_RDY").name() + ".")
       tw.writeLine("int_state <= " + s.getTransition("M_RDY").name() + ";")
@@ -849,7 +859,7 @@ def translateInstruction(stateName, instruction):
     raise ValueError("Unknown instruction for translation: " + str(instruction))
 
   if needsTemp:
-    lines.append(localName(stateName, instruction.rD()) + " := temp64(31 downto 0);")
+    lines.append(localName(stateName, instruction.rD()) + " := unsigned(temp64(31 downto 0));")
 
   if setCarry:
     lines.append(localName(stateName, instruction.rD()) + " := temp33(31 downto 0);")
