@@ -43,10 +43,14 @@ XORI_FORMAT = "{:s} := {:s} xor unsigned(to_signed({:s}, 32));"
 
 SRL_FORMAT = "{:s} := shift_right({:s}, 1);"
 
-SRA_FORMAT = "{:s} := shift_right(signed({:s}), 1);"
+SRA_FORMAT = "{:s} := unsigned(shift_right(signed({:s}), 1));"
 
-MUL_FORMAT = "{:s} := signed({:s}) * signed({:s});"
-MULI_FORMAT = "{:s} := signed({:s}) * {:s};"
+SRC_FORMAT = "{:s} := shift_right({:s}, 1); {:s}(31) := temp_carry(0);"
+
+SH_CARRYSET = "if {:s}(0) = '1' then temp_carry := \"01\"; else temp_carry := \"00\"; end if;"
+
+MUL_FORMAT = "{:s} := {:s} * {:s};"
+MULI_FORMAT = "{:s} := {:s} * unsigned(to_signed({:s}, 32));"
 
 IDIV_FORMAT_A_1 = "if {:s} = x\"00000000\" then"
 IDIV_FORMAT_A_2 = "    {:s} := x\"00000000\";"
@@ -172,13 +176,16 @@ def getArchitecturalDefinition(stateMachine):
 
   # Output the 'temp64' variable. This is used by operations which produce a 64-bit result (e.g. multiply)
   tw.writeCommentLine("Temporary 64-bit variable.")
-  tw.writeLine("variable temp64      : signed(63 downto 0);")
+  tw.writeLine("variable temp64      : unsigned(63 downto 0);")
   tw.writeBlankLine()
 
   # Output the 'temp33' variable. This is used by operations which can overflow.
   tw.writeCommentLine("Temporary 33-bit variable.")
   tw.writeLine("variable temp33      : unsigned(32 downto 0);")
   tw.writeBlankLine()
+
+  tw.writeCommentLine("Temporary 32-bit variable.")
+  tw.writeLine("variable temp32      : unsigned(31 downto 0);")
 
   # Output the 'temp_carry' variable. This is used to store the carry flag during computations.
   tw.writeCommentLine("Temporary carry flag.")
@@ -223,6 +230,8 @@ def getArchitecturalDefinition(stateMachine):
 
   tw.writeBlankLine()
 
+  tw.writeLine("report \"TESTBENCH: {:s}: \" & STATE'image(int_state);".format(stateMachine.name()))
+
   tw.writeLine("case int_state is")
 
   # Reset state condition.
@@ -263,11 +272,6 @@ def getArchitecturalDefinition(stateMachine):
           raise ValueError("Invalid width " + str(inst.width()) + " while translating instruction " + str(inst) + ".")
 
         tw.writeBlankLine()
-
-        tw.writeLine("m_rd <= '0';")
-
-      else:
-        tw.writeLine("m_wr <= \"0000\";")
 
       tw.writeCommentLine("Transition to " + s.getTransition("M_RDY").name() + ".")
       tw.writeLine("int_state <= " + s.getTransition("M_RDY").name() + ";")
@@ -848,18 +852,35 @@ def translateInstruction(stateName, instruction):
                                     immediate))
 
   elif mnemonic == "srl":
-    lines.append(SRL_FORMAT.format(localName(stateName, instruction.rD()),
+    lines.append(SRL_FORMAT.format("temp32",
                                    localName(stateName, instruction.rA())))
 
+    lines.append(SH_CARRYSET.format(localName(stateName, instruction.rA())))
+
+    lines.append("{:s} := temp32;".format(localName(stateName, instruction.rD())))
+
   elif mnemonic == "sra":
-    lines.append(SRA_FORMAT.format(localName(stateName, instruction.rD()),
+    lines.append(SRA_FORMAT.format("temp32",
                                    localName(stateName, instruction.rA())))
+
+    lines.append(SH_CARRYSET.format(localName(stateName, instruction.rA())))
+
+    lines.append("{:s} := temp32;".format(localName(stateName, instruction.rD())))
+
+  elif mnemonic == "src":
+    lines.append(SRC_FORMAT.format("temp32",
+                                   localName(stateName, instruction.rA()),
+                                   "temp32"))
+
+    lines.append(SH_CARRYSET.format(localName(stateName, instruction.rA())))
+
+    lines.append("{:s} := temp32;".format(localName(stateName, instruction.rD())))
 
   else:
     raise ValueError("Unknown instruction for translation: " + str(instruction))
 
   if needsTemp:
-    lines.append(localName(stateName, instruction.rD()) + " := unsigned(temp64(31 downto 0));")
+    lines.append(localName(stateName, instruction.rD()) + " := temp64(31 downto 0);")
 
   if setCarry:
     lines.append(localName(stateName, instruction.rD()) + " := temp33(31 downto 0);")
