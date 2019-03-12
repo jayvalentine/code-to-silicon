@@ -331,6 +331,7 @@ class BasicBlock:
             break
 
         if removeRegister:
+          logger.debug("Pruning register r{:02d} as output for block ".format(r) + self._name + ".")
           self._outputs.remove(r)
 
     logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
