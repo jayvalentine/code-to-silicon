@@ -58,6 +58,9 @@ architecture Behavioral of testbench_%%TESTNAME%% is
             m_data_to_accel         : out std_logic_vector(31 downto 0);
             m_data_from_accel       : in std_logic_vector(31 downto 0);
 
+            carry_out               : in std_logic;
+            carry_in                : out std_logic;
+
             reg_from_accel_01       : in std_logic_vector(31 downto 0);
             reg_from_accel_02       : in std_logic_vector(31 downto 0);
             reg_from_accel_03       : in std_logic_vector(31 downto 0);
@@ -309,6 +312,9 @@ architecture Behavioral of testbench_%%TESTNAME%% is
     signal m_data_to_accel          : STD_LOGIC_VECTOR(31 downto 0);
     signal m_data_from_accel        : STD_LOGIC_VECTOR(31 downto 0);
 
+    signal carry_out                : std_logic;
+    signal carry_in                 : std_logic;
+
     signal LMB_M_0_abus             : std_logic_vector(31 downto 0);
     signal LMB_M_0_addrstrobe       : std_logic;
     signal LMB_M_0_be               : std_logic_vector(3 downto 0);
@@ -528,6 +534,9 @@ begin
 
         wakeup                  => Wakeup_0,
         sleep                   => Sleep_0,
+
+        carry_in                => carry_in,
+        carry_out               => carry_out,
 
         m_addr                  => m_addr,
         m_data_to_accel         => m_data_to_accel,

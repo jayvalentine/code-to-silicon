@@ -52,11 +52,15 @@ class StateMachine:
     tempRegister = 31
 
     # Write the input registers to the right ports.
-    # We just exclude r13 and r31 because we ensure that the compiler doesn't use those registers
+    # We just exclude r13, r30 and r31 because we ensure that the compiler doesn't use those registers
     # through the -ffixed option.
     for i in sorted(self.inputRegisters()):
       if i != controllerPointer and i != tempRegister:
         replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, i*4, None, 4))
+
+    # Get MSR and write to controller.
+    replace.append(instructions.SystemInstruction("mfs", "msr", None, tempRegister, None, None, None))
+    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 31*4, None, 4))
 
     # Write to the special controller register that will start our desired state machine.
     replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, tempRegister, self._id, None, None))
@@ -71,7 +75,9 @@ class StateMachine:
         replace.append(instructions.InputInstruction("lwi", controllerPointer, None, o, o*4, None, 4))
 
     # Read the special port at offset 0 to reset the controller.
-    replace.append(instructions.InputInstruction("lwi", controllerPointer, None, 0, 0, None, 4))
+    # This also gets us the updated MSR register.
+    replace.append(instructions.InputInstruction("lwi", controllerPointer, None, tempRegister, 0, None, 4))
+    replace.append(instructions.SystemInstruction("mts", tempRegister, None, "msr", None, None, None))
 
     return replace
 

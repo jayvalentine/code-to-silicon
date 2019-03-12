@@ -18,6 +18,9 @@ entity hw_accel_controller is
         m_data_to_accel         : out std_logic_vector(31 downto 0);
         m_data_from_accel       : in std_logic_vector(31 downto 0);
 
+        carry_out               : in std_logic;
+        carry_in                : out std_logic;
+
 %%STATEMACHINE_PORTS%%
 
         reg_from_accel_01       : in std_logic_vector(31 downto 0);
@@ -128,6 +131,7 @@ architecture hw_accel_controller_behav of hw_accel_controller is
     );
 
     signal int_state : STATE := S_READY;
+    signal int_msr   : std_logic_vector(31 downto 0);
 
 begin
     control_proc : process(clk, rst, m_rd, m_wr, LMB_M_0_ready, LMB_M_0_readdbus)
@@ -189,9 +193,6 @@ begin
 %%STATEMACHINES_DONE%%
 
                 when S_READY =>
-                    M_AXI_DP_0_awready <= '1';
-                    M_AXI_DP_0_wready <= '1';
-
                     -- Write transaction.
                     if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
                         case M_AXI_DP_0_awaddr is
@@ -200,6 +201,9 @@ begin
 
                         M_AXI_DP_0_bresp <= "00";
                         M_AXI_DP_0_bvalid <= '1';
+
+                        M_AXI_DP_0_awready <= '1';
+                        M_AXI_DP_0_wready <= '1';
                     end if;
 
                 when S_DONE =>
@@ -208,13 +212,15 @@ begin
                     end if;
 
                 when S_WAITING_FOR_MB =>
-                    M_AXI_DP_0_arready <= '1';
                     M_AXI_DP_0_rvalid <= '1';
 
-                    if M_AXI_DP_0_arvalid = '1' then
+
+                    if M_AXI_DP_0_arvalid = '1' and M_AXI_DP_0_rready = '1' then
                         case M_AXI_DP_0_araddr is
 %%READ_REG_FROM_ACCEL%%
                         end case;
+
+                        M_AXI_DP_0_arready <= '1';
                     end if;
                 end case;
             end if;

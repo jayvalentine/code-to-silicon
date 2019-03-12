@@ -41,13 +41,13 @@ ORI_FORMAT = "{:s} := {:s} or unsigned(to_signed({:s}, 32));"
 XOR_FORMAT = "{:s} := {:s} xor {:s};"
 XORI_FORMAT = "{:s} := {:s} xor unsigned(to_signed({:s}, 32));"
 
-SRL_FORMAT = "{:s} := shift_right({:s}, 1);"
+SRL_FORMAT = "{:s} := '0' & {:s}(31 downto 1);"
 
-SRA_FORMAT = "{:s} := unsigned(shift_right(signed({:s}), 1));"
+SRA_FORMAT = "{:s} := {:s}(31) & {:s}(31 downto 1);"
 
-SRC_FORMAT = "{:s} := shift_right({:s}, 1); {:s}(31) := temp_carry(0);"
+SRC_FORMAT = "{:s} := temp_carry & {:s}(31 downto 1);"
 
-SH_CARRYSET = "if {:s}(0) = '1' then temp_carry := \"01\"; else temp_carry := \"00\"; end if;"
+SH_CARRYSET = "temp_carry := {:s}(0);"
 
 MUL_FORMAT = "{:s} := {:s} * {:s};"
 MULI_FORMAT = "{:s} := {:s} * unsigned(to_signed({:s}, 32));"
@@ -139,12 +139,12 @@ def getArchitecturalDefinition(stateMachine):
 
   # Output the 'offset' signal. This is used for calculating offsets for IO of bytes and halfwords.
   tw.writeCommentLine("Offset.")
-  tw.writeLine("signal offset         :  Integer range 0 to 31;")
+  tw.writeLine("signal offset         : Integer range 0 to 31;")
   tw.writeBlankLine()
 
   # Carry signal. This is used in addition and subtraction operations.
   tw.writeCommentLine("Carry.")
-  tw.writeLine("signal carry          : unsigned(1 downto 0);")
+  tw.writeLine("signal carry          : std_logic;")
   tw.writeBlankLine()
 
   # Begin behavioural definition.
@@ -189,7 +189,7 @@ def getArchitecturalDefinition(stateMachine):
 
   # Output the 'temp_carry' variable. This is used to store the carry flag during computations.
   tw.writeCommentLine("Temporary carry flag.")
-  tw.writeLine("variable temp_carry  : unsigned(1 downto 0);")
+  tw.writeLine("variable temp_carry  : std_logic;")
   tw.writeBlankLine()
 
   # Start the process body.
@@ -214,6 +214,7 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("m_rd       <= '0';")
   tw.writeLine("m_wr       <= \"0000\";")
   tw.writeLine("done       <= '0';")
+  tw.writeLine("carry_out  <= '0';")
 
   tw.decreaseIndent()
 
@@ -229,8 +230,6 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("m_wr <= \"0000\";")
 
   tw.writeBlankLine()
-
-  tw.writeLine("report \"TESTBENCH: {:s}: \" & STATE'image(int_state);".format(stateMachine.name()))
 
   tw.writeLine("case int_state is")
 
@@ -310,6 +309,8 @@ def getArchitecturalDefinition(stateMachine):
       for r in stateMachine.inputRegisters():
         tw.writeLine("r{reg:02d} <= unsigned(in_r{reg:02d});".format(reg=r))
       tw.writeBlankLine()
+      tw.writeCommentLine("Get carry flag input.")
+      tw.writeLine("carry <= carry_in;")
 
     # If this is an end state, put outputs from the state machine's internal registers.
     # Also set the done flag.
@@ -318,6 +319,7 @@ def getArchitecturalDefinition(stateMachine):
       for r in stateMachine.outputRegisters():
         tw.writeLine("out_r{reg:02d} <= std_logic_vector(r{reg:02d});".format(reg=r))
       tw.writeLine("done <= '1';")
+      tw.writeLine("carry_out <= carry;")
       tw.writeBlankLine()
 
     # If this is a wait state, set up the memory transaction (either a read or a write).
@@ -438,6 +440,8 @@ def getArchitecturalDefinition(stateMachine):
   tw.writeLine("m_rd       <= 'Z';")
   tw.writeLine("m_wr       <= \"ZZZZ\";")
 
+  tw.writeLine("carry_out  <= 'Z';")
+
   tw.decreaseIndent()
 
   tw.writeLine("end if;")
@@ -547,11 +551,19 @@ def getControllerWriteRegisters(stateMachines):
   tw.writeBlankLine()
   tw.decreaseIndent()
 
-  for i in range(1,32):
+  for i in range(1,31):
     tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
     tw.increaseIndent()
     tw.writeLine("reg_to_accel_{:02d} <= M_AXI_DP_0_wdata;".format(i))
     tw.decreaseIndent()
+
+  tw.writeCommentLine("Register r31 is unused by program, therefore it is safe to assume it is never an input to a core.")
+  tw.writeLine("when x\"44A0{:04x}\" =>".format(31*4))
+  tw.increaseIndent()
+  tw.writeCommentLine("Carry flag is bit 2 of MSR.")
+  tw.writeLine("carry_in <= M_AXI_DP_0_wdata(2);")
+  tw.writeLine("int_msr <= M_AXI_DP_0_wdata;")
+  tw.decreaseIndent()
 
   tw.decreaseIndent()
   tw.decreaseIndent()
@@ -578,11 +590,13 @@ def getControllerReadRegisters(stateMachines):
     tw.writeLine(sm.name() + "_sel <= '0';")
 
   tw.writeBlankLine()
+  tw.writeCommentLine("Send carry signal to MicroBlaze core.")
+  tw.writeLine("M_AXI_DP_0_rdata <= int_msr;")
   tw.writeCommentLine("Put controller into READY state.")
   tw.writeLine("int_state <= S_READY;")
   tw.decreaseIndent()
 
-  for i in range(1,32):
+  for i in range(1,31):
     tw.writeLine("when x\"44A0{:04x}\" =>".format((i)*4))
     tw.increaseIndent()
     tw.writeLine("M_AXI_DP_0_rdata <= reg_from_accel_{:02d};".format(i))
@@ -652,6 +666,9 @@ def getControllerStateMachinesDone(stateMachines):
     tw.increaseIndent()
     tw.writeLine("int_state <= S_DONE;")
     tw.writeLine("wakeup <= \"11\";")
+    tw.writeBlankLine()
+    tw.writeCommentLine("Update carry flag in MSR register.")
+    tw.writeLine("int_msr(2) <= carry_out;")
     tw.decreaseIndent()
     tw.writeLine("end if;")
 
@@ -861,6 +878,7 @@ def translateInstruction(stateName, instruction):
 
   elif mnemonic == "sra":
     lines.append(SRA_FORMAT.format("temp32",
+                                   localName(stateName, instruction.rA()),
                                    localName(stateName, instruction.rA())))
 
     lines.append(SH_CARRYSET.format(localName(stateName, instruction.rA())))
@@ -884,11 +902,7 @@ def translateInstruction(stateName, instruction):
 
   if setCarry:
     lines.append(localName(stateName, instruction.rD()) + " := temp33(31 downto 0);")
-    lines.append("if temp33(32) = '1' then")
-    lines.append("    temp_carry := to_unsigned(1, 2);")
-    lines.append("else")
-    lines.append("    temp_carry := to_unsigned(0, 2);")
-    lines.append("end if;")
+    lines.append("temp_carry := temp33(32);")
 
   return lines
 
@@ -921,6 +935,11 @@ def getPorts(stateMachine):
 
   # Done signal.
   ports.append(("done", "out", "std_logic", stateMachine.name() + "_done"))
+
+  ports.append(("carry_in", "in", "std_logic", "carry_in"))
+
+  # Carry signal. HIGH if carry flag SET after completion, LOW otherwise.
+  ports.append(("carry_out", "out", "std_logic", "carry_out"))
 
   # Select signal.
   ports.append(("sel", "in", "std_logic", stateMachine.name() + "_sel"))
