@@ -14,7 +14,7 @@ def help():
   logger.debug("GCC: " + out[0])
 
 def compile(logger, files, output):
-  out = common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mno-xl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-ffixed-13", "-ffixed-31", "-O2"] + ["-o", output] + files)
+  out = common.run_command(GCC, ["-S", "-Xassembler", "-ahlsm", "-mno-xl-soft-div", "-mhard-float", "-mxl-soft-mul", "-fno-delayed-branch", "-flive-range-shrinkage", "-ffixed-13", "-ffixed-31", "-O2"] + ["-o", output] + files)
   logger.debug("GCC: " + out[0])
 
 def link(logger, files, output):
