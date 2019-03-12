@@ -24,7 +24,7 @@ const uint8_t check[32] = {
 void test(void)
 {
   int failed = 0;
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 32; i++)
   {
     if (check[i] != result[i]) failed = 1;
   }
