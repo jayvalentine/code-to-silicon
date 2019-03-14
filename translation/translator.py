@@ -356,11 +356,9 @@ def getArchitecturalDefinition(stateMachine):
         tw.writeLine("m_wr <= \"0000\";")
       else:
         if inst.width() == 1:
-          tw.writeLine("m_data_out <= (others => '0');")
-          tw.writeLine("m_data_out((offset+7) downto offset) <= std_logic_vector(unsigned(r{:02d}(7 downto 0)));".format(inst.rD()))
+          tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}(7 downto 0))) & std_logic_vector(unsigned(r{:02d}(7 downto 0))) & std_logic_vector(unsigned(r{:02d}(7 downto 0))) & std_logic_vector(unsigned(r{:02d}(7 downto 0)));".format(inst.rD(), inst.rD(), inst.rD(), inst.rD()))
         elif inst.width() == 2:
-          tw.writeLine("m_data_out <= (others => '0');")
-          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD()))
+          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}(15 downto 0))) & std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD(), inst.rD()))
         elif inst.width() == 4:
           tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
 
@@ -391,7 +389,7 @@ def getArchitecturalDefinition(stateMachine):
       tw.writeLine("m_wr <= \"0000\";")
 
       tw.writeBlankLine()
-      
+
       # First get all inputs to the block.
       tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
                                                            s.inputs()))))
