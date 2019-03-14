@@ -329,7 +329,15 @@ def getArchitecturalDefinition(stateMachine):
       if inst.imm() != None:
         expr = "(r{reg:02d} + unsigned(to_signed({imm:d}, 32)))".format(reg = inst.rA(), imm = inst.imm())
       elif inst.label() != None:
-        expr = "(r{reg:02d} + unsigned(to_signed({imm:s}, 32)))".format(reg = inst.rA(), imm = "%%SYM_" + inst.label() + "%%")
+        label = "%%SYM_" + inst.label() + "%%"
+
+        if inst.off() != None:
+          if inst.off() > 0:
+            label += " + " + str(inst.off())
+          elif inst.off() < 0:
+            label += " " + str(inst.off())
+
+        expr = "(r{reg:02d} + unsigned(to_signed({imm:s}, 32)))".format(reg = inst.rA(), imm = label)
       else:
         expr = "(r{regA:02d} + r{regB:02d})".format(regA = inst.rA(), regB = inst.rB())
 
