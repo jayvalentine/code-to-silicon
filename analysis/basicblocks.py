@@ -258,6 +258,7 @@ class BasicBlock:
 
   def setOutputs(self, logger, mode):
     logger.debug("Pruning mode '" + mode + "' started for block " + self._name + ".")
+
     self._outputs = self.rawOutputs()
 
     if mode == "naive":
@@ -333,7 +334,7 @@ class BasicBlock:
 
         removeRegister = True
         for visited in t:
-          if not _isOutBeforeIn(r, visited[1:]):
+          if not _isOutBeforeIn(r, visited):
             removeRegister = False
             break
 
@@ -355,8 +356,6 @@ class BasicBlock:
     # We don't want to convert empty basic blocks, so their cost is effectively infinite.
     if len(self._instructions) == 0:
       self._cost = math.inf
-    elif self._name in unwantedSMs:
-      self._cost = 0
     else:
       io_overhead = (len(self._outputs) + len(self._inputs)) / len(self._instructions)
       predicted_parallelism = self.averageComputationWidth()
