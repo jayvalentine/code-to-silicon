@@ -17,7 +17,7 @@ SIM_DIR = os.path.abspath("microblaze_system/microblaze_system.sim/sim_1")
 
 TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
 
-CYCLES_MSG_FORMAT = re.compile("CYCLES: (\d+)")
+CYCLES_MSG_FORMAT = re.compile("CYCLES:\s+(\d+)")
 
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
