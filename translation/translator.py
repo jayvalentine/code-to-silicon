@@ -32,14 +32,14 @@ SEXT8_FORMAT_B = "{:s}(6 downto 0) := {:s}(6 downto 0);"
 SEXT16_FORMAT_A = "{:s} := (others => {:s}(15));"
 SEXT16_FORMAT_B = "{:s}(14 downto 0) := {:s}(14 downto 0);"
 
-AND_FORMAT = "{:s} := {:s} and {:s};"
-ANDI_FORMAT = "{:s} := {:s} and unsigned(to_signed({:s}, 32));"
+AND_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) and std_logic_vector({:s}));"
+ANDI_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) and std_logic_vector(to_signed({:s}, 32)));"
 
-OR_FORMAT = "{:s} := {:s} or {:s};"
-ORI_FORMAT = "{:s} := {:s} or unsigned(to_signed({:s}, 32));"
+OR_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) or std_logic_vector({:s}));"
+ORI_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) or std_logic_vector(to_signed({:s}, 32)));"
 
-XOR_FORMAT = "{:s} := {:s} xor {:s};"
-XORI_FORMAT = "{:s} := {:s} xor unsigned(to_signed({:s}, 32));"
+XOR_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) xor std_logic_vector({:s}));"
+XORI_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) xor std_logic_vector(to_signed({:s}, 32)));"
 
 SRL_FORMAT = "{:s} := '0' & {:s}(31 downto 1);"
 
@@ -154,7 +154,7 @@ def getArchitecturalDefinition(stateMachine):
 
   # Begin process.
   tw.increaseIndent()
-  tw.writeLine("process(clk, m_rdy, rst)")
+  tw.writeLine("process(clk, rst)")
   tw.increaseIndent()
 
   # Output local variables for each state.
@@ -225,9 +225,6 @@ def getArchitecturalDefinition(stateMachine):
   # Transition to next state for all states that have a clock transition.
   tw.writeLine("if rising_edge(clk) then")
   tw.increaseIndent()
-
-  tw.writeLine("m_rd <= '0';")
-  tw.writeLine("m_wr <= \"0000\";")
 
   tw.writeBlankLine()
 
@@ -348,6 +345,7 @@ def getArchitecturalDefinition(stateMachine):
 
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
+        tw.writeLine("m_wr <= \"0000\";")
       else:
         if inst.width() == 1:
           tw.writeLine("m_data_out <= (others => '0');")
@@ -358,11 +356,14 @@ def getArchitecturalDefinition(stateMachine):
         elif inst.width() == 4:
           tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
 
+        tw.writeLine("m_rd <= '0';")
+
         # Set up the write enable.
-        tw.writeLine("m_wr <= \"0000\";")
         if inst.width() == 1:
+          tw.writeLine("m_wr <= \"0000\";")
           tw.writeLine("m_wr(to_integer(" + expr + ") mod 4) <= '1';")
         elif inst.width() == 2:
+          tw.writeLine("m_wr <= \"0000\";")
           tw.writeLine("m_wr((to_integer(" + expr + ") mod 2)*2) <= '1';")
           tw.writeLine("m_wr(((to_integer(" + expr + ") mod 2)*2)+1) <= '1';")
         elif inst.width() == 4:
