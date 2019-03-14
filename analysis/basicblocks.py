@@ -257,6 +257,7 @@ class BasicBlock:
       self._averageComputationWidth = (sum(widths)/len(widths))
 
   def setOutputs(self, logger, mode):
+    logger.debug("Pruning mode '" + mode + "' started for block " + self._name + ".")
     self._outputs = self.rawOutputs()
 
     if mode == "naive":
@@ -319,8 +320,14 @@ class BasicBlock:
         if i.rB() != None and i.rB() == r:
           neededForBranch = True
 
-      if not neededForBranch:
-        t = _track(self, r, [])
+      # NEVER, EVER prune the stack pointer! (r1)
+      # It's best to be on the safe side and always treat it as an output
+      # if it's modified, than to mess up the stack halfway through a program.
+      if (not neededForBranch) and (r != 1):
+        t = []
+
+        for s in self._next:
+          t += _track(s, r, [])
 
         t = sorted(t, key=lambda v: -len(v))
 
@@ -337,9 +344,19 @@ class BasicBlock:
     logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
 
   def setCost(self):
+    unwantedSMs = [
+      "D_L7_line0313",
+      "D_L4_line0127",
+      "D_L15_line0088",
+      "D_L9_line0516",
+      "calc_sha_256_line0005",
+      "D_L12_line0619"
+    ]
     # We don't want to convert empty basic blocks, so their cost is effectively infinite.
     if len(self._instructions) == 0:
       self._cost = math.inf
+    elif self._name in unwantedSMs:
+      self._cost = 0
     else:
       io_overhead = (len(self._outputs) + len(self._inputs)) / len(self._instructions)
       predicted_parallelism = self.averageComputationWidth()
@@ -385,10 +402,10 @@ def _track(block, register, visited):
     visited.append(block)
     return [visited]
 
-  # Stop if the tracked register is an input to this block.
+  # Stop if we've found a block to which the register is an input.
   if register in block.inputs():
     visited.append(block)
-    return [visited]
+    return[visited]
 
   # We've now visited this block.
   visited.append(block)
@@ -408,10 +425,10 @@ def _isOutBeforeIn(register, visited):
   output = False
   for block in visited:
     if block.getNext()[1] and not output:
-      if register not in range(3, 5) and register not in range(11, 13):
+      if (register not in range(3, 5)) and (register not in range(11, 13)):
         return False
 
-    if output == False and register in block.inputs():
+    if output == False and (register in block.inputs()):
       return False
 
     if register in block.rawOutputs():
