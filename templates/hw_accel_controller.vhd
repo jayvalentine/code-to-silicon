@@ -130,51 +130,89 @@ architecture hw_accel_controller_behav of hw_accel_controller is
         S_READY
     );
 
+    type LMB_STATE is (
+        LMB_DONE,
+        LMB_WAITING_START,
+        LMB_WAITING_END1,
+        LMB_WAITING_END2,
+        LMB_READ,
+        LMB_WRITE
+    );
+
     signal int_state : STATE := S_READY;
     signal int_msr   : std_logic_vector(31 downto 0);
+    signal int_lmb_state : LMB_STATE := LMB_WAITING_START;
 
 begin
-    control_proc : process(clk, rst, m_rd, m_wr, LMB_M_0_ready, LMB_M_0_readdbus)
+    control_proc : process(clk, rst)
     begin
         if rst = '1' then
             int_state <= S_READY;
             m_rdy <= '0';
             wakeup <= "00";
 
+            LMB_M_0_addrstrobe <= '0';
+            LMB_M_0_readstrobe <= '0';
+            LMB_M_0_writestrobe <= '0';
+
 %%RESET_STATEMACHINES%%
 
 %%DESELECT_STATEMACHINES%%
 
         else
-            if m_rd = '1' then
-                LMB_M_0_abus <= m_addr;
-                LMB_M_0_addrstrobe <= '1';
-
-                LMB_M_0_readstrobe <= '1';
-                LMB_M_0_writestrobe <= '0';
-            elsif m_wr /= "0000" and m_wr /= "ZZZZ" then
-                LMB_M_0_abus <= m_addr;
-                LMB_M_0_addrstrobe <= '1';
-
-                LMB_M_0_writedbus <= m_data_from_accel;
-                LMB_M_0_readstrobe <= '0';
-                LMB_M_0_writestrobe <= '1';
-                LMB_M_0_be <= m_wr;
-            else
-                LMB_M_0_addrstrobe <= '0';
-                LMB_M_0_readstrobe <= '0';
-                LMB_M_0_writestrobe <= '0';
-            end if;
-
-            if LMB_M_0_ready = '1' then
-                m_rdy <= '1';
-            else
-                m_rdy <= '0';
-            end if;
-
-            m_data_to_accel <= LMB_M_0_readdbus;
-
             if rising_edge(clk) then
+                case int_lmb_state is
+                when LMB_WAITING_START =>
+                    if m_rd = '1' then
+                        LMB_M_0_abus <= m_addr;
+                        LMB_M_0_addrstrobe <= '1';
+
+                        LMB_M_0_readstrobe <= '1';
+
+                        m_rdy <= '0';
+
+                        int_lmb_state <= LMB_READ;
+
+                    elsif m_wr /= "0000" and m_wr /= "ZZZZ" then
+                        LMB_M_0_abus <= m_addr;
+                        LMB_M_0_addrstrobe <= '1';
+
+                        LMB_M_0_writedbus <= m_data_from_accel;
+                        LMB_M_0_writestrobe <= '1';
+                        LMB_M_0_be <= m_wr;
+
+                        m_rdy <= '0';
+
+                        int_lmb_state <= LMB_WRITE;
+                    end if;
+
+                when LMB_READ =>
+                    if LMB_M_0_ready = '1' then
+                        m_data_to_accel <= LMB_M_0_readdbus;
+                        int_lmb_state <= LMB_DONE;
+                    end if;
+
+                when LMB_WRITE =>
+                    if LMB_M_0_ready = '1' then
+                        int_lmb_state <= LMB_DONE;
+                    end if;
+
+                when LMB_DONE =>
+                    m_rdy <= '1';
+                    LMB_M_0_readstrobe <= '0';
+                    LMB_M_0_writestrobe <= '0';
+                    LMB_M_0_addrstrobe <= '0';
+                    int_lmb_state <= LMB_WAITING_END1;
+
+                when LMB_WAITING_END1 =>
+                    m_rdy <= '0';
+                    int_lmb_state <= LMB_WAITING_END2;
+
+                when LMB_WAITING_END2 =>
+                    int_lmb_state <= LMB_WAITING_START;
+
+                end case;
+
 %%UNRESET_STATEMACHINES%%
 
                 wakeup <= "00";

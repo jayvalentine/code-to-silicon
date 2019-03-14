@@ -385,6 +385,13 @@ def getArchitecturalDefinition(stateMachine):
     # each instruction.
     else:
       tw.writeCommentLine("Computation state. Compute values and store in internal registers.")
+      tw.writeBlankLine()
+      tw.writeCommentLine("Deassert read and write strobes.")
+      tw.writeLine("m_rd <= '0';")
+      tw.writeLine("m_wr <= \"0000\";")
+
+      tw.writeBlankLine()
+      
       # First get all inputs to the block.
       tw.writeCommentLine("Inputs: " + ", ".join(list(map(lambda r: "r{:02d}".format(r),
                                                            s.inputs()))))
