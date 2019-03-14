@@ -10,7 +10,7 @@ CONFIG_FILENAME = os.path.join(os.path.dirname(__file__), "instructions.yaml")
 
 REGISTER_FORMAT_RE = re.compile("r(\d{1,2})")
 IMMEDIATE_FORMAT_RE = re.compile("(-?\d+)")
-LABEL_FORMAT_RE = re.compile("(\$?\w+)")
+LABEL_FORMAT_RE = re.compile("(\$?\w+)([+-]\d+)?")
 REL_LABEL_FORMAT_RE = re.compile("(\.[-+]\d+)")
 
 INSTRUCTION_STRING_TEMPLATE = "{:10}{:24}"
@@ -49,13 +49,14 @@ class Instruction(streams.StreamItem):
     - rD - number of destination register
     - imm - immediate value. None if no immediate.
   """
-  def __init__(self, mnemonic, rA, rB, rD, imm, label, width):
+  def __init__(self, mnemonic, rA, rB, rD, imm, label, off, width):
     self._mnemonic = mnemonic
     self._rA = rA
     self._rB = rB
     self._rD = rD
     self._imm = imm
     self._label = label
+    self._off = off
     self._width = width
 
     super(Instruction, self).__init__()
@@ -81,7 +82,14 @@ class Instruction(streams.StreamItem):
     elif self._imm != None:
       params.append(str(self._imm))
     elif self._label != None:
-      params.append(str(self._label))
+      labelStr = self._label
+      if self._off != None:
+        if self._off > 0:
+          labelStr += "+" + str(self._off)
+        elif self._off < 0:
+          labelStr += str(self._off)
+
+      params.append(labelStr)
 
     return INSTRUCTION_STRING_TEMPLATE.format(self._mnemonic, ",".join(params))
 
@@ -195,10 +203,10 @@ class FloatArithmeticInstruction(ArithmeticInstruction):
 Abstract class for control flow instructions
 """
 class ControlFlowInstruction(Instruction):
-  def __init__(self, mnemonic, rA, rB, rD, imm, label, width):
+  def __init__(self, mnemonic, rA, rB, rD, imm, label, off, width):
     # For a control flow instruction, there is no rD, so what is passed as rD becomes rA, and rA becomes
     # rB.
-    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label, width)
+    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label, off, width)
 
   def canTranslate(self):
     return False
@@ -473,7 +481,7 @@ def parseInstruction(instructionString):
 
   # If there are no delimiters now, just return a blank instruction.
   if ' ' not in instructionString and '\t' not in instructionString:
-    return instructionClass(mnemonic, None, None, None, None, None, None)
+    return instructionClass(mnemonic, None, None, None, None, None, None, None)
 
   # Now we have one or more whitespaces.
   try:
@@ -495,41 +503,42 @@ def parseInstruction(instructionString):
   destinationRegister = None
   immediate = None
   label = None
+  off = None
 
   if len(instructionParameters) < 1:
-    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, width)
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
 
   # The first parameter is the destination register or a label.
   destinationRegister = parseRegister(instructionParameters[0])
   if destinationRegister == None:
-    label = parseLabel(instructionParameters[0])
+    label, off = parseLabel(instructionParameters[0])
     if label == None:
       raise ValueError("Error parsing first parameter in instruction: " + originalInstructionString)
 
   if len(instructionParameters) < 2:
-    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, width)
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
 
   # The second parameter is source register A, an immediate, or a label.
   sourceRegisterA = parseRegister(instructionParameters[1])
   if sourceRegisterA == None:
     immediate = parseImmediate(instructionParameters[1])
     if immediate == None:
-      label = parseLabel(instructionParameters[1])
+      label, off = parseLabel(instructionParameters[1])
       if label == None:
         raise ValueError("Error parsing second parameter in instruction: " + originalInstructionString)
 
   if len(instructionParameters) < 3:
-    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, width)
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
 
   sourceRegisterB = parseRegister(instructionParameters[2])
   if sourceRegisterB == None:
     immediate = parseImmediate(instructionParameters[2])
     if immediate == None:
-      label = parseLabel(instructionParameters[2])
+      label, off = parseLabel(instructionParameters[2])
       if label == None:
         raise ValueError("Error parsing third parameter in instruction: " + originalInstructionString)
 
-  return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, width)
+  return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
 
 def parseRegister(s):
   m = REGISTER_FORMAT_RE.match(s)
@@ -554,6 +563,11 @@ def parseLabel(s):
     # Try parsing as a relative label (e.g. '.-4')
     m = REL_LABEL_FORMAT_RE.match(s)
     if m == None:
-      return None
+      return (None, None)
 
-  return str(m.groups()[0])
+  label = str(m.groups()[0])
+  off = m.groups()[1]
+  if off != None:
+    off = int(m.groups()[1])
+
+  return (label, off)
