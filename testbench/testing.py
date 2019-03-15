@@ -18,6 +18,10 @@ SIM_DIR = os.path.abspath("microblaze_system/microblaze_system.sim/sim_1")
 TESTBENCH_MSG_FORMAT = re.compile("Note: TESTBENCH: (.+)")
 
 CYCLES_MSG_FORMAT = re.compile("CYCLES:\s+(\d+)")
+MB_CYCLES_FORMAT = re.compile("MICROBLAZE:\s+(\d+)")
+TRANSFER_CYCLES_FORMAT = re.compile("AXI TRANSFER:\s+(\d+)")
+CORE_CYCLES_FORMAT = re.compile("CORES:\s+(\d+)")
+SLEEP_CYCLES_FORMAT = re.compile("SLEEP OVERHEAD:\s+(\d+)")
 
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
@@ -92,6 +96,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "analysisTime": (end-start),
       "result": vivadoResults["passed"],
       "cycles": vivadoResults["cycles"],
+      "cycleBreakdown": vivadoResults["cycleBreakdown"],
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
       "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected)),
@@ -303,6 +308,10 @@ def runVivadoSimulation(logger):
   mem = {}
 
   cycles = None
+  mb_cycles = None
+  axi_cycles = None
+  core_cycles = None
+  sleep_cycles = None
 
   output_lines = output[1].splitlines()
   for l in output_lines:
@@ -318,6 +327,23 @@ def runVivadoSimulation(logger):
         cm = CYCLES_MSG_FORMAT.match(m.groups()[0])
         if cm != None:
           cycles = int(cm.groups()[0])
+
+        cm = MB_CYCLES_FORMAT.match(m.groups()[0])
+        if cm != None:
+          mb_cycles = int(cm.groups()[0])
+
+        cm = TRANSFER_CYCLES_FORMAT.match(m.groups()[0])
+        if cm != None:
+          axi_cycles = int(cm.groups()[0])
+
+        cm = CORE_CYCLES_FORMAT.match(m.groups()[0])
+        if cm != None:
+          core_cycles = int(cm.groups()[0])
+
+        cm = SLEEP_CYCLES_FORMAT.match(m.groups()[0])
+        if cm != None:
+          sleep_cycles = int(cm.groups()[0])
+
 
     else:
       m = MEM_MSG_FORMAT.match(l)
@@ -337,7 +363,8 @@ def runVivadoSimulation(logger):
 
   results = {
     "passed": passed,
-    "cycles": cycles
+    "cycles": cycles,
+    "cycleBreakdown": (mb_cycles, axi_cycles, core_cycles, sleep_cycles)
   }
 
   return results

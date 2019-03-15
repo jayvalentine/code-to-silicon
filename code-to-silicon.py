@@ -6,6 +6,7 @@ import getopt
 import sys
 
 import matplotlib.pyplot as plot
+import matplotlib.patches as patches
 
 from testbench import testing
 
@@ -139,7 +140,7 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66]
+  cores = [0, 1, 2, 3, 4, 6, 8, 10, 15, 21, 28, 36, 45, 55, 66]
 
   outputLines = []
 
@@ -155,11 +156,14 @@ def main(argv):
         coreInputsAvg = []
         coreOutputsAvg = []
         baseCycles = None
+        cycleBreakdowns = []
 
         i = 0
         done = False
         while i < len(cores) and not done:
           metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
+
+          cycleBreakdowns.append(metrics["cycleBreakdown"])
 
           # Set the 'done' flag if the system produces fewer cores than we told it to.
           # this indicates that we've reached saturation.
@@ -232,6 +236,37 @@ def main(argv):
           plot.ylim([0, 32])
           plot.savefig("figures/autogen/avg-io-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
           plot.clf()
+
+          # Display a plot of speedup against core count.
+          if sim:
+            mb_bd = []
+            axi_bd = []
+            core_bd = []
+            sleep_bd = []
+
+            for bd in cycleBreakdowns:
+              mb_bd.append(bd[0])
+              axi_bd.append(bd[0] + bd[1])
+              core_bd.append(bd[0] + bd[1] + bd[2])
+              sleep_bd.append(bd[0] + bd[1] + bd[2] + bd[3])
+
+            plot.plot(coreCounts, mb_bd, label="microblaze", color="black")
+            plot.plot(coreCounts, axi_bd, label="axi transfer", color="black")
+            plot.plot(coreCounts, core_bd, label="accelerator cores", color="black")
+            plot.plot(coreCounts, sleep_bd, label="sleep overhead", color="black")
+            plot.fill_between(coreCounts, [0 for i in range(len(coreCounts))], mb_bd, color="orange")
+            plot.fill_between(coreCounts, mb_bd, axi_bd, color="blue")
+            plot.fill_between(coreCounts, axi_bd, core_bd, color="green")
+            plot.fill_between(coreCounts, core_bd, sleep_bd, color='red')
+
+            orange_patch = patches.Patch(color='orange', label='MicroBlaze')
+            blue_patch = patches.Patch(color='blue', label='AXI Transfer')
+            green_patch = patches.Patch(color='green', label='Accelerator Cores')
+            red_patch = patches.Patch(color='red', label='Sleep Overhead')
+            plot.legend(handles=[orange_patch, blue_patch, green_patch, red_patch])
+
+            plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
+            plot.clf()
 
     # Plot analysis times against core count.
     if fig:
