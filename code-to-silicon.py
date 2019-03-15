@@ -250,6 +250,9 @@ def main(argv):
           for pruning in pruningModes:
             plot.plot(coreCounts, speedups[selection][pruning], label=selection + ", " + pruning)
 
+        plot.plot(coreCounts, [1.0 for i in range(len(coreCounts))], 'r--', label="baseline")
+        plot.legend(loc="upper left")
+
         plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
         plot.clf()
 
