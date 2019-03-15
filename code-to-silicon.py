@@ -263,7 +263,7 @@ def main(argv):
             blue_patch = patches.Patch(color='blue', label='AXI Transfer')
             green_patch = patches.Patch(color='green', label='Accelerator Cores')
             red_patch = patches.Patch(color='red', label='Sleep Overhead')
-            plot.legend(handles=[orange_patch, blue_patch, green_patch, red_patch])
+            plot.legend(handles=[orange_patch, blue_patch, green_patch, red_patch], loc="upper left")
 
             plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
             plot.clf()
@@ -286,7 +286,7 @@ def main(argv):
             plot.plot(coreCounts, speedups[selection][pruning], label=selection + ", " + pruning)
 
         plot.plot(coreCounts, [1.0 for i in range(len(coreCounts))], 'r--', label="baseline")
-        plot.legend(loc="upper left")
+        plot.legend(loc="upper right")
 
         plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
         plot.clf()
