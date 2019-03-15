@@ -27,6 +27,18 @@ with open(CONFIG_FILENAME, 'r') as stream:
     for m in mnemonics:
       INSTRUCTION_MAPPING[m] = category
 
+MODIFIES_CARRY = [
+  "add",
+  "addc",
+  "addkc",
+  "addi"
+  "addic",
+  "addikc",
+  "sra",
+  "src",
+  "srl"
+]
+
 """
 Base instruction class. Actual instructions shouldn't use this directly,
 but should instead inherit from this to create a custom subclass.
@@ -49,7 +61,7 @@ class Instruction(streams.StreamItem):
     - rD - number of destination register
     - imm - immediate value. None if no immediate.
   """
-  def __init__(self, mnemonic, rA, rB, rD, imm, label, off, width):
+  def __init__(self, mnemonic, rA, rB, rD, imm, label, off, width, usesCarry):
     self._mnemonic = mnemonic
     self._rA = rA
     self._rB = rB
@@ -58,6 +70,7 @@ class Instruction(streams.StreamItem):
     self._label = label
     self._off = off
     self._width = width
+    self._usesCarry = usesCarry
 
     super(Instruction, self).__init__()
 
@@ -119,6 +132,9 @@ class Instruction(streams.StreamItem):
 
   def isInstruction(self):
     return True
+
+  def usesCarry(self):
+    return self._usesCarry
 
   """
   Returns true if this instruction can be translated to VHDL, false otherwise.
@@ -206,10 +222,10 @@ class FloatArithmeticInstruction(ArithmeticInstruction):
 Abstract class for control flow instructions
 """
 class ControlFlowInstruction(Instruction):
-  def __init__(self, mnemonic, rA, rB, rD, imm, label, off, width):
+  def __init__(self, mnemonic, rA, rB, rD, imm, label, off, width, usesCarry):
     # For a control flow instruction, there is no rD, so what is passed as rD becomes rA, and rA becomes
     # rB.
-    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label, off, width)
+    super(ControlFlowInstruction, self).__init__(mnemonic, rD, rA, None, imm, label, off, width, usesCarry)
 
   def canTranslate(self):
     return False
@@ -441,6 +457,12 @@ def parseInstruction(instructionString):
   # This only gets defined if the instruction is an IO instruction.
   width = None
 
+  # Set to TRUE if the instruction uses or modifies the carry flag.
+  if mnemonic in MODIFIES_CARRY:
+    usesCarry = True
+  else:
+    usesCarry = False
+
   if category == "IntegerArith":
     instructionClass = IntegerArithmeticInstruction
   elif category == "FloatArith":
@@ -484,7 +506,7 @@ def parseInstruction(instructionString):
 
   # If there are no delimiters now, just return a blank instruction.
   if ' ' not in instructionString and '\t' not in instructionString:
-    return instructionClass(mnemonic, None, None, None, None, None, None, None)
+    return instructionClass(mnemonic, None, None, None, None, None, None, None, usesCarry)
 
   # Now we have one or more whitespaces.
   try:
@@ -509,7 +531,7 @@ def parseInstruction(instructionString):
   off = None
 
   if len(instructionParameters) < 1:
-    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width, usesCarry)
 
   # The first parameter is the destination register or a label.
   destinationRegister = parseRegister(instructionParameters[0])
@@ -519,7 +541,7 @@ def parseInstruction(instructionString):
       raise ValueError("Error parsing first parameter in instruction: " + originalInstructionString)
 
   if len(instructionParameters) < 2:
-    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width, usesCarry)
 
   # The second parameter is source register A, an immediate, or a label.
   sourceRegisterA = parseRegister(instructionParameters[1])
@@ -531,7 +553,7 @@ def parseInstruction(instructionString):
         raise ValueError("Error parsing second parameter in instruction: " + originalInstructionString)
 
   if len(instructionParameters) < 3:
-    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
+    return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width, usesCarry)
 
   sourceRegisterB = parseRegister(instructionParameters[2])
   if sourceRegisterB == None:
@@ -541,7 +563,7 @@ def parseInstruction(instructionString):
       if label == None:
         raise ValueError("Error parsing third parameter in instruction: " + originalInstructionString)
 
-  return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width)
+  return instructionClass(mnemonic, sourceRegisterA, sourceRegisterB, destinationRegister, immediate, label, off, width, usesCarry)
 
 def parseRegister(s):
   m = REGISTER_FORMAT_RE.match(s)

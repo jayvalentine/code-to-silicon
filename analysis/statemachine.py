@@ -15,6 +15,11 @@ class StateMachine:
     self._states = getStates(basicBlock)
     linkStates(self._states)
 
+    self._usesCarry = False
+    for s in self._states:
+      if s.usesCarry():
+        self._usesCarry = True
+
   def __len__(self):
     return len(self._states)
 
@@ -56,28 +61,31 @@ class StateMachine:
     # through the -ffixed option.
     for i in sorted(self.inputRegisters()):
       if i != controllerPointer and i != tempRegister:
-        replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, i*4, None, None, 4))
+        replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, i*4, None, None, 4, False))
 
-    # Get MSR and write to controller.
-    replace.append(instructions.SystemInstruction("mfs", "msr", None, tempRegister, None, None, None, None))
-    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 31*4, None, None, 4))
+    # Get MSR and write to controller, if the core modifies the carry flag.
+    if self._usesCarry:
+      replace.append(instructions.SystemInstruction("mfs", "msr", None, tempRegister, None, None, None, None, False))
+      replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 31*4, None, None, 4, False))
 
     # Write to the special controller register that will start our desired state machine.
-    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, tempRegister, self._id, None, None, None))
-    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 0, None, None, 4))
+    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, tempRegister, self._id, None, None, None, False))
+    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 0, None, None, 4, False))
 
     # Go to sleep until wakeup signal from controller.
-    replace.append(instructions.SystemInstruction("mbar", None, None, None, 24, None, None, None))
+    replace.append(instructions.SystemInstruction("mbar", None, None, None, 24, None, None, None, False))
 
     # Read the output registers from the right ports.
     for o in sorted(self.outputRegisters()):
       if o != controllerPointer and o != tempRegister:
-        replace.append(instructions.InputInstruction("lwi", controllerPointer, None, o, o*4, None, None, 4))
+        replace.append(instructions.InputInstruction("lwi", controllerPointer, None, o, o*4, None, None, 4, False))
 
     # Read the special port at offset 0 to reset the controller.
     # This also gets us the updated MSR register.
-    replace.append(instructions.InputInstruction("lwi", controllerPointer, None, tempRegister, 0, None, None, 4))
-    replace.append(instructions.SystemInstruction("mts", tempRegister, None, "msr", None, None, None, None))
+    replace.append(instructions.InputInstruction("lwi", controllerPointer, None, tempRegister, 0, None, None, 4, False))
+
+    if self._usesCarry:
+      replace.append(instructions.SystemInstruction("mts", tempRegister, None, "msr", None, None, None, None, False))
 
     return replace
 
@@ -135,6 +143,7 @@ class State:
   def __init__(self, name):
     self._name = name
     self._transitions = {}
+    self._usesCarry = False
 
   def __str__(self):
     s = "State: " + str(self._name) + "\n"
@@ -175,11 +184,18 @@ class State:
   def locals(self):
     return []
 
+  def usesCarry(self):
+    return self._usesCarry
+
 class ComputationState(State):
   def __init__(self, name, instructions):
     super(ComputationState, self).__init__(name)
 
     self._instructions = instructions
+
+    for i in self._instructions:
+      if i.usesCarry():
+        self._usesCarry = True
 
   def __str__(self):
     s = super(ComputationState, self).__str__()
