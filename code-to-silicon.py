@@ -210,11 +210,19 @@ def main(argv):
               plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
               plot.xlim([0, 32])
               plot.ylim([0, 32])
+
+              plot.xlabel("# of input registers")
+              plot.ylabel("# of output registers")
+
               plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
               plot.clf()
 
               # Plot regression of heuristic cost against actual cost.
               plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
+
+              plot.xlabel("Estimated cost")
+              plot.ylabel("Actual IPC (instructions per clock)")
+
               plot.savefig("figures/autogen/cost-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
               plot.clf()
 
@@ -234,6 +242,10 @@ def main(argv):
           plot.legend(loc = "upper left")
           plot.xlim([1, coreCounts[-1]])
           plot.ylim([0, 32])
+
+          plot.xlabel("Core count")
+          plot.ylabel("Register count")
+
           plot.savefig("figures/autogen/avg-io-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
           plot.clf()
 
@@ -260,10 +272,13 @@ def main(argv):
             plot.fill_between(coreCounts, core_bd, sleep_bd, color='red')
 
             orange_patch = patches.Patch(color='orange', label='MicroBlaze')
-            blue_patch = patches.Patch(color='blue', label='AXI Transfer')
-            green_patch = patches.Patch(color='green', label='Accelerator Cores')
-            red_patch = patches.Patch(color='red', label='Sleep Overhead')
+            blue_patch = patches.Patch(color='blue', label='AXI transfer')
+            green_patch = patches.Patch(color='green', label='Accelerator cores')
+            red_patch = patches.Patch(color='red', label='Sleep overhead')
             plot.legend(handles=[orange_patch, blue_patch, green_patch, red_patch], loc="upper left")
+
+            plot.xlabel("Core count")
+            plot.ylabel("Clock cycles")
 
             plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
             plot.clf()
@@ -276,6 +291,10 @@ def main(argv):
 
       plot.legend(loc="upper left")
       plot.xlim([0, coreCounts[-1]])
+
+      plot.xlabel("Core count")
+      plot.ylabel("Analysis time (seconds)")
+
       plot.savefig("figures/autogen/analysis-times-{:s}.png".format(testName))
       plot.clf()
 
@@ -287,6 +306,9 @@ def main(argv):
 
         plot.plot(coreCounts, [1.0 for i in range(len(coreCounts))], 'r--', label="baseline")
         plot.legend(loc="upper right")
+
+        plot.xlabel("Core count")
+        plot.ylabel("Speedup")
 
         plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
         plot.clf()
