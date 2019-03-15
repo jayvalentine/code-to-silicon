@@ -568,9 +568,9 @@ def parseLabel(s):
     if m == None:
       return (None, None)
 
+  off = None
   label = str(m.groups()[0])
-  off = m.groups()[1]
-  if off != None:
+  if len(m.groups()) > 1 and m.groups()[1] != None:
     off = int(m.groups()[1])
 
   return (label, off)
