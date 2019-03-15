@@ -345,17 +345,11 @@ class BasicBlock:
     logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
 
   def setCost(self):
-    unwantedSMs = [
-      "D_L7_line0313",
-      "D_L4_line0127",
-      "D_L15_line0088",
-      "D_L9_line0516",
-      "calc_sha_256_line0005",
-      "D_L12_line0619"
-    ]
     # We don't want to convert empty basic blocks, so their cost is effectively infinite.
     if len(self._instructions) == 0:
       self._cost = math.inf
+    elif self.memoryAccessDensity() == 1:
+      self._cost = math.inf  
     else:
       io_overhead = (len(self._outputs) + len(self._inputs)) / len(self._instructions)
       predicted_parallelism = self.averageComputationWidth()

@@ -157,6 +157,10 @@ def generateStateMachines(logger, num, analysisType, mode):
       sm = statemachine.getStateMachine(b)
       stateMachines.append(sm)
 
+  # Emit info about selected cores in cost order.
+  for sm in stateMachines:
+    logger.info("Selected: " + sm.name() + " (cost: " + str(sm.block().cost()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+
   # Sort in textual order.
   stateMachines = sorted(stateMachines, key=lambda sm: sm.block().startLine())
 
@@ -165,7 +169,6 @@ def generateStateMachines(logger, num, analysisType, mode):
   for sm in stateMachines:
     sm.setId(id)
 
-    logger.info("Selected: " + sm.name() + " (cost: " + str(sm.cost()) + ", states: " + str(len(sm)) + ", id: " + str(id) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
     with open(sm.name() + "_temp.vhd", 'w') as file:
       logger.debug("Writing definition for " + sm.name() + " to file " + sm.name() + "_temp.vhd.")
       file.write(translator.translateStateMachine(sm))
