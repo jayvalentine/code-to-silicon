@@ -84,7 +84,8 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
     else:
       vivadoResults = {
         "passed": None,
-        "cycles": None
+        "cycles": None,
+        "cycleBreakdown": None
       }
       logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
 
