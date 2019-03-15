@@ -133,8 +133,7 @@ architecture hw_accel_controller_behav of hw_accel_controller is
     type LMB_STATE is (
         LMB_DONE,
         LMB_WAITING_START,
-        LMB_WAITING_END1,
-        LMB_WAITING_END2,
+        LMB_WAITING_END,
         LMB_READ,
         LMB_WRITE
     );
@@ -189,26 +188,24 @@ begin
                 when LMB_READ =>
                     if LMB_M_0_ready = '1' then
                         m_data_to_accel <= LMB_M_0_readdbus;
+                        m_rdy <= '1';
                         int_lmb_state <= LMB_DONE;
                     end if;
 
                 when LMB_WRITE =>
                     if LMB_M_0_ready = '1' then
+                        m_rdy <= '1';
                         int_lmb_state <= LMB_DONE;
                     end if;
 
                 when LMB_DONE =>
-                    m_rdy <= '1';
+                    m_rdy <= '0';
                     LMB_M_0_readstrobe <= '0';
                     LMB_M_0_writestrobe <= '0';
                     LMB_M_0_addrstrobe <= '0';
-                    int_lmb_state <= LMB_WAITING_END1;
+                    int_lmb_state <= LMB_WAITING_END;
 
-                when LMB_WAITING_END1 =>
-                    m_rdy <= '0';
-                    int_lmb_state <= LMB_WAITING_END2;
-
-                when LMB_WAITING_END2 =>
+                when LMB_WAITING_END =>
                     int_lmb_state <= LMB_WAITING_START;
 
                 end case;
