@@ -156,8 +156,15 @@ def main(argv):
         coreOutputsAvg = []
         baseCycles = None
 
-        for i in cores:
-          metrics = testing.runTest(logger, testName, i, sim, selection, pruning)
+        i = 0
+        done = False
+        while i < len(cores) and not done:
+          metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
+
+          # Set the 'done' flag if the system produces fewer cores than we told it to.
+          # this indicates that we've reached saturation.
+          if metrics["coreCount"] < cores[i]:
+            done = True
 
           if metrics["result"] == None:
             result = "not-run"
@@ -180,7 +187,7 @@ def main(argv):
 
           analysisTimes[selection][pruning].append(metrics["analysisTime"])
 
-          if i == 0:
+          if cores[i] == 0:
             speedups[selection][pruning].append(1.0)
             coreCounts.append(0)
             baseCycles = metrics["cycles"]
@@ -213,6 +220,8 @@ def main(argv):
 
           with open("results.csv", 'a') as results:
             results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
+
+          i += 1
 
         # Plot average inputs/outputs against core count.
         if fig:
