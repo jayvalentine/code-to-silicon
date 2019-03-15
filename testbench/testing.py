@@ -90,6 +90,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
     # Return metrics to caller.
     metrics = {
       "analysisTime": (end-start),
+      "result": vivadoResults["passed"],
       "cycles": vivadoResults["cycles"],
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),

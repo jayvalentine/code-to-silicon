@@ -144,7 +144,7 @@ def main(argv):
   outputLines = []
 
   with open("results.csv", 'w+') as results:
-    results.write("testname,analysistype,pruningmode,cores,cycles,analysistime\n")
+    results.write("testname,analysistype,pruningmode,result,cores,cycles,analysistime\n")
 
   for testName in tests:
     analysisTimes = {}
@@ -158,6 +158,13 @@ def main(argv):
 
         for i in cores:
           metrics = testing.runTest(logger, testName, i, sim, selection, pruning)
+
+          if metrics["result"] == None:
+            result = "not-run"
+          elif metrics["result"]:
+            result = "passed"
+          else:
+              result = "failed"
 
           if selection not in analysisTimes.keys():
             analysisTimes[selection] = {}
@@ -203,11 +210,9 @@ def main(argv):
             # Store average inputs and outputs.
             coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
             coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
-          
-          with open("results.csv", 'a') as results:
-            results.write(",".join([testName, selection, pruning, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
 
-        
+          with open("results.csv", 'a') as results:
+            results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
 
         # Plot average inputs/outputs against core count.
         if fig:
