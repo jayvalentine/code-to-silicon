@@ -146,6 +146,26 @@ short Sinewave[N_WAVE-N_WAVE/4] = {
 };
 
 /*
+32-bit integer multiply operation.
+*/
+inline unsigned int __attribute__((always_inline)) __mulsi3 (unsigned int a, unsigned int b)
+{
+  unsigned int result = 0;
+
+  if (a == 0) return 0;
+
+  while (b != 0)
+  {
+    if (b & 1) result += a;
+
+    a <<= 1;
+    b >>= 1;
+  }
+
+  return result;
+}
+
+/*
   FIX_MPY() - fixed-point multiplication & scaling.
   Substitute inline assembly for hardware-specific
   optimization suited to a particluar DSP processor.
@@ -154,7 +174,7 @@ short Sinewave[N_WAVE-N_WAVE/4] = {
 inline short __attribute__((always_inline)) FIX_MPY(short a, short b)
 {
 	/* shift right one less bit (i.e. 15-1) */
-	int c = ((int)a * (int)b) >> 14;
+	int c = __mulsi3((int)a, (int)b) >> 14;
 	/* last bit shifted out = rounding-bit */
 	b = c & 0x01;
 	/* last shift + rounding bit */
