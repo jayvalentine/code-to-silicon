@@ -34,7 +34,7 @@
 #define N_WAVE      1024    /* full length of Sinewave[] */
 #define LOG2_N_WAVE 10      /* log2(N_WAVE) */
 
-#define SAMPLES 8
+#define SAMPLES 7
 
 /*
   Henceforth "short" implies 16-bit word. If this is not
