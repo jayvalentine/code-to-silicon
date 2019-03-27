@@ -325,17 +325,19 @@ class BasicBlock:
       # It's best to be on the safe side and always treat it as an output
       # if it's modified, than to mess up the stack halfway through a program.
       if (not neededForBranch) and (r != 1):
-        t = []
-
-        for s in self._next:
-          t += _track(s, r, [])
-
-        t = sorted(t, key=lambda v: -len(v))
-
         removeRegister = True
-        for visited in t:
-          if not _isOutBeforeIn(r, visited):
-            removeRegister = False
+        for s in self._next:
+          t = _track(s, r, [])
+
+          t = sorted(t, key=lambda v: -len(v))
+
+          for visited in t:
+            if not _isOutBeforeIn(r, visited):
+              removeRegister = False
+              break
+
+          # Stop the search if we've found a path with a dependency.
+          if not removeRegister:
             break
 
         if removeRegister:
@@ -349,7 +351,7 @@ class BasicBlock:
     if len(self._instructions) == 0:
       self._cost = math.inf
     elif self.memoryAccessDensity() == 1:
-      self._cost = math.inf  
+      self._cost = math.inf
     else:
       io_overhead = (len(self._outputs) + len(self._inputs)) / len(self._instructions)
       predicted_parallelism = self.averageComputationWidth()
