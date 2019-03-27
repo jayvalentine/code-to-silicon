@@ -26,10 +26,10 @@ CMP_FORMAT_B_3 = "else"
 CMP_FORMAT_B_4 = "    {:s}(31) := '0';"
 CMP_FORMAT_B_5 = "end if;"
 
-SEXT8_FORMAT_A = "{:s} := (others => {:s}(7));"
+SEXT8_FORMAT_A = "{:s}(31 downto 7) := (others => {:s}(7));"
 SEXT8_FORMAT_B = "{:s}(6 downto 0) := {:s}(6 downto 0);"
 
-SEXT16_FORMAT_A = "{:s} := (others => {:s}(15));"
+SEXT16_FORMAT_A = "{:s}(31 downto 15) := (others => {:s}(15));"
 SEXT16_FORMAT_B = "{:s}(14 downto 0) := {:s}(14 downto 0);"
 
 AND_FORMAT = "{:s} := unsigned(std_logic_vector({:s}) and std_logic_vector({:s}));"
@@ -815,10 +815,10 @@ def translateInstruction(stateName, instruction):
                                        localName(stateName, instruction.rA())))
 
   elif mnemonic == "sext16":
-    lines.append(SEXT8_FORMAT_A.format(localName(stateName, instruction.rD()),
+    lines.append(SEXT16_FORMAT_A.format(localName(stateName, instruction.rD()),
                                        localName(stateName, instruction.rA())))
 
-    lines.append(SEXT8_FORMAT_B.format(localName(stateName, instruction.rD()),
+    lines.append(SEXT16_FORMAT_B.format(localName(stateName, instruction.rD()),
                                        localName(stateName, instruction.rA())))
 
   elif mnemonic == "mul":
