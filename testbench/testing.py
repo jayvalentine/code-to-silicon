@@ -318,7 +318,7 @@ def runVivadoSimulation(logger):
   for l in output_lines:
     m = TESTBENCH_MSG_FORMAT.match(l)
     if m != None:
-      logger.info("TESTBENCH: " + m.groups()[0])
+      logger.debug("TESTBENCH: " + m.groups()[0])
 
       if m.groups()[0] == PASSED:
         passed = True
