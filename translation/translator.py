@@ -347,9 +347,9 @@ def getArchitecturalDefinition(stateMachine):
       # If the instruction is a read, we need to set the read strobe high.
       # If the instruction is a write, we need to set the write strobe high AND set the data out line.
       if inst.width() == 1:
-        tw.writeLine("offset <= ((to_integer((" + expr + ")) rem 4) * 8);")
+        tw.writeLine("offset <= ((to_integer((" + expr + ")) mod 4) * 8);")
       elif inst.width() == 2:
-        tw.writeLine("offset <= ((to_integer((" + expr + ")) rem 4) * 16);")
+        tw.writeLine("offset <= ((to_integer((" + expr + ")) mod 2) * 16);")
 
       if inst.isRead():
         tw.writeLine("m_rd <= '1';")
