@@ -358,7 +358,7 @@ def getArchitecturalDefinition(stateMachine):
         if inst.width() == 1:
           tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}(7 downto 0))) & std_logic_vector(unsigned(r{:02d}(7 downto 0))) & std_logic_vector(unsigned(r{:02d}(7 downto 0))) & std_logic_vector(unsigned(r{:02d}(7 downto 0)));".format(inst.rD(), inst.rD(), inst.rD(), inst.rD()))
         elif inst.width() == 2:
-          tw.writeLine("m_data_out((offset+15) downto offset) <= std_logic_vector(unsigned(r{:02d}(15 downto 0))) & std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD(), inst.rD()))
+          tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}(15 downto 0))) & std_logic_vector(unsigned(r{:02d}(15 downto 0)));".format(inst.rD(), inst.rD()))
         elif inst.width() == 4:
           tw.writeLine("m_data_out <= std_logic_vector(unsigned(r{:02d}));".format(inst.rD()))
 
@@ -548,15 +548,14 @@ def getControllerWriteRegisters(stateMachines):
   tw.writeBlankLine()
 
   tw.writeLine("case M_AXI_DP_0_wdata is")
-  for i in range(0, 32):
-    if i < len(stateMachines):
-      tw.writeCommentLine("Select accelerator " + stateMachines[i].name() + ".")
-      tw.writeLine("when x\"{:08x}\" =>".format(stateMachines[i].id()))
-      tw.increaseIndent()
-      tw.writeLine(stateMachines[i].name() + "_sel <= '1';")
-      tw.writeLine("int_state <= S_WAITING_FOR_CORE;")
-      tw.writeBlankLine()
-      tw.decreaseIndent()
+  for sm in stateMachines:
+    tw.writeCommentLine("Select accelerator " + sm.name() + ".")
+    tw.writeLine("when x\"{:08x}\" =>".format(sm.id()))
+    tw.increaseIndent()
+    tw.writeLine(sm.name() + "_sel <= '1';")
+    tw.writeLine("int_state <= S_WAITING_FOR_CORE;")
+    tw.writeBlankLine()
+    tw.decreaseIndent()
 
   tw.writeCommentLine("A non-existent ID is undefined behaviour.")
   tw.writeLine("when others => null;")
