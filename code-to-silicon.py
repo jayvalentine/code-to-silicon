@@ -140,7 +140,7 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0, 1, 2, 3, 4, 6, 8, 10, 15, 21, 28, 36, 45, 55, 66]
+  cores = [0, 1, 2, 3, 4, 6, 8, 10, 15, 21, 28, 36, 45]
 
   outputLines = []
 
