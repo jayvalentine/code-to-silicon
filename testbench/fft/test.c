@@ -1,4 +1,4 @@
-#define SAMPLES 8
+#define SAMPLES 7
 
 // This is the only way I can think of to force the compiler
 // not to combine test_failed and test_passed.
