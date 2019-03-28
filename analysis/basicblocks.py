@@ -382,6 +382,13 @@ class BasicBlock:
 # that register as an input.
 # In addition, return a flag if this block has a successor which is unknown to us (i.e. it is not a block we are analysing).
 def _track(block, register, visited):
+  # Stop if we've hit the depth limit of 12.
+  if len(visited) == 12:
+    # Append a null value to the list, this can be checked later to see whether or not
+    # the limit has been reached.
+    visited.append(None)
+    return [visited]
+
   # Stop if we've seen this block before, as this implies a loop.
   if block in visited:
     visited.append(block)
@@ -418,7 +425,12 @@ def _track(block, register, visited):
 
 def _isOutBeforeIn(register, visited):
   output = False
-  for block in visited:
+  if visited[-1] == None:
+    chain = visited[:-1]
+  else:
+    chain = visited
+
+  for block in chain:
     if block.getNext()[1] and not output:
       if (register not in range(3, 5)) and (register not in range(11, 13)):
         return False
@@ -428,6 +440,15 @@ def _isOutBeforeIn(register, visited):
 
     if register in block.rawOutputs():
       output = True
+
+  # If we've got here, we haven't found an input for this output anywhere along the chain.
+  # However, if the chain is incomplete (marked by a 'None' at the end), we can't know
+  # if there is one or not - so we assume there must be for safety.
+  #
+  # If the chain is complete then at this point we know the register is not an input anywhere
+  # along it.
+  if visited[-1] == None:
+    return False
 
   return True
 
