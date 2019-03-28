@@ -58,10 +58,20 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
 
     # Analyse generated code and produce statemachines.
     start = time.time()
-    selected = generateStateMachines(logger, numStateMachines, analysisType, mode)
+    blocks, selected = generateStateMachines(logger, numStateMachines, analysisType, mode)
     end = time.time()
 
     logger.info("Analysis completed in " + str(round(end-start, 4)) + "s.")
+
+    memDensities = []
+    sizes = []
+    inputs = []
+    outputs = []
+    for b in blocks:
+      memDensities.append(b.memoryAccessDensity())
+      sizes.append(len(b))
+      inputs.append(len(b.inputs()))
+      outputs.append(len(b.outputs()))
 
     actualNum = len(selected)
 
@@ -103,6 +113,10 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected)),
       "heuristicCost": list(map(lambda sm: sm.block().cost(), selected)),
       "actualCost": list(map(lambda sm: sm.cost(), selected)),
+      "blockSize": sizes,
+      "blockMemDensity": memDensities,
+      "blockInputs": inputs,
+      "blockOutputs": outputs
     }
 
     return metrics
@@ -185,7 +199,7 @@ def generateStateMachines(logger, num, analysisType, mode):
   with open("application_new.s", 'w') as file:
     file.write(str(stream))
 
-  return stateMachines
+  return (blocks, stateMachines)
 
 def compileHarness(logger):
   # Compile the harness and test functions.

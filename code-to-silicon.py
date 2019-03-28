@@ -198,6 +198,36 @@ def main(argv):
             coreInputsAvg.append(0)
             coreOutputsAvg.append(0)
 
+            inputs = metrics["blockInputs"]
+            outputs = metrics["blockOutputs"]
+            sizes = metrics["blockSize"]
+            memDensities = metrics["blockMemDensity"]
+
+            if fig:
+              plot.hist(inputs, 32)
+              plot.xlabel("# of input registers")
+              plot.ylabel("Occurances")
+              plot.savefig("figures/autogen/block-inputs-{:s}.png".format(testName))
+              plot.clf()
+
+              plot.hist(outputs, 32)
+              plot.xlabel("# of output registers")
+              plot.ylabel("Occurances")
+              plot.savefig("figures/autogen/block-outputs-{:s}.png".format(testName))
+              plot.clf()
+
+              plot.hist(sizes, 10)
+              plot.xlabel("Block size (# of instructions)")
+              plot.ylabel("Occurances")
+              plot.savefig("figures/autogen/block-sizes-{:s}.png".format(testName))
+              plot.clf()
+
+              plot.hist(memDensities, 10)
+              plot.xlabel("Block memory access density")
+              plot.ylabel("Occurances")
+              plot.savefig("figures/autogen/block-mem-densities-{:s}.png".format(testName))
+              plot.clf()
+
           else:
             if metrics["cycles"] != None:
               s = baseCycles / metrics["cycles"]
