@@ -34,7 +34,7 @@
 #define N_WAVE      1024    /* full length of Sinewave[] */
 #define LOG2_N_WAVE 10      /* log2(N_WAVE) */
 
-#define SAMPLES 7
+#define SAMPLES 8
 
 /*
   Henceforth "short" implies 16-bit word. If this is not
@@ -179,7 +179,7 @@ inline short __attribute__((always_inline)) FIX_MPY(short a, short b)
 	b = c & 0x01;
 	/* last shift + rounding bit */
 	a = (c >> 1) + b;
-	return a;
+	return (short)a;
 }
 
 /*
