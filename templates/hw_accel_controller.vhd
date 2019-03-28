@@ -247,15 +247,14 @@ begin
                     end if;
 
                 when S_WAITING_FOR_MB =>
-                    M_AXI_DP_0_rvalid <= '1';
-
+                    M_AXI_DP_0_arready <= '1';
 
                     if M_AXI_DP_0_arvalid = '1' and M_AXI_DP_0_rready = '1' then
                         case M_AXI_DP_0_araddr is
 %%READ_REG_FROM_ACCEL%%
                         end case;
 
-                        M_AXI_DP_0_arready <= '1';
+                        M_AXI_DP_0_rvalid <= '1';
                     end if;
                 end case;
             end if;
