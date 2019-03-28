@@ -228,17 +228,17 @@ begin
 %%STATEMACHINES_DONE%%
 
                 when S_READY =>
+                    M_AXI_DP_0_awready <= '1';
+                    M_AXI_DP_0_wready <= '1';
+
+                    M_AXI_DP_0_bresp <= "00";
+                    M_AXI_DP_0_bvalid <= '1';
+
                     -- Write transaction.
                     if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
                         case M_AXI_DP_0_awaddr is
 %%WRITE_REG_TO_ACCEL%%
                         end case;
-
-                        M_AXI_DP_0_bresp <= "00";
-                        M_AXI_DP_0_bvalid <= '1';
-
-                        M_AXI_DP_0_awready <= '1';
-                        M_AXI_DP_0_wready <= '1';
                     end if;
 
                 when S_DONE =>
