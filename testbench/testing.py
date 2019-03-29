@@ -269,6 +269,8 @@ def generateTemplates(logger, testName, selectedStateMachines):
   vars_testbench = {
     "FAILED_ADDR": syms["test_failed"],
     "PASSED_ADDR": syms["test_passed"],
+    "APPLICATION_ADDR": syms["application"],
+    "TEST_ADDR": syms["test"],
     "STATEMACHINE_COMPONENTS": componentDefs,
     "STATEMACHINE_UUTS": uutDefs,
     "STATEMACHINE_SIGNALS": signals,

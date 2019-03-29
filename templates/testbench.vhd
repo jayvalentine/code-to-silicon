@@ -372,7 +372,9 @@ architecture Behavioral of testbench_%%TESTNAME%% is
 
     constant clk_period             : time := 10ns;
     signal clk_hold                 : std_logic := '0';
+    signal cycles_count             : std_logic := '0';
     signal cycles                   : Integer := 0;
+    signal final_cycles             : Integer := 0;
     signal core_start               : Integer := 0;
     signal mb_start                 : Integer := 0;
     signal overhead_start           : Integer := 0;
@@ -664,7 +666,10 @@ begin
             wait for clk_period/2;
             clk <= '1';
             wait for clk_period/2;
-            cycles <= cycles + 1;
+
+            if cycles_count = '1' then
+                cycles <= cycles + 1;
+            end if;
         end if;
     end process clk_proc;
 
@@ -711,6 +716,18 @@ begin
 		end if;
             end if;
 
+            -- Report the start of the application.
+            if BRAM_PORT_INST_en = '1' and BRAM_PORT_INST_addr = x"%%APPLICATION_ADDR%%" then
+                report "TESTBENCH: APPLICATION START.";
+                cycles_count <= '1';
+            end if;
+
+            -- Report the end of the application.
+            if BRAM_PORT_INST_en = '1' and BRAM_PORT_INST_addr = x"%%TEST_ADDR%%" then
+                report "TESTBENCH: APPLICATION END.";
+                final_cycles <= cycles;
+            end if;
+
             -- Report the MicroBlaze core going to sleep or waking up.
             if Sleep_0 = '1' and sleep_mode = '0' then
                 report "TESTBENCH: MICROBLAZE SLEEP.";
@@ -738,9 +755,9 @@ begin
             wait for clk_period;
         end loop;
 
-        mb_cycles := mb_cycles + (cycles - mb_start);
+        mb_cycles := mb_cycles + (final_cycles - mb_start);
 
-        report "TESTBENCH: CYCLES:         " & Integer'image(cycles);
+        report "TESTBENCH: CYCLES:         " & Integer'image(final_cycles);
         report "TESTBENCH: MICROBLAZE:     " & Integer'image(mb_cycles - transfer_cycles);
         report "TESTBENCH: AXI TRANSFER:   " & Integer'image(transfer_cycles);
         report "TESTBENCH: CORES:          " & Integer'image(core_cycles);
