@@ -145,25 +145,8 @@ def generateStateMachines(logger, num, analysisType, mode):
   # Filter any blocks we don't want to convert.
   blocks = list(filter(lambda b: b.cost() != math.inf, blocks))
 
-  if analysisType == "expensive":
-    logger.info("Performing expensive block selection analysis.")
-    stateMachines = []
-
-    # Convert all state machines.
-    for b in blocks:
-      sm = statemachine.getStateMachine(b)
-      stateMachines.append(sm)
-
-    # Select from converted state machines.
-    stateMachines = sorted(stateMachines, key=lambda sm: sm.cost())
-
-    if len(stateMachines) < num:
-      logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
-    else:
-      stateMachines = stateMachines[:num]
-
-  elif analysisType == "heuristic":
-    logger.info("Performing heuristic block selection analysis.")
+  if analysisType == "hybrid":
+    logger.info("Selecting blocks based on hybrid cost function.")
     blocksSorted = sorted(blocks, key=lambda b: b.cost())
 
     if len(blocksSorted) <= num:
@@ -177,9 +160,28 @@ def generateStateMachines(logger, num, analysisType, mode):
       sm = statemachine.getStateMachine(b)
       stateMachines.append(sm)
 
-  # Emit info about selected cores in cost order.
-  for sm in stateMachines:
-    logger.info("Selected: " + sm.name() + " (cost: " + str(sm.block().cost()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+    # Emit info about selected cores in cost order.
+    for sm in stateMachines:
+      logger.info("Selected: " + sm.name() + " (cost: " + str(sm.block().cost()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+
+  if analysisType == "avgwidth":
+    logger.info("Selecting blocks based on potential parallelism (computation width).")
+    blocksSorted = sorted(blocks, key=lambda b: 1 / b.averageComputationWidth())
+
+    if len(blocksSorted) <= num:
+      logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
+      selected = blocksSorted
+    else:
+      selected = blocksSorted[:num]
+
+    stateMachines = []
+    for b in selected:
+      sm = statemachine.getStateMachine(b)
+      stateMachines.append(sm)
+
+    # Emit info about selected cores in cost order.
+    for sm in stateMachines:
+      logger.info("Selected: " + sm.name() + " (average width: " + str(sm.block().averageComputationWidth()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
   # Sort in textual order.
   stateMachines = sorted(stateMachines, key=lambda sm: sm.block().startLine())
