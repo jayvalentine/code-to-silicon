@@ -354,6 +354,12 @@ class BasicBlock:
       self._cost = math.inf
     else:
       io_overhead = (len(self._outputs) + len(self._inputs)) / len(self._instructions)
+
+      for line in self._instructions.keys():
+        if self._instructions[line].usesCarry():
+          io_overhead += 2 / len(self._instructions)
+          break
+
       predicted_parallelism = self.averageComputationWidth()
       self._cost = io_overhead / predicted_parallelism
 
