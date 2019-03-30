@@ -185,6 +185,25 @@ def generateStateMachines(logger, num, analysisType, mode):
     for sm in stateMachines:
       logger.info("Selected: " + sm.name() + " (average width: " + str(sm.block().averageComputationWidth()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
+  if analysisType == "size":
+    logger.info("Selecting blocks based on size (larger first).")
+    blocksSorted = sorted(blocks, key=lambda b: 1 / len(b))
+
+    if len(blocksSorted) <= num:
+      logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
+      selected = blocksSorted
+    else:
+      selected = blocksSorted[:num]
+
+    stateMachines = []
+    for b in selected:
+      sm = statemachine.getStateMachine(b)
+      stateMachines.append(sm)
+
+    # Emit info about selected cores in cost order.
+    for sm in stateMachines:
+      logger.info("Selected: " + sm.name() + " (size: " + str(len(sm.block())) + " instructions, states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+
   # Sort in textual order.
   stateMachines = sorted(stateMachines, key=lambda sm: sm.block().startLine())
 

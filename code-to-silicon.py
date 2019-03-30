@@ -70,7 +70,7 @@ def main(argv):
   fig = True
 
   pruningModes = ["naive", "volatile", "dependency"]
-  selectionModes = ["hybrid", "avgwidth"]
+  selectionModes = ["hybrid", "avgwidth", "size"]
 
   tests = ["fannkuch", "sha256", "fft", "sum_squares"]
 
