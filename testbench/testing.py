@@ -91,6 +91,8 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
           logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
       else:
           logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
+
+      logger.info("Total cycles: {:d} (mb {:d}, cores {:d}, axi {:d}, sleep {:d})".format(vivadoResults["cycles"], vivadoResults["cycleBreakdown"][0], vivadoResults["cycleBreakdown"][2], vivadoResults["cycleBreakdown"][1], vivadoResults["cycleBreakdown"][3]))
     else:
       vivadoResults = {
         "passed": None,
