@@ -222,7 +222,11 @@ These cores differ from conservation cores in that there is no control flow - wh
 work focuses solely on basic blocks. This means that less use can be made of the cores (as the main processor must still
 perform flow control), but also that the implementation of state machines is less complex - they are linear.
 
-\chapter{Methodology and Design}
+\chapter{System Design}
+
+This chapter describes the architecture and design of the MicroBlaze system and the accelerator cores, and the
+methods of communication between them. It also describes the methods used to analyse the object code in order to
+extract accelerator cores, as well as the ways in which blocks to be extracted are selected automatically.
 
 \section{System Architecture}
 
@@ -267,7 +271,8 @@ M\_RDY          & I                  & Memory-ready signal. Signals to the state
 M\_RD           & O                  & Memory read strobe. Indicates that the state machine is reading a value from memory. \\[0.05cm]
 M\_WR           & O                  & Memory write strobe. Indicates that the state machine is writing a value to memory. \\[0.05cm]
 M\_ADDR         & O                  & Memory address. Address of word being accessed in memory. \\[0.05cm]
-M\_DATA         & I/O                & Data in/out. Data accessed in memory is written to or read from this line. \\[0.05cm]
+M\_DATA\_OUT    & O                  & Data out. Data written to memory is placed on this line. \\[0.05cm]
+M\_DATA\_IN     & I                  & Data in. Data read from memory is placed on this line. \\[0.05cm]
 IN\_Rxx         & I                  & One or more input register lines. Inputs to the state machine are written to these lines from the MicroBlaze core. \\[0.05cm]
 OUT\_Rxx        & O                  & One or more output register lines. Outputs from the state machine are written to these lines from the state machine once it has finished computation.
 \end{tabular}
@@ -640,15 +645,66 @@ A memory-access density of >0.5 indicates that the block has more memory-access 
 density of <0.5 indicates the reverse. As the amount of memory-access limits the parallelism that can be extracted from a block,
 a lower memory-access density is desirable.
 
+\chapter{Experimental Methodology}
+
+This chapter outlines how the performance of the system described in the previous chapter was measured.
+In addition, this chapter describes how an estimation of the energy charateristics of the system are obtained.
+All testing was performed in the Xilinx Vivado toolsuite.
+
+\section{Benchmark Applications}
+
+A range of applications were selected for use as benchmarks in the evaluation of the MicroBlaze system. These applications
+were selected with the intention of being representative of embedded workloads.
+
+\begin{itemize}
+  \item An implementation of the SHA256 algorithm.
+  \item A 256-sample FFT application.
+\end{itemize}
+
+It is worth noting that there is a very small number of benchmarks - nowhere near enough to understand how this system
+will behave in the real world. However, it is hoped that even with the small quantity of tests, a case can be made for the
+benefits of such a configuration in an embedded system.
+
+\section{Measuring Application Speedup}
+
+Each application was compiled using the Xilinx MicroBlaze GNU tools to produce an assembly file. The accelerator generation
+tool was then run on this assembly file to produce a number of state machines, generated as VHDL files. These were then
+used in a simulation, along with the MicroBlaze system, to run the compiled application. A range of core counts was used,
+ranging from 1 to 45. In addition, the application was run on the MicroBlaze core alone, to provide a baseline from which speedup
+could be measured.
+
+Speedup is a measure of the difference in execution time between two configurations, and is calculated as below
+\cite{computer-arch}: 
+
+\[\frac{cycles_{new}}{cycles_{old}}\]
+
+For each configuration (number of cores, method of analysis, etc), the speedup was calculated relative to the baseline execution
+time obtained by testing with the MicroBlaze core alone.
+
 \chapter{Results}
 
-This section will detail results of testing and benchmarking with the system. The various benchmarks used will be described here,
-and in the following sections different measurements will be presented.
+This chapter outlines the results obtained from the various benchmarks used.
 
 \section{Speedup and Energy Savings}
 
-Speedup: cycle count of execution of a range of benchmark applications, with varying numbers of cores (including 0, used
-as the baseline for calculating speedup).
+Some of the benchmarks showed significant speedup when accelerator cores were added, while in others the addition of
+accelerator cores either slowed down the system or provided no change. The SHA256 benchmark showed significant speedup,
+as can be seen from the graph below, however even this application began to slow down once large numbers of cores
+were incorporated into the design.
+
+GRAPH: SHA256 speedup
+
+When using the hybrid cost function (which performed well with the SHA256 benchmark), the FFT benchmark slowed down with small
+numbers of cores added to the configuration. However as the core count increased, a small speedup was observed.
+This indicates that the hybrid cost function was not selecting the initial few cores correctly, leading to the inclusion of
+cores that offered no performance benefit.
+
+GRAPH: FFT poor performance (hybrid)
+
+A range of other selection heuristics were tried, focusing on memory-access density,
+basic block length, and average block width. Of these, --- was found to offer the best performance.
+
+GRAPH: FFT best performance
 
 Energy saving: Comparison of post-synthesis energy estimates for baseline (0 cores) and varying number of cores, across
 applications.
@@ -659,10 +715,9 @@ Observe trends in generated cores across applications, e.g. input/output counts,
 
 \section{Effectiveness of Heuristics}
 
-Comparison of different heuristics and their impact on results of the testing. For example, difference in performance between
-'simple' heuristics which evaluate basic blocks before selecting those to be converted and an 'expensive' analysis which converts
-all basic blocks before comparison to see which should be implemented. Comparing performance results between these two 'modes'
-could give an idea of how accurate the heuristics are.
+As shown by some of the benchmarks, different kinds of application require different approaches to selecting accelerator cores.
+
+GRAPH: side-by-side comparison of heuristics for FFT.
 
 \chapter{Conclusions and Further Work}
 
