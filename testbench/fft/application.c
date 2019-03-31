@@ -190,45 +190,45 @@ inline short __attribute__((always_inline)) FIX_MPY(short a, short b)
 */
 int fix_fft(short fr[], short fi[], short m, short inverse)
 {
-	int mr, nn, i, j, l, k, istep, n, scale, shift;
 	short qr, qi, tr, ti, wr, wi;
 
-	n = 1 << m;
+	int n = 1 << m;
 
 	/* max FFT size = N_WAVE */
 	if (n > N_WAVE)
 		return -1;
 
-	mr = 0;
-	nn = n - 1;
-	scale = 0;
+	int mr = 0;
+	int nn = n - 1;
+	int scale = 0;
 
 	/* decimation in time - re-order data */
-	for (m=1; m<=nn; ++m) {
-		l = n;
+	for (int s=1; s<=nn; ++s) {
+		int l = n;
 		do {
 			l >>= 1;
 		} while (mr+l > nn);
 		mr = (mr & (l-1)) + l;
 
-		if (mr <= m)
+		if (mr <= s)
 			continue;
-		tr = fr[m];
-		fr[m] = fr[mr];
+		tr = fr[s];
+		fr[s] = fr[mr];
 		fr[mr] = tr;
-		ti = fi[m];
-		fi[m] = fi[mr];
+		ti = fi[s];
+		fi[s] = fi[mr];
 		fi[mr] = ti;
 	}
 
-	l = 1;
-	k = LOG2_N_WAVE-1;
+	int l = 1;
+	int k = LOG2_N_WAVE-1;
 	while (l < n) {
+		int shift;
 		if (inverse) {
 			/* variable scaling, depending upon data */
 			shift = 0;
-			for (i=0; i<n; ++i) {
-				j = fr[i];
+			for (int i=0; i<n; ++i) {
+				int j = fr[i];
 				if (j < 0)
 					j = -j;
 				m = fi[i];
@@ -255,9 +255,9 @@ int fix_fft(short fr[], short fi[], short m, short inverse)
 		  performed on each data point exactly once,
 		  during this pass.
 		*/
-		istep = l << 1;
-		for (m=0; m<l; ++m) {
-			j = m << k;
+		int istep = l << 1;
+		for (int s=0; s<l; s++) {
+			int j = s << k;
 			/* 0 <= j < N_WAVE/2 */
 			wr =  Sinewave[j+N_WAVE/4];
 			wi = -Sinewave[j];
@@ -267,10 +267,10 @@ int fix_fft(short fr[], short fi[], short m, short inverse)
 				wr >>= 1;
 				wi >>= 1;
 			}
-			for (i=m; i<n; i+=istep) {
+			for (int i=s; i<n; i+=istep) {
 				j = i + l;
-				tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
-				ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);
+				tr = FIX_MPY(wi,fr[j]) - FIX_MPY(wi,fi[j]);
+				ti = FIX_MPY(wi,fi[j]) + FIX_MPY(wi,fr[j]);
 				qr = fr[i];
 				qi = fi[i];
 				if (shift) {
@@ -283,7 +283,7 @@ int fix_fft(short fr[], short fi[], short m, short inverse)
 				fi[i] = qi + ti;
 			}
 		}
-		--k;
+		k--;
 		l = istep;
 	}
 	return scale;

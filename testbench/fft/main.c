@@ -10,7 +10,7 @@ unsigned int state = 777;
 short rand(void)
 {
   state = state * 1664525 + 1013904223;
-  return (state >> 16);
+  return (short)(state);
 }
 
 int main()
