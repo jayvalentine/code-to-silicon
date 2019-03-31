@@ -55,29 +55,37 @@ class StateMachine:
 
     controllerPointer = 13
     tempRegister = 31
+    idRegister = 30
+
+    # Put MSR in temp register if we need it.
+    if self._usesCarry:
+      replace.append(instructions.SystemInstruction("mfs", "msr", None, tempRegister, None, None, None, None, False))
+
+    # Put ID in ID register.
+    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, idRegister, self._id, None, None, None, False))
+
+    # To take advantage of AXI pipelining, all writes are in a single burst.
 
     # Write the input registers to the right ports.
     # We just exclude r13, r30 and r31 because we ensure that the compiler doesn't use those registers
     # through the -ffixed option.
     for i in sorted(self.inputRegisters()):
-      if i != controllerPointer and i != tempRegister:
+      if i != controllerPointer and i != tempRegister and i != idRegister:
         replace.append(instructions.OutputInstruction("swi", controllerPointer, None, i, i*4, None, None, 4, False))
 
     # Get MSR and write to controller, if the core modifies the carry flag.
     if self._usesCarry:
-      replace.append(instructions.SystemInstruction("mfs", "msr", None, tempRegister, None, None, None, None, False))
       replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 31*4, None, None, 4, False))
 
     # Write to the special controller register that will start our desired state machine.
-    replace.append(instructions.IntegerArithmeticInstruction("addik", 0, None, tempRegister, self._id, None, None, None, False))
-    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, tempRegister, 0, None, None, 4, False))
+    replace.append(instructions.OutputInstruction("swi", controllerPointer, None, idRegister, 0, None, None, 4, False))
 
     # Go to sleep until wakeup signal from controller.
     replace.append(instructions.SystemInstruction("mbar", None, None, None, 24, None, None, None, False))
 
     # Read the output registers from the right ports.
     for o in sorted(self.outputRegisters()):
-      if o != controllerPointer and o != tempRegister:
+      if o != controllerPointer and o != tempRegister and o != idRegister:
         replace.append(instructions.InputInstruction("lwi", controllerPointer, None, o, o*4, None, None, 4, False))
 
     # Read the special port at offset 0 to reset the controller.
