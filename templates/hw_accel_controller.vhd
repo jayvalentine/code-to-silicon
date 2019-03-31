@@ -142,6 +142,9 @@ architecture hw_accel_controller_behav of hw_accel_controller is
     signal int_msr   : std_logic_vector(31 downto 0);
     signal int_lmb_state : LMB_STATE := LMB_WAITING_START;
 
+    signal addr_latch : std_logic_vector(31 downto 0);
+    signal addr_latch_set : std_logic;
+
 begin
     control_proc : process(clk, rst)
     begin
@@ -153,6 +156,9 @@ begin
             LMB_M_0_addrstrobe <= '0';
             LMB_M_0_readstrobe <= '0';
             LMB_M_0_writestrobe <= '0';
+
+            addr_latch <= (others => '0');
+            addr_latch_set <= '0';
 
 %%RESET_STATEMACHINES%%
 
@@ -229,16 +235,25 @@ begin
 
                 when S_READY =>
                     M_AXI_DP_0_awready <= '1';
-                    M_AXI_DP_0_wready <= '1';
 
                     M_AXI_DP_0_bresp <= "00";
                     M_AXI_DP_0_bvalid <= '1';
 
-                    -- Write transaction.
-                    if M_AXI_DP_0_wvalid = '1' and M_AXI_DP_0_awvalid = '1' then
-                        case M_AXI_DP_0_awaddr is
+                    -- Write transaction: set data.
+                    if M_AXI_DP_0_wvalid = '1' and addr_latch_set = '1' then
+                        case addr_latch is
 %%WRITE_REG_TO_ACCEL%%
                         end case;
+
+                        addr_latch_set <= '0';
+                        M_AXI_DP_0_wready <= '0';
+                    end if;
+
+		    -- Write transaction: set address latch.
+                    if M_AXI_DP_0_awvalid = '1' then
+                        addr_latch <= M_AXI_DP_0_awaddr;
+                        addr_latch_set <= '1';
+                        M_AXI_DP_0_wready <= '1';
                     end if;
 
                 when S_DONE =>
@@ -249,7 +264,7 @@ begin
                 when S_WAITING_FOR_MB =>
                     M_AXI_DP_0_arready <= '1';
 
-                    if M_AXI_DP_0_arvalid = '1' and M_AXI_DP_0_rready = '1' then
+                    if M_AXI_DP_0_arvalid = '1' then
                         case M_AXI_DP_0_araddr is
 %%READ_REG_FROM_ACCEL%%
                         end case;
