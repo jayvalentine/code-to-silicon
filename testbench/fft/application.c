@@ -148,21 +148,31 @@ short Sinewave[N_WAVE-N_WAVE/4] = {
 /*
 32-bit integer multiply operation.
 */
-inline unsigned int __attribute__((always_inline)) __mulsi3 (unsigned int a, unsigned int b)
+inline int __attribute__((always_inline)) __mulsi3 (int a, int b)
 {
+  unsigned int abs_a, abs_b;
+
+  if (a < 0) abs_a = (unsigned int)-a;
+  else       abs_a = (unsigned int)a;
+
+  if (b < 0) abs_b = (unsigned int)-b;
+  else       abs_b = (unsigned int)b;
+
   unsigned int result = 0;
 
-  if (a == 0) return 0;
+  if (abs_a == 0) return 0;
 
-  while (b != 0)
+  while (abs_b != 0)
   {
-    if (b & 1) result += a;
+    if (abs_b & 1) result += abs_a;
 
-    a <<= 1;
-    b >>= 1;
+    abs_a <<= 1;
+    abs_b >>= 1;
   }
 
-  return result;
+  if ((a < 0 && b < 0) || (a > 0 && b > 0)) return result; 
+
+  return -result;
 }
 
 /*
@@ -269,8 +279,8 @@ int fix_fft(short fr[], short fi[], short m, short inverse)
 			}
 			for (int i=s; i<n; i+=istep) {
 				j = i + l;
-				tr = FIX_MPY(wi,fr[j]) - FIX_MPY(wi,fi[j]);
-				ti = FIX_MPY(wi,fi[j]) + FIX_MPY(wi,fr[j]);
+				tr = FIX_MPY(wr,fr[j]) - FIX_MPY(wi,fi[j]);
+				ti = FIX_MPY(wr,fi[j]) + FIX_MPY(wi,fr[j]);
 				qr = fr[i];
 				qi = fi[i];
 				if (shift) {
@@ -325,4 +335,5 @@ short result[1 << SAMPLES];
 void application(void)
 {
     fix_fftr(result, SAMPLES, 0);
+    fix_fftr(result, SAMPLES, 1);
 }
