@@ -658,7 +658,7 @@ were selected with the intention of being representative of embedded workloads.
 
 \begin{itemize}
   \item An implementation of the SHA256 algorithm.
-  \item A 256-sample FFT application.
+  \item A 64-sample FFT application.
 \end{itemize}
 
 It is worth noting that there is a very small number of benchmarks - nowhere near enough to understand how this system
@@ -674,7 +674,7 @@ ranging from 1 to 45. In addition, the application was run on the MicroBlaze cor
 could be measured.
 
 Speedup is a measure of the difference in execution time between two configurations, and is calculated as below
-\cite{computer-arch}: 
+\cite{computer-arch}:
 
 \[\frac{cycles_{new}}{cycles_{old}}\]
 
@@ -689,35 +689,118 @@ This chapter outlines the results obtained from the various benchmarks used.
 
 Some of the benchmarks showed significant speedup when accelerator cores were added, while in others the addition of
 accelerator cores either slowed down the system or provided no change. The SHA256 benchmark showed significant speedup,
-as can be seen from the graph below, however even this application began to slow down once large numbers of cores
-were incorporated into the design.
+as can be seen from figure ~\ref{fig:speedupSHA256}.The highest speedup was obtained by both the hybrid and size heuristics,
+and was over 1.3x, however even with as many as 28 cores, the speedup gained using the hybrid heuristic remained above the baseline,
+at 1.1x.
 
-GRAPH: SHA256 speedup
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/speedup-sha256.png}}
+\caption{Speedup provided by accelerator cores for the SHA256 benchmark, by selection heuristic.}
+\label{fig:speedupSHA256}
+\end{figure}
 
-When using the hybrid cost function (which performed well with the SHA256 benchmark), the FFT benchmark slowed down with small
+When using the hybrid cost function (which, as can be seen above, performed well with the SHA256 benchmark), the FFT benchmark slowed down with small
 numbers of cores added to the configuration. However as the core count increased, a small speedup was observed.
 This indicates that the hybrid cost function was not selecting the initial few cores correctly, leading to the inclusion of
-cores that offered no performance benefit.
+cores that offered no performance benefit. When using the size of blocks as the selection heuristic (selecting larger blocks first),
+an initial spike in the speedup is observed, but performs worse with large core counts than the hybrid heuristics.
+These poor results indicate that this application is not an ideal candidate for the use of an accelerator-rich architecture.
 
-GRAPH: FFT poor performance (hybrid)
-
-A range of other selection heuristics were tried, focusing on memory-access density,
-basic block length, and average block width. Of these, --- was found to offer the best performance.
-
-GRAPH: FFT best performance
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/speedup-fft.png}}
+\caption{Speedup provided by accelerator cores for the FFT benchmark, by selection heuristic.}
+\label{fig:speedupFFT}
+\end{figure}
 
 Energy saving: Comparison of post-synthesis energy estimates for baseline (0 cores) and varying number of cores, across
 applications.
 
+\subsection{Effect of Selection Heuristics on Performance}
+
+By measuring the number of cycles spent on the MicroBlaze core, on accelerator cores, and on overheads,
+a breakdown of execution time for each application and each selection heuristic was generated.
+Figures ~\ref{fig:breakdownHybridSHA256} to ~\ref{fig:breakdownSizeSHA256} show the execution-time breakdowns
+for the SHA256 benchmark.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-sha256-hybrid-dependency.png}}
+\caption{Execution-time breakdown for the SHA256 benchmark using the hybrid selection heuristic.}
+\label{fig:breakdownHybridSHA256}
+\end{figure}
+
+As expected, the hybrid selection heuristic, shown in figure ~\ref{fig:breakdownHybridSHA256}, generated
+a configuration which halved the number of cycles executed on the MicroBlaze core, with these gains
+lessened by overheads, particularly the overhead associated with transferring inputs and outputs to and from
+the cores over the AXI bus.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-sha256-avgwidth-dependency.png}}
+\caption{Execution-time breakdown for the SHA256 benchmark using the average width selection heuristic.}
+\label{fig:breakdownAvgWidthSHA256}
+\end{figure}
+
+The average width heuristic performed poorly, as indicated by figure ~\ref{fig:breakdownAvgWidthSHA256}.
+The execution time spent on the MicroBlaze core was not reduced as much as with the hybrid heuristic,
+and increasing overheads (both from AXI transfer and from the MicroBlaze wakeup period) eventually
+resulted in the performance of the system being below baseline.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-sha256-size-dependency.png}}
+\caption{Execution-time breakdown for the SHA256 benchmark using the block size selection heuristic.}
+\label{fig:breakdownSizeSHA256}
+\end{figure}
+
+Initially, the size heuristic performed similarly to the hybrid heuristic, with a sharp drop
+in the cycles spent on the MicroBlaze core, and by extension, the overall execution time.
+However, this heuristic did not perform as well as the hybrid heuristic did with large numbers
+of cores, with the time spent on the MicroBlaze core increasing, rather than decreasing, beyond
+6 cores, and the overall execution time eventually rising above the baseline at 8 cores.
+
+As seen with the overall performance results, none of the heuristics offered particularly good performance
+with the FFT benchmark. The execution-time breakdowns for this application show some of the reasons for this poor performance.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-fft-hybrid-dependency.png}}
+\caption{Execution-time breakdown for the FFT benchmark using the hybrid selection heuristic.}
+\label{fig:breakdownHybridFFT}
+\end{figure}
+
+The hybrid selection heuristic is the only selection heuristic that showed a significant reduction
+in the execution time spent on the MicroBlaze core. However, the reduction was not as great as with
+the SHA256 benchmark. This indicates that the blocks converted here are accessed less frequently
+and/or offer less parallelism than those in the SHA256 application.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-fft-avgwidth-dependency.png}}
+\caption{Execution-time breakdown for the FFT benchmark using the average width selection heuristic.}
+\label{fig:breakdownAvgWidthFFT}
+\end{figure}
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-fft-size-dependency.png}}
+\caption{Execution-time breakdown for the FFT benchmark using the block size selection heuristic.}
+\label{fig:breakdownSizeFFT}
+\end{figure}
+
+The other two heuristics perform much worse than the hybrid heuristic.
+As indicated by figures ~\ref{fig:breakdownAvgWidthFFT} and ~\ref{fig:breakdownSizeFFT},
+the execution time spent on the MicroBlaze core is either reduced only very slightly (as with the size heuristic)
+or not at all (as with the average width heuristic). This hints that the hybrid heuristic is a good
+approach to finding the 'best' configuration, with regards to performance, and that when it does not
+perform well, the other approaches perform just as poorly. However, this cannot be stated categorically
+with such a small pool of test applications.
+
 \section{Trends in Generated Cores}
 
 Observe trends in generated cores across applications, e.g. input/output counts, IPC (instructions per cycle), state counts.
-
-\section{Effectiveness of Heuristics}
-
-As shown by some of the benchmarks, different kinds of application require different approaches to selecting accelerator cores.
-
-GRAPH: side-by-side comparison of heuristics for FFT.
 
 \chapter{Conclusions and Further Work}
 
