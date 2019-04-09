@@ -145,7 +145,7 @@ def main(argv):
   outputLines = []
 
   with open("results.csv", 'w+') as results:
-    results.write("testname,analysistype,pruningmode,result,cores,cycles,analysistime\n")
+    results.write("testname,analysistype,pruningmode,result,cores,cycles,analysistime,percentageconverted\n")
 
   for testName in tests:
     analysisTimes = {}
@@ -261,7 +261,7 @@ def main(argv):
             coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
 
           with open("results.csv", 'a') as results:
-            results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4))]) + "\n")
+            results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4)), str(round(metrics["percentageConverted"], 4))]) + "\n")
 
           i += 1
 

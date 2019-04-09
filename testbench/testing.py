@@ -58,7 +58,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
 
     # Analyse generated code and produce statemachines.
     start = time.time()
-    blocks, selected = generateStateMachines(logger, numStateMachines, analysisType, mode)
+    blocks, selected, percentageConverted = generateStateMachines(logger, numStateMachines, analysisType, mode)
     end = time.time()
 
     logger.info("Analysis completed in " + str(round(end-start, 4)) + "s.")
@@ -83,6 +83,8 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
 
     # Generate testbench templates.
     generateTemplates(logger, testName, selected)
+
+    logger.info("{:2.2f}% of program converted.".format(percentageConverted * 100))
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
@@ -118,7 +120,8 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "blockSize": sizes,
       "blockMemDensity": memDensities,
       "blockInputs": inputs,
-      "blockOutputs": outputs
+      "blockOutputs": outputs,
+      "percentageConverted": percentageConverted
     }
 
     return metrics
@@ -166,7 +169,7 @@ def generateStateMachines(logger, num, analysisType, mode):
     for sm in stateMachines:
       logger.info("Selected: " + sm.name() + " (cost: " + str(sm.block().cost()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
-  if analysisType == "avgwidth":
+  elif analysisType == "avgwidth":
     logger.info("Selecting blocks based on potential parallelism (computation width).")
     blocksSorted = sorted(blocks, key=lambda b: 1 / b.averageComputationWidth())
 
@@ -185,7 +188,7 @@ def generateStateMachines(logger, num, analysisType, mode):
     for sm in stateMachines:
       logger.info("Selected: " + sm.name() + " (average width: " + str(sm.block().averageComputationWidth()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
-  if analysisType == "size":
+  elif analysisType == "size":
     logger.info("Selecting blocks based on size (larger first).")
     blocksSorted = sorted(blocks, key=lambda b: 1 / len(b))
 
@@ -203,6 +206,16 @@ def generateStateMachines(logger, num, analysisType, mode):
     # Emit info about selected cores in cost order.
     for sm in stateMachines:
       logger.info("Selected: " + sm.name() + " (size: " + str(len(sm.block())) + " instructions, states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+
+  # Get the sum of the lengths of all basic blocks.
+  sumAll = 0
+  for b in blocks:
+    sumAll += len(b)
+
+  # Get the sum of the lengths of selected basic blocks.
+  sumSelected = 0
+  for b in selected:
+    sumSelected += len(b)
 
   # Sort in textual order.
   stateMachines = sorted(stateMachines, key=lambda sm: sm.block().startLine())
@@ -222,7 +235,7 @@ def generateStateMachines(logger, num, analysisType, mode):
   with open("application_new.s", 'w') as file:
     file.write(str(stream))
 
-  return (blocks, stateMachines)
+  return (blocks, stateMachines, (sumSelected/sumAll))
 
 def compileHarness(logger):
   # Compile the harness and test functions.
