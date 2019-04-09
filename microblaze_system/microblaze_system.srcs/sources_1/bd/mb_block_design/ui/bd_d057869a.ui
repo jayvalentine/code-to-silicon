@@ -2,38 +2,38 @@
    ExpandedHierarchyInLayout: "",
    guistr: "# # String gsaved with Nlview 6.8.5  2018-01-30 bk=1.4354 VDI=40 GEI=35 GUI=JA:1.6 TLS
 #  -string -flagsOSRD
-preplace port BRAM_PORT_INST -pg 1 -y -290 -defaultsOSRD
-preplace port Hibernate_0 -pg 1 -y -550 -defaultsOSRD
-preplace port Sleep_0 -pg 1 -y -590 -defaultsOSRD
-preplace port Sleep_1 -pg 1 -y -570 -defaultsOSRD
-preplace port clk_100MHz -pg 1 -y -370 -defaultsOSRD
-preplace port LMB_M_0 -pg 1 -y -1050 -defaultsOSRD
-preplace port BRAM_PORT_DATA -pg 1 -y -490 -defaultsOSRD
-preplace port M_AXI_DP_0 -pg 1 -y -1050 -defaultsOSRD
-preplace port rst -pg 1 -y -310 -defaultsOSRD
-preplace portBus Wakeup_0 -pg 1 -y -550 -defaultsOSRD
-preplace inst microblaze_0 -pg 1 -lvl 1 -y -570 -defaultsOSRD
-preplace inst lmb_bram_if_cntlr_0 -pg 1 -lvl 3 -y -490 -defaultsOSRD
-preplace inst lmb_v10_0 -pg 1 -lvl 2 -y -730 -defaultsOSRD
-preplace inst lmb_bram_if_cntlr_1 -pg 1 -lvl 3 -y -290 -defaultsOSRD
-preplace inst lmb_v10_1 -pg 1 -lvl 2 -y -870 -defaultsOSRD
-preplace inst lmb_v10_2 -pg 1 -lvl 2 -y -310 -defaultsOSRD
-preplace netloc Conn1 1 2 1 1220
-preplace netloc Conn2 1 2 1 N
-preplace netloc Conn3 1 0 2 -60J -890 NJ
-preplace netloc microblaze_0_ILMB 1 1 1 910
-preplace netloc rst_1 1 0 3 -50 -710 930 -390 1230
-preplace netloc microblaze_0_M_AXI_DP 1 1 3 900J -1050 NJ -1050 NJ
-preplace netloc microblaze_0_Suspend 1 1 3 960 -590 NJ -590 NJ
-preplace netloc Wakeup_0_1 1 0 1 N
-preplace netloc lmb_bram_if_cntlr_0_BRAM_PORT 1 3 1 N
-preplace netloc lmb_bram_if_cntlr_1_BRAM_PORT 1 3 1 N
-preplace netloc microblaze_0_Hibernate 1 1 3 940J -600 NJ -600 1560J
-preplace netloc microblaze_0_Sleep 1 1 3 950J -580 NJ -580 1550J
-preplace netloc Conn 1 2 1 1230
-preplace netloc microblaze_0_DLMB 1 1 1 910
-preplace netloc clk_100MHz_1 1 0 3 -60 -720 920J -400 1220
-levelinfo -pg 1 -80 650 1100 1430 1940 -top -1210 -bot 180
+preplace port BRAM_PORT_INST -pg 1 -y 290 -defaultsOSRD
+preplace port Hibernate_0 -pg 1 -y 530 -defaultsOSRD
+preplace port Sleep_0 -pg 1 -y 550 -defaultsOSRD
+preplace port Sleep_1 -pg 1 -y 510 -defaultsOSRD
+preplace port clk_100MHz -pg 1 -y 80 -defaultsOSRD
+preplace port LMB_M_0 -pg 1 -y 60 -defaultsOSRD
+preplace port BRAM_PORT_DATA -pg 1 -y 110 -defaultsOSRD
+preplace port M_AXI_DP_0 -pg 1 -y 490 -defaultsOSRD
+preplace port rst -pg 1 -y 100 -defaultsOSRD
+preplace portBus Wakeup_0 -pg 1 -y 540 -defaultsOSRD
+preplace inst microblaze_0 -pg 1 -lvl 2 -y 510 -defaultsOSRD
+preplace inst lmb_bram_if_cntlr_0 -pg 1 -lvl 2 -y 110 -defaultsOSRD
+preplace inst lmb_v10_0 -pg 1 -lvl 1 -y 280 -defaultsOSRD
+preplace inst lmb_bram_if_cntlr_1 -pg 1 -lvl 2 -y 290 -defaultsOSRD
+preplace inst lmb_v10_1 -pg 1 -lvl 1 -y 80 -defaultsOSRD
+preplace inst lmb_v10_2 -pg 1 -lvl 1 -y 450 -defaultsOSRD
+preplace netloc Conn1 1 1 1 280
+preplace netloc Conn2 1 1 1 290
+preplace netloc Conn3 1 0 1 NJ
+preplace netloc microblaze_0_ILMB 1 0 3 40 370 NJ 370 810
+preplace netloc rst_1 1 0 2 20 170 310
+preplace netloc microblaze_0_M_AXI_DP 1 2 1 NJ
+preplace netloc microblaze_0_Suspend 1 2 1 NJ
+preplace netloc Wakeup_0_1 1 0 2 30J 530 NJ
+preplace netloc lmb_bram_if_cntlr_0_BRAM_PORT 1 2 1 NJ
+preplace netloc lmb_bram_if_cntlr_1_BRAM_PORT 1 2 1 NJ
+preplace netloc microblaze_0_Hibernate 1 2 1 NJ
+preplace netloc microblaze_0_Sleep 1 2 1 NJ
+preplace netloc Conn 1 1 1 N
+preplace netloc microblaze_0_DLMB 1 0 3 40 200 NJ 200 820
+preplace netloc clk_100MHz_1 1 0 2 30 160 300
+levelinfo -pg 1 0 160 560 840 -top 0 -bot 650
 ",
 }
 {
