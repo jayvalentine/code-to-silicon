@@ -202,6 +202,7 @@ def main(argv):
             outputs = metrics["blockOutputs"]
             sizes = metrics["blockSize"]
             memDensities = metrics["blockMemDensity"]
+            avgWidths = metrics["blockAvgWidths"]
 
             if fig:
               plot.hist(inputs, 32)
@@ -226,6 +227,12 @@ def main(argv):
               plot.xlabel("Block memory access density")
               plot.ylabel("Occurances")
               plot.savefig("figures/autogen/block-mem-densities-{:s}.png".format(testName))
+              plot.clf()
+
+              plot.hist(avgWidths, 10)
+              plot.xlabel("Block average computation width")
+              plot.ylabel("Occurances")
+              plot.savefig("figures/autogen/block-avg-widths-{:s}.png".format(testName))
               plot.clf()
 
           else:

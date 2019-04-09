@@ -67,11 +67,13 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
     sizes = []
     inputs = []
     outputs = []
+    avgWidths = []
     for b in blocks:
       memDensities.append(b.memoryAccessDensity())
       sizes.append(len(b))
       inputs.append(len(b.inputs()))
       outputs.append(len(b.outputs()))
+      avgWidths.append(b.averageComputationWidth())
 
     actualNum = len(selected)
 
@@ -91,6 +93,10 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       vivadoResults = runVivadoSimulation(logger)
       if vivadoResults["passed"]:
           logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
+
+          # If the simulation directory exists, delete it.
+          if os.path.isdir(SIM_DIR):
+            shutil.rmtree(SIM_DIR, ignore_errors=True)
       else:
           logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
 
@@ -117,6 +123,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected)),
       "heuristicCost": list(map(lambda sm: sm.block().cost(), selected)),
       "actualCost": list(map(lambda sm: sm.cost(), selected)),
+      "blockAvgWidths": avgWidths,
       "blockSize": sizes,
       "blockMemDensity": memDensities,
       "blockInputs": inputs,
