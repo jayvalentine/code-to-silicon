@@ -32,6 +32,124 @@ intnative_t factorial_Lookup_Table[4] = {
   24
 };
 
+inline unsigned int __attribute__((always_inline)) unsigned_divide(unsigned int dividend, unsigned int divisor, unsigned int rem)
+{
+  unsigned int t, num_bits;
+  unsigned int q, bit, d;
+  int i;
+
+  unsigned int remainder = 0;
+  unsigned int quotient = 0;
+
+  if (divisor == 0)
+  {
+    if (rem) return remainder;
+    return quotient;
+  }
+
+  if (divisor > dividend) {
+    remainder = dividend;
+    if (rem) return remainder;
+    return quotient;
+  }
+
+  if (divisor == dividend) {
+    quotient = 1;
+    if (rem) return remainder;
+    return quotient;
+  }
+
+  num_bits = 32;
+
+  while (remainder < divisor) {
+    bit = (dividend & 0x80000000) >> 31;
+    remainder = (remainder << 1) | bit;
+    d = dividend;
+    dividend = dividend << 1;
+    num_bits--;
+  }
+
+  /* The loop, above, always goes one iteration too far.
+     To avoid inserting an "if" statement inside the loop
+     the last iteration is simply reversed. */
+  dividend = d;
+  remainder = remainder >> 1;
+  num_bits++;
+
+  for (i = 0; i < num_bits; i++) {
+    bit = (dividend & 0x80000000) >> 31;
+    remainder = (remainder << 1) | bit;
+    t = remainder - divisor;
+    q = !((t & 0x80000000) >> 31);
+    dividend = dividend << 1;
+    quotient = (quotient << 1) | q;
+    if (q) {
+       remainder = t;
+     }
+  }
+
+  if (rem) return remainder;
+  return quotient;
+}  /* unsigned_divide */
+
+#define ABS(x)  ((x) < 0 ? -(x) : (x))
+
+inline int __attribute__((always_inline)) signed_divide(int dividend, int divisor)
+{
+  unsigned int dend, dor;
+  unsigned int q, r;
+  int quotient, remainder;
+
+  dend = ABS(dividend);
+  dor  = ABS(divisor);
+
+  q = unsigned_divide(dend, dor, 0);
+
+  /* the sign of the remainder is the same as the sign of the dividend
+     and the quotient is negated if the signs of the operands are
+     opposite */
+  quotient = q;
+  if (dividend < 0) {
+    if (divisor > 0)
+      quotient = -q;
+  }
+  else { /* positive dividend */
+    if (divisor < 0)
+      quotient = -q;
+  }
+
+  return quotient;
+} /* signed_divide */
+
+inline int __attribute__((always_inline)) signed_modulo(int dividend, int divisor)
+{
+  unsigned int dend, dor;
+  unsigned int q, r;
+  int quotient, remainder;
+
+  dend = ABS(dividend);
+  dor  = ABS(divisor);
+
+  r = unsigned_divide(dend, dor, 1);
+
+  /* the sign of the remainder is the same as the sign of the dividend
+     and the quotient is negated if the signs of the operands are
+     opposite */
+  quotient = q;
+  if (dividend < 0) {
+    remainder = -r;
+    if (divisor > 0)
+      quotient = -q;
+  }
+  else { /* positive dividend */
+    remainder = r;
+    if (divisor < 0)
+      quotient = -q;
+  }
+
+  return remainder;
+} /* signed_divide */
+
 intmax_t fannkuch(intnative_t n)
 {
   // Determine the block_Size to use. If n! is less than
@@ -39,9 +157,9 @@ intmax_t fannkuch(intnative_t n)
   // block_Size from being set to 0. This also causes smaller values of n to
   // be computed serially which is faster and uses less resources for small
   // values of n.
-  const intnative_t block_Size=factorial_Lookup_Table[n]/
+  const intnative_t block_Size=signed_divide(factorial_Lookup_Table[n],
    (factorial_Lookup_Table[n]<PREFERRED_NUMBER_OF_BLOCKS_TO_USE ?
-   1 : PREFERRED_NUMBER_OF_BLOCKS_TO_USE);
+   1 : PREFERRED_NUMBER_OF_BLOCKS_TO_USE));
 
   intnative_t maximum_Flip_Count=0, checksum=0;
 
@@ -61,8 +179,8 @@ intmax_t fannkuch(intnative_t n)
       current_Permutation[i]=i;
     for(intnative_t i=n-1, permutation_Index=initial_Permutation_Index_For_Block; i>0; --i)
     {
-      const intnative_t d=permutation_Index/factorial_Lookup_Table[i];
-      permutation_Index=permutation_Index%factorial_Lookup_Table[i];
+      const intnative_t d=signed_divide(permutation_Index, factorial_Lookup_Table[i]);
+      permutation_Index=signed_modulo(permutation_Index, factorial_Lookup_Table[i]);
       count[i]=d;
 
       for(intnative_t j=0; j<n; ++j)
@@ -140,7 +258,7 @@ intmax_t fannkuch(intnative_t n)
 
 
         // Update the checksum.
-        if(permutation_Index%2==0)
+        if(signed_modulo(permutation_Index, 2) == 0)
            checksum+=flip_Count;
         else
            checksum-=flip_Count;
@@ -182,5 +300,5 @@ int resultA;
 
 void application(void)
 {
-  resultA = (int)fannkuch(3);
+  resultA = (int)fannkuch(2);
 }
