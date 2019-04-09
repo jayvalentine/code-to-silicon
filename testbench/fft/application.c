@@ -34,7 +34,7 @@
 #define N_WAVE      1024    /* full length of Sinewave[] */
 #define LOG2_N_WAVE 10      /* log2(N_WAVE) */
 
-#define SAMPLES 7
+#define SAMPLES 6
 
 /*
   Henceforth "short" implies 16-bit word. If this is not
@@ -170,7 +170,7 @@ inline int __attribute__((always_inline)) __mulsi3 (int a, int b)
     abs_b >>= 1;
   }
 
-  if ((a < 0 && b < 0) || (a > 0 && b > 0)) return result; 
+  if ((a < 0 && b < 0) || (a > 0 && b > 0)) return result;
 
   return -result;
 }

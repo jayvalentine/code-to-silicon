@@ -1,7 +1,7 @@
 void application(void);
 void test(void);
 
-#define SAMPLES 7
+#define SAMPLES 6
 
 extern short result[1 << SAMPLES];
 
