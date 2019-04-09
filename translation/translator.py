@@ -541,6 +541,7 @@ def getControllerWriteRegisters(stateMachines):
   tw.increaseIndent()
   tw.increaseIndent()
   tw.increaseIndent()
+  tw.increaseIndent()
 
   tw.writeLine("when x\"44A00000\" =>")
   tw.increaseIndent()
@@ -578,6 +579,7 @@ def getControllerWriteRegisters(stateMachines):
   tw.writeLine("int_msr <= M_AXI_DP_0_wdata;")
   tw.decreaseIndent()
 
+  tw.decreaseIndent()
   tw.decreaseIndent()
   tw.decreaseIndent()
   tw.decreaseIndent()
