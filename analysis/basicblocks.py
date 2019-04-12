@@ -29,6 +29,7 @@ class BasicBlock:
     self._inputs = []
     self._memoryAccessDensity = None
     self._averageComputationWidth = None
+    self._ioOverhead = None
     self._cost = None
 
   def __str__(self):
@@ -178,6 +179,12 @@ class BasicBlock:
 
     return self._averageComputationWidth
 
+  def ioOverhead(self):
+    if self._ioOverhead == None:
+      raise ValueError("I/O overhead not defined.")
+
+    return self._ioOverhead
+
   def rawOutputs(self):
     outputs = []
 
@@ -258,6 +265,13 @@ class BasicBlock:
       self._averageComputationWidth = 0
     else:
       self._averageComputationWidth = (sum(widths)/len(widths))
+
+  def normalizeAverageComputationWidth(self, maxWidth):
+    self._averageComputationWidth /= maxWidth
+
+  def setIOOverhead(self):
+    io = (len(self._outputs) + len(self._inputs)) * 4 # Assume 4 cycles for an AXI write or read.
+    self._ioOverhead = io / (io + len(self)) # Assume all instructions 1 cycle.
 
   def setOutputs(self, logger, mode):
     logger.debug("Pruning mode '" + mode + "' started for block " + self._name + ".")
@@ -349,22 +363,14 @@ class BasicBlock:
 
     logger.debug("Pruning mode 'dependency' completed for block " + self._name + ".")
 
-  def setCost(self):
+  def setCost(self, a, b, c):
     # We don't want to convert empty basic blocks, so their cost is effectively infinite.
     if len(self._instructions) == 0:
       self._cost = math.inf
     elif self.memoryAccessDensity() == 1:
       self._cost = math.inf
     else:
-      io_overhead = (len(self._outputs) + len(self._inputs)) / len(self._instructions)
-
-      for line in self._instructions.keys():
-        if self._instructions[line].usesCarry():
-          io_overhead += 2 / len(self._instructions)
-          break
-
-      predicted_parallelism = self.averageComputationWidth()
-      self._cost = io_overhead / predicted_parallelism
+      self._cost = a * self.ioOverhead() + b * self.averageComputationWidth() + c * self.memoryAccessDensity()
 
   def inputs(self):
     return self._inputs
@@ -624,10 +630,21 @@ def linkBasicBlocks(logger, blocks, mode):
   for block in blocks:
     block.setOutputs(logger, mode)
 
-  # Set metrics and cost for ALL BLOCKS.
+  # Set metrics for ALL BLOCKS.
   for block in blocks:
     block.setMemoryAccessDensity()
     block.setAverageComputationWidth()
-    block.setCost()
+    block.setIOOverhead()
+
+  # Find maximum avg width.
+  maxWidth = 0
+  for block in blocks:
+    if block.averageComputationWidth() > maxWidth:
+      maxWidth = block.averageComputationWidth()
+
+  # Normalize avg width and set cost for all blocks.
+  for block in blocks:
+    block.normalizeAverageComputationWidth(maxWidth)
+    block.setCost(1/3, 1/3, 1/3)
 
   return blocks

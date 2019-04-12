@@ -71,7 +71,7 @@ def main(argv):
   test = True
 
   pruningModes = ["naive", "volatile", "dependency"]
-  selectionModes = ["hybrid", "avgwidth", "size"]
+  selectionModes = ["hybrid", "avgwidth", "memdensity", "overhead"]
 
   tests = ["fannkuch", "sha256", "fft", "sum_squares"]
 
