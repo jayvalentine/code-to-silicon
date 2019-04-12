@@ -68,6 +68,7 @@ def main(argv):
   sim = True
   report = True
   fig = True
+  test = True
 
   pruningModes = ["naive", "volatile", "dependency"]
   selectionModes = ["hybrid", "avgwidth", "size"]
@@ -82,7 +83,7 @@ def main(argv):
 
   # Parse command line arguments.
   try:
-    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "verbosity=", "selection=", "pruning=", "tests=", "help"])
+    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "notest", "verbosity=", "selection=", "pruning=", "tests=", "help"])
   except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -99,6 +100,8 @@ def main(argv):
       logger.warn("Unimplemented option --nosynth.")
     elif opt == "--nofig":
       fig = False
+    elif opt == "--notest":
+      test = False
     elif opt == "--verbosity":
       verbosity = int(arg)
 
@@ -144,211 +147,212 @@ def main(argv):
 
   outputLines = []
 
-  with open("results.csv", 'w+') as results:
-    results.write("testname,analysistype,pruningmode,result,cores,cycles,analysistime,percentageconverted\n")
+  if test:
+    with open("results.csv", 'w+') as results:
+      results.write("testname,analysistype,pruningmode,result,cores,cycles,analysistime,percentageconverted\n")
 
-  for testName in tests:
-    analysisTimes = {}
-    speedups = {}
-    for selection in selectionModes:
-      for pruning in pruningModes:
-        coreCounts = []
-        coreInputsAvg = []
-        coreOutputsAvg = []
-        baseCycles = None
-        cycleBreakdowns = []
+    for testName in tests:
+      analysisTimes = {}
+      speedups = {}
+      for selection in selectionModes:
+        for pruning in pruningModes:
+          coreCounts = []
+          coreInputsAvg = []
+          coreOutputsAvg = []
+          baseCycles = None
+          cycleBreakdowns = []
 
-        i = 0
-        done = False
-        while i < len(cores) and not done:
-          metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
+          i = 0
+          done = False
+          while i < len(cores) and not done:
+            metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
 
-          cycleBreakdowns.append(metrics["cycleBreakdown"])
+            cycleBreakdowns.append(metrics["cycleBreakdown"])
 
-          # Set the 'done' flag if the system produces fewer cores than we told it to.
-          # this indicates that we've reached saturation.
-          if metrics["coreCount"] < cores[i]:
-            done = True
+            # Set the 'done' flag if the system produces fewer cores than we told it to.
+            # this indicates that we've reached saturation.
+            if metrics["coreCount"] < cores[i]:
+              done = True
 
-          if metrics["result"] == None:
-            result = "not-run"
-          elif metrics["result"]:
-            result = "passed"
-          else:
-              result = "failed"
+            if metrics["result"] == None:
+              result = "not-run"
+            elif metrics["result"]:
+              result = "passed"
+            else:
+                result = "failed"
 
-          if selection not in analysisTimes.keys():
-            analysisTimes[selection] = {}
+            if selection not in analysisTimes.keys():
+              analysisTimes[selection] = {}
 
-          if pruning not in analysisTimes[selection].keys():
-            analysisTimes[selection][pruning] = []
+            if pruning not in analysisTimes[selection].keys():
+              analysisTimes[selection][pruning] = []
 
-          if selection not in speedups.keys():
-            speedups[selection] = {}
+            if selection not in speedups.keys():
+              speedups[selection] = {}
 
-          if pruning not in speedups[selection].keys():
-            speedups[selection][pruning] = []
+            if pruning not in speedups[selection].keys():
+              speedups[selection][pruning] = []
 
-          analysisTimes[selection][pruning].append(metrics["analysisTime"])
+            analysisTimes[selection][pruning].append(metrics["analysisTime"])
 
-          if cores[i] == 0:
-            speedups[selection][pruning].append(1.0)
-            coreCounts.append(0)
-            baseCycles = metrics["cycles"]
-            coreInputsAvg.append(0)
-            coreOutputsAvg.append(0)
+            if cores[i] == 0:
+              speedups[selection][pruning].append(1.0)
+              coreCounts.append(0)
+              baseCycles = metrics["cycles"]
+              coreInputsAvg.append(0)
+              coreOutputsAvg.append(0)
 
-            inputs = metrics["blockInputs"]
-            outputs = metrics["blockOutputs"]
-            sizes = metrics["blockSize"]
-            memDensities = metrics["blockMemDensity"]
-            avgWidths = metrics["blockAvgWidths"]
+              inputs = metrics["blockInputs"]
+              outputs = metrics["blockOutputs"]
+              sizes = metrics["blockSize"]
+              memDensities = metrics["blockMemDensity"]
+              avgWidths = metrics["blockAvgWidths"]
 
-            if fig:
-              plot.hist(inputs, 32)
-              plot.xlabel("# of input registers")
-              plot.ylabel("Occurances")
-              plot.savefig("figures/autogen/block-inputs-{:s}.png".format(testName))
-              plot.clf()
+              if fig:
+                plot.hist(inputs, 32)
+                plot.xlabel("# of input registers")
+                plot.ylabel("Occurances")
+                plot.savefig("figures/autogen/block-inputs-{:s}.png".format(testName))
+                plot.clf()
 
-              plot.hist(outputs, 32)
-              plot.xlabel("# of output registers")
-              plot.ylabel("Occurances")
-              plot.savefig("figures/autogen/block-outputs-{:s}.png".format(testName))
-              plot.clf()
+                plot.hist(outputs, 32)
+                plot.xlabel("# of output registers")
+                plot.ylabel("Occurances")
+                plot.savefig("figures/autogen/block-outputs-{:s}.png".format(testName))
+                plot.clf()
 
-              plot.hist(sizes, 10)
-              plot.xlabel("Block size (# of instructions)")
-              plot.ylabel("Occurances")
-              plot.savefig("figures/autogen/block-sizes-{:s}.png".format(testName))
-              plot.clf()
+                plot.hist(sizes, 10)
+                plot.xlabel("Block size (# of instructions)")
+                plot.ylabel("Occurances")
+                plot.savefig("figures/autogen/block-sizes-{:s}.png".format(testName))
+                plot.clf()
 
-              plot.hist(memDensities, 10)
-              plot.xlabel("Block memory access density")
-              plot.ylabel("Occurances")
-              plot.savefig("figures/autogen/block-mem-densities-{:s}.png".format(testName))
-              plot.clf()
+                plot.hist(memDensities, 10)
+                plot.xlabel("Block memory access density")
+                plot.ylabel("Occurances")
+                plot.savefig("figures/autogen/block-mem-densities-{:s}.png".format(testName))
+                plot.clf()
 
-              plot.hist(avgWidths, 10)
-              plot.xlabel("Block average computation width")
-              plot.ylabel("Occurances")
-              plot.savefig("figures/autogen/block-avg-widths-{:s}.png".format(testName))
-              plot.clf()
+                plot.hist(avgWidths, 10)
+                plot.xlabel("Block average computation width")
+                plot.ylabel("Occurances")
+                plot.savefig("figures/autogen/block-avg-widths-{:s}.png".format(testName))
+                plot.clf()
 
-          else:
-            if metrics["cycles"] != None:
-              s = baseCycles / metrics["cycles"]
-              speedups[selection][pruning].append(s)
+            else:
+              if metrics["cycles"] != None:
+                s = baseCycles / metrics["cycles"]
+                speedups[selection][pruning].append(s)
 
-            coreCounts.append(metrics["coreCount"])
+              coreCounts.append(metrics["coreCount"])
 
-            # Plot 'population scatter' of inputs vs outputs.
-            if fig:
-              plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
-              plot.xlim([0, 32])
-              plot.ylim([0, 32])
+              # Plot 'population scatter' of inputs vs outputs.
+              if fig:
+                plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
+                plot.xlim([0, 32])
+                plot.ylim([0, 32])
 
-              plot.xlabel("# of input registers")
-              plot.ylabel("# of output registers")
+                plot.xlabel("# of input registers")
+                plot.ylabel("# of output registers")
 
-              plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
-              plot.clf()
+                plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+                plot.clf()
 
-              # Plot regression of heuristic cost against actual cost.
-              plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
+                # Plot regression of heuristic cost against actual cost.
+                plot.scatter(metrics["heuristicCost"], metrics["actualCost"])
 
-              plot.xlabel("Estimated cost")
-              plot.ylabel("Actual IPC (instructions per clock)")
+                plot.xlabel("Estimated cost")
+                plot.ylabel("Actual IPC (instructions per clock)")
 
-              plot.savefig("figures/autogen/cost-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
-              plot.clf()
+                plot.savefig("figures/autogen/cost-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+                plot.clf()
 
-            # Store average inputs and outputs.
-            coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
-            coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
+              # Store average inputs and outputs.
+              coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
+              coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
 
-          with open("results.csv", 'a') as results:
-            results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4)), str(round(metrics["percentageConverted"], 4))]) + "\n")
+            with open("results.csv", 'a') as results:
+              results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4)), str(round(metrics["percentageConverted"], 4))]) + "\n")
 
-          i += 1
+            i += 1
 
-        # Plot average inputs/outputs against core count.
-        if fig:
-          plot.plot(coreCounts, coreInputsAvg, label="Input")
-          plot.plot(coreCounts, coreOutputsAvg, label="Output")
-          plot.legend(loc = "upper left")
-          plot.xlim([1, coreCounts[-1]])
-          plot.ylim([0, 32])
-
-          plot.xlabel("Core count")
-          plot.ylabel("Register count")
-
-          plot.savefig("figures/autogen/avg-io-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
-          plot.clf()
-
-          # Display a plot of speedup against core count.
-          if sim:
-            mb_bd = []
-            axi_bd = []
-            core_bd = []
-            sleep_bd = []
-
-            for bd in cycleBreakdowns:
-              mb_bd.append(bd[0])
-              axi_bd.append(bd[0] + bd[1])
-              core_bd.append(bd[0] + bd[1] + bd[2])
-              sleep_bd.append(bd[0] + bd[1] + bd[2] + bd[3])
-
-            plot.plot(coreCounts, mb_bd, label="microblaze", color="black")
-            plot.plot(coreCounts, axi_bd, label="axi transfer", color="black")
-            plot.plot(coreCounts, core_bd, label="accelerator cores", color="black")
-            plot.plot(coreCounts, sleep_bd, label="sleep overhead", color="black")
-            plot.fill_between(coreCounts, [0 for i in range(len(coreCounts))], mb_bd, color="orange")
-            plot.fill_between(coreCounts, mb_bd, axi_bd, color="blue")
-            plot.fill_between(coreCounts, axi_bd, core_bd, color="green")
-            plot.fill_between(coreCounts, core_bd, sleep_bd, color='red')
-
-            orange_patch = patches.Patch(color='orange', label='MicroBlaze')
-            blue_patch = patches.Patch(color='blue', label='AXI transfer')
-            green_patch = patches.Patch(color='green', label='Accelerator cores')
-            red_patch = patches.Patch(color='red', label='Sleep overhead')
-            plot.legend(handles=[orange_patch, blue_patch, green_patch, red_patch], loc="upper left")
+          # Plot average inputs/outputs against core count.
+          if fig:
+            plot.plot(coreCounts, coreInputsAvg, label="Input")
+            plot.plot(coreCounts, coreOutputsAvg, label="Output")
+            plot.legend(loc = "upper left")
+            plot.xlim([1, coreCounts[-1]])
+            plot.ylim([0, 32])
 
             plot.xlabel("Core count")
-            plot.ylabel("Clock cycles")
+            plot.ylabel("Register count")
 
-            plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
+            plot.savefig("figures/autogen/avg-io-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
             plot.clf()
 
-    # Plot analysis times against core count.
-    if fig:
-      for selection in selectionModes:
-        for mode in pruningModes:
-          plot.plot(coreCounts, analysisTimes[selection][mode], label=selection + ", " + mode)
+            # Display a plot of speedup against core count.
+            if sim:
+              mb_bd = []
+              axi_bd = []
+              core_bd = []
+              sleep_bd = []
 
-      plot.legend(loc="upper left")
-      plot.xlim([0, coreCounts[-1]])
+              for bd in cycleBreakdowns:
+                mb_bd.append(bd[0])
+                axi_bd.append(bd[0] + bd[1])
+                core_bd.append(bd[0] + bd[1] + bd[2])
+                sleep_bd.append(bd[0] + bd[1] + bd[2] + bd[3])
 
-      plot.xlabel("Core count")
-      plot.ylabel("Analysis time (seconds)")
+              plot.plot(coreCounts, mb_bd, label="microblaze", color="black")
+              plot.plot(coreCounts, axi_bd, label="axi transfer", color="black")
+              plot.plot(coreCounts, core_bd, label="accelerator cores", color="black")
+              plot.plot(coreCounts, sleep_bd, label="sleep overhead", color="black")
+              plot.fill_between(coreCounts, [0 for i in range(len(coreCounts))], mb_bd, color="orange")
+              plot.fill_between(coreCounts, mb_bd, axi_bd, color="blue")
+              plot.fill_between(coreCounts, axi_bd, core_bd, color="green")
+              plot.fill_between(coreCounts, core_bd, sleep_bd, color='red')
 
-      plot.savefig("figures/autogen/analysis-times-{:s}.png".format(testName))
-      plot.clf()
+              orange_patch = patches.Patch(color='orange', label='MicroBlaze')
+              blue_patch = patches.Patch(color='blue', label='AXI transfer')
+              green_patch = patches.Patch(color='green', label='Accelerator cores')
+              red_patch = patches.Patch(color='red', label='Sleep overhead')
+              plot.legend(handles=[orange_patch, blue_patch, green_patch, red_patch], loc="upper left")
 
-      # Display a plot of speedup against core count.
-      if sim:
+              plot.xlabel("Core count")
+              plot.ylabel("Clock cycles")
+
+              plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
+              plot.clf()
+
+      # Plot analysis times against core count.
+      if fig:
         for selection in selectionModes:
-          for pruning in pruningModes:
-            plot.plot(coreCounts, speedups[selection][pruning], label=selection + ", " + pruning)
+          for mode in pruningModes:
+            plot.plot(coreCounts, analysisTimes[selection][mode], label=selection + ", " + mode)
 
-        plot.plot(coreCounts, [1.0 for i in range(len(coreCounts))], 'r--', label="baseline")
-        plot.legend(loc="upper right")
+        plot.legend(loc="upper left")
+        plot.xlim([0, coreCounts[-1]])
 
         plot.xlabel("Core count")
-        plot.ylabel("Speedup")
+        plot.ylabel("Analysis time (seconds)")
 
-        plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
+        plot.savefig("figures/autogen/analysis-times-{:s}.png".format(testName))
         plot.clf()
+
+        # Display a plot of speedup against core count.
+        if sim:
+          for selection in selectionModes:
+            for pruning in pruningModes:
+              plot.plot(coreCounts, speedups[selection][pruning], label=selection + ", " + pruning)
+
+          plot.plot(coreCounts, [1.0 for i in range(len(coreCounts))], 'r--', label="baseline")
+          plot.legend(loc="upper right")
+
+          plot.xlabel("Core count")
+          plot.ylabel("Speedup")
+
+          plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
+          plot.clf()
 
   # Now build the report (unless we've been asked not to)!
   if report:
