@@ -252,8 +252,7 @@ class BasicBlock:
       if self._instructions[l].isMemoryAccess():
         if (currentWidth > 0):
           widths.append(currentWidth)
-          
-        widths.append(1.0)
+
         currentWidth = 0.0
       else:
         currentWidth += 1.0
@@ -267,7 +266,7 @@ class BasicBlock:
       self._averageComputationWidth = (sum(widths)/len(widths))
 
   def normalizeAverageComputationWidth(self, maxWidth):
-    self._averageComputationWidth /= maxWidth
+    self._averageComputationWidth = 1 - (self._averageComputationWidth / maxWidth)
 
   def setIOOverhead(self):
     io = (len(self._outputs) + len(self._inputs)) * 4 # Assume 4 cycles for an AXI write or read.

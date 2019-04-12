@@ -174,11 +174,11 @@ def generateStateMachines(logger, num, analysisType, mode):
 
     # Emit info about selected cores in cost order.
     for sm in stateMachines:
-      logger.info("Selected: " + sm.name() + " (cost: " + str(sm.block().cost()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+      logger.info("Selected: " + sm.name() + " (cost: " + str(round(sm.block().cost(), 4)) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
   elif analysisType == "avgwidth":
     logger.info("Selecting blocks based on potential parallelism (computation width).")
-    blocksSorted = sorted(blocks, key=lambda b: 1 / b.averageComputationWidth())
+    blocksSorted = sorted(blocks, key=lambda b: b.averageComputationWidth())
 
     if len(blocksSorted) <= num:
       logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
@@ -193,11 +193,11 @@ def generateStateMachines(logger, num, analysisType, mode):
 
     # Emit info about selected cores in cost order.
     for sm in stateMachines:
-      logger.info("Selected: " + sm.name() + " (average width: " + str(sm.block().averageComputationWidth()) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+      logger.info("Selected: " + sm.name() + " (average width: " + str(round(sm.block().averageComputationWidth(), 4)) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
   elif analysisType == "memdensity":
     logger.info("Selecting blocks based on memory access density.")
-    blocksSorted = sorted(blocks, key=lambda b: 1 - b.memoryAccessDensity())
+    blocksSorted = sorted(blocks, key=lambda b: b.memoryAccessDensity())
 
     if len(blocksSorted) <= num:
       logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
@@ -212,11 +212,11 @@ def generateStateMachines(logger, num, analysisType, mode):
 
     # Emit info about selected cores in cost order.
     for sm in stateMachines:
-      logger.info("Selected: " + sm.name() + " (memory access density: " + sm.memoryAccessDensity() + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+      logger.info("Selected: " + sm.name() + " (memory access density: " + str(round(sm.block().memoryAccessDensity(), 4)) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
   elif analysisType == "overhead":
     logger.info("Selecting blocks based on I/O overhead.")
-    blocksSorted = sorted(blocks, key=lambda b: 1 - b.ioOverhead())
+    blocksSorted = sorted(blocks, key=lambda b: b.ioOverhead())
 
     if len(blocksSorted) <= num:
       logger.debug("Number specified is lower than or equal to number of blocks. Selecting all.")
@@ -231,7 +231,7 @@ def generateStateMachines(logger, num, analysisType, mode):
 
     # Emit info about selected cores in cost order.
     for sm in stateMachines:
-      logger.info("Selected: " + sm.name() + " (I/O overhead: " + sm.ioOverhead() + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
+      logger.info("Selected: " + sm.name() + " (I/O overhead: " + str(round(sm.block().ioOverhead(), 4)) + ", states: " + str(len(sm)) + ", inputs: " + str(len(sm.inputRegisters())) + ", outputs: " + str(len(sm.outputRegisters())) + ")")
 
   # Get the sum of the lengths of all basic blocks.
   sumAll = 0
