@@ -644,6 +644,6 @@ def linkBasicBlocks(logger, blocks, mode):
   # Normalize avg width and set cost for all blocks.
   for block in blocks:
     block.normalizeAverageComputationWidth(maxWidth)
-    block.setCost(1/3, 1/3, 1/3)
+    block.setCost(0.1, 0.4, 0.5)
 
   return blocks
