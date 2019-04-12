@@ -592,15 +592,15 @@ than a block with 100 cycles of instructions and 10 cycles of overhead.
 Thus, relative I/O overhead is represented as below:
 
 \begin{equation}
-\scalebox{1.5}{$\frac{cost_{in} + cost_{out}}{\#cycles}$}
+\scalebox{1.5}{$\frac{cost_{in} + cost_{out}}{cost_{in} + cost_{out} + \#cycles}$}
 \end{equation}
 
 Where \(cost_{in}\) is the cost (in cycles) of transferring inputs from MicroBlaze to the core, \(cost_{out}\) is the cost
 (in cycles) of transferring outputs from the core to MicroBlaze, and \(\#cycles\) is the number of cycles of instructions in the
 core.
 
-If this value is greater than 1, this indicates that the given block would have more I/O overhead than it has instructions,
-making it a poor candidate for translation. Therefore, relative overheads >1 are undesirable, and a core becomes more optimal
+If this value is greater than 0.5, this indicates that the given block would have more I/O overhead than it has instructions,
+making it a poor candidate for translation. Therefore, relative overheads >0.5 are undesirable, and a core becomes more optimal
 the closer to 0 its relative overhead is.
 
 \subsection{Potential Parallelism}
@@ -623,6 +623,10 @@ Intuitively, this heuristic represents the 'average width' of a basic block, and
 can be extracted from the block. As such, it is expected that this heuristic be proportional to the instruction-per-cycle (IPC)
 count of the resulting core.
 
+There is no theoretical limit to the potential parallelism heuristic, because there can be arbitrary-length sequences of
+computation instructions in a basic block. Hence, to normalize this value, the maximum 'average width' in the program must be
+known. The potential parallelism values for all blocks can then be divided by this maximum, giving a value in the range [0, 1].
+
 \subsection{Memory Access Density}
 
 As a core can only access one location in memory at a time, each memory access instruction is converted into its own state.
@@ -644,6 +648,24 @@ total number of instructions in the block.
 A memory-access density of >0.5 indicates that the block has more memory-access in it than it has computation, and a memory-access
 density of <0.5 indicates the reverse. As the amount of memory-access limits the parallelism that can be extracted from a block,
 a lower memory-access density is desirable.
+
+\subsection{Combining Heuristics}
+
+The three heuristics described in this section describe different attributes of a basic block, and when selecting a block
+to be transformed into an accelerator core it is necessary to combine these into a 'hybrid' heuristic. Furthermore,
+this combination can be weighted to allow the preference for blocks of a certain kind to be controlled, e.g. if it is preferred
+that all selected blocks have low I/O overheads.
+
+Because each heuristic is normalized, a simple weighted sum can be used to combine them:
+
+\begin{equation}
+\scalebox{1.5}{$a \cdot H_{io} + b \cdot H_{par} + c \cdot H_{mem}$}
+\end{equation}
+
+Where \(H_{io}\) is the I/O overhead heuristic, \(H_{par}\) is the potential parallelism heuristic, and \(H_{mem}\) is the
+memory access heuristic. \(a + b + c = 1\).
+
+This gives a cost in the range [0, 1] for each basic block, allowing blocks to be compared when making selections for translation.
 
 \chapter{Experimental Methodology}
 
