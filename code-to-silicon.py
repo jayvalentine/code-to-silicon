@@ -328,7 +328,7 @@ def main(argv):
       if fig:
         for selection in selectionModes:
           for mode in pruningModes:
-            plot.plot(coreCounts, analysisTimes[selection][mode], label=selection + ", " + mode)
+            plot.plot(coreCounts, analysisTimes[selection][mode], label=selection)
 
         plot.legend(loc="upper left")
         plot.xlim([0, coreCounts[-1]])
@@ -343,7 +343,7 @@ def main(argv):
         if sim:
           for selection in selectionModes:
             for pruning in pruningModes:
-              plot.plot(coreCounts, speedups[selection][pruning], label=selection + ", " + pruning)
+              plot.plot(coreCounts, speedups[selection][pruning], label=selection)
 
           plot.plot(coreCounts, [1.0 for i in range(len(coreCounts))], 'r--', label="baseline")
           plot.legend(loc="upper right")
