@@ -270,7 +270,11 @@ class BasicBlock:
 
   def setIOOverhead(self):
     io = (len(self._outputs) + len(self._inputs)) * 4 # Assume 4 cycles for an AXI write or read.
-    self._ioOverhead = io / (io + len(self)) # Assume all instructions 1 cycle.
+
+    if len(self) == 0:
+      self._ioOverhead = math.inf
+    else:
+      self._ioOverhead = io / (io + len(self)) # Assume all instructions 1 cycle.
 
   def setOutputs(self, logger, mode):
     logger.debug("Pruning mode '" + mode + "' started for block " + self._name + ".")
