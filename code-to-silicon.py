@@ -5,6 +5,9 @@ import shutil
 import getopt
 import sys
 
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plot
 import matplotlib.patches as patches
 
