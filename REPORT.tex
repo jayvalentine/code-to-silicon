@@ -711,9 +711,9 @@ This chapter outlines the results obtained from the various benchmarks used.
 
 Some of the benchmarks showed significant speedup when accelerator cores were added, while in others the addition of
 accelerator cores either slowed down the system or provided no change. The SHA256 benchmark showed significant speedup,
-as can be seen from figure ~\ref{fig:speedupSHA256}.The highest speedup was obtained by both the hybrid and size heuristics,
-and was over 1.3x, however even with as many as 28 cores, the speedup gained using the hybrid heuristic remained above the baseline,
-at 1.1x.
+as can be seen from figure ~\ref{fig:speedupSHA256}.The highest speedup was obtained by both the hybrid and overhead heuristics,
+and was over 1.3x, however even with as many as 28 cores, the speedup gained using the overhead heuristic remained above the
+baseline, at 1.1x.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -722,12 +722,10 @@ at 1.1x.
 \label{fig:speedupSHA256}
 \end{figure}
 
-When using the hybrid cost function (which, as can be seen above, performed well with the SHA256 benchmark), the FFT benchmark slowed down with small
-numbers of cores added to the configuration. However as the core count increased, a small speedup was observed.
-This indicates that the hybrid cost function was not selecting the initial few cores correctly, leading to the inclusion of
-cores that offered no performance benefit. When using the size of blocks as the selection heuristic (selecting larger blocks first),
-an initial spike in the speedup is observed, but performs worse with large core counts than the hybrid heuristics.
-These poor results indicate that this application is not an ideal candidate for the use of an accelerator-rich architecture.
+When using the overhead selection heuristic (which, as can be seen above, performed well with the SHA256 benchmark)
+with the FFT benchmark (as seen in figure ~\ref{fig:speedupFFT}), only a small speedup (1.1x) was observed at the highest
+point. The speedup then fell below the baseline with 10 cores. Both the hybrid and avgwidth heuristics offered similar results.
+The memdensity heuristic performed much more poorly, not offering any speedup whatsoever, even falling to 0.5x with 45 cores.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -743,8 +741,41 @@ applications.
 
 By measuring the number of cycles spent on the MicroBlaze core, on accelerator cores, and on overheads,
 a breakdown of execution time for each application and each selection heuristic was generated.
-Figures ~\ref{fig:breakdownHybridSHA256} to ~\ref{fig:breakdownSizeSHA256} show the execution-time breakdowns
+Figures ~\ref{fig:breakdownAvgWidthSHA256} to ~\ref{fig:breakdownHybridSHA256} show the execution-time breakdowns
 for the SHA256 benchmark.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-sha256-avgwidth-dependency.png}}
+\caption{Execution-time breakdown for the SHA256 benchmark using the avgwidth selection heuristic.}
+\label{fig:breakdownAvgWidthSHA256}
+\end{figure}
+
+While initially the avgwidth heuristic performed well, halving the execution time spent on the MicroBlaze core
+with 2 to 8 cores, this performance improvement stopped once the 10-core mark was reached. This indicates
+that this heuristic selects the initial cores well, but makes poor selections after this point.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-sha256-memdensity-dependency.png}}
+\caption{Execution-time breakdown for the SHA256 benchmark using the memdensity selection heuristic.}
+\label{fig:breakdownMemDensitySHA256}
+\end{figure}
+
+Conversely, the memdensity heuristic did not show a performance improvement until the 8-core mark, with
+the cycle count sharply dropping at this point. This shows that, unlike the avgwidth heuristic, this heuristic
+does not select the initial cores well.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-sha256-overhead-dependency.png}}
+\caption{Execution-time breakdown for the SHA256 benchmark using the overhead selection heuristic.}
+\label{fig:breakdownOverheadSHA256}
+\end{figure}
+
+Of the three individual heuristics, the overhead heuristic performed the best, with a sharp drop in the cycle count
+with 2 cores, and speedup not dropping below the baseline until 33 cores. This indicates that I/O overhead is a significant
+limiting factor in the accelerator core performance.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -754,37 +785,44 @@ for the SHA256 benchmark.
 \end{figure}
 
 As expected, the hybrid selection heuristic, shown in figure ~\ref{fig:breakdownHybridSHA256}, generated
-a configuration which halved the number of cycles executed on the MicroBlaze core, with these gains
-lessened by overheads, particularly the overhead associated with transferring inputs and outputs to and from
-the cores over the AXI bus.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-sha256-avgwidth-dependency.png}}
-\caption{Execution-time breakdown for the SHA256 benchmark using the average width selection heuristic.}
-\label{fig:breakdownAvgWidthSHA256}
-\end{figure}
-
-The average width heuristic performed poorly, as indicated by figure ~\ref{fig:breakdownAvgWidthSHA256}.
-The execution time spent on the MicroBlaze core was not reduced as much as with the hybrid heuristic,
-and increasing overheads (both from AXI transfer and from the MicroBlaze wakeup period) eventually
-resulted in the performance of the system being below baseline.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-sha256-size-dependency.png}}
-\caption{Execution-time breakdown for the SHA256 benchmark using the block size selection heuristic.}
-\label{fig:breakdownSizeSHA256}
-\end{figure}
-
-Initially, the size heuristic performed similarly to the hybrid heuristic, with a sharp drop
-in the cycles spent on the MicroBlaze core, and by extension, the overall execution time.
-However, this heuristic did not perform as well as the hybrid heuristic did with large numbers
-of cores, with the time spent on the MicroBlaze core increasing, rather than decreasing, beyond
-6 cores, and the overall execution time eventually rising above the baseline at 8 cores.
+a configuration which performed well initially, halving the number of cycles executed on the MicroBlaze core.
+However, unlike the overhead heuristic, speedup fell below the baseline at 21 cores, rather than 33.
+Interestingly, this indicates that the I/O overhead factor dwarfs all other factors in core selection, making
+it really the only factor determining the performance of a given system.
 
 As seen with the overall performance results, none of the heuristics offered particularly good performance
 with the FFT benchmark. The execution-time breakdowns for this application show some of the reasons for this poor performance.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-fft-avgwidth-dependency.png}}
+\caption{Execution-time breakdown for the FFT benchmark using the avgwidth selection heuristic.}
+\label{fig:breakdownAvgWidthFFT}
+\end{figure}
+
+As seen in the overall performance measurements, the avgwidth heuristic offered a small initial performance increase,
+however this was negated by the 10-core mark. The sleep overhead (the time wasted between a core finishing computation
+and MicroBlaze waking up to continue execution) is more significant here than with the SHA256 benchmark. This indicates that
+the cores selected are executing more frequently than those selected for the SHA256 benchmark.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-fft-memdensity-dependency.png}}
+\caption{Execution-time breakdown for the FFT benchmark using the memdensity selection heuristic.}
+\label{fig:breakdownMemDensityFFT}
+\end{figure}
+
+This is even more apparent with the breakdown for the memdensity heuristic. Here the sleep overhead was greater than the
+execution time spent on accelerator cores, indicating that the heuristic selected very small, frequently executed blocks of code.
+Unlike other heuristics, here the MicroBlaze execution time is increasing from the very start, showing that this heuristic
+is not even selecting cores that reduce the amount of work the MicroBlaze core does.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/cycles-breakdown-fft-overhead-dependency.png}}
+\caption{Execution-time breakdown for the FFT benchmark using the overhead selection heuristic.}
+\label{fig:breakdowOverheadFFT}
+\end{figure}
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -793,46 +831,47 @@ with the FFT benchmark. The execution-time breakdowns for this application show 
 \label{fig:breakdownHybridFFT}
 \end{figure}
 
-The hybrid selection heuristic is the only selection heuristic that showed a significant reduction
-in the execution time spent on the MicroBlaze core. However, the reduction was not as great as with
-the SHA256 benchmark. This indicates that the blocks converted here are accessed less frequently
-and/or offer less parallelism than those in the SHA256 application.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-fft-avgwidth-dependency.png}}
-\caption{Execution-time breakdown for the FFT benchmark using the average width selection heuristic.}
-\label{fig:breakdownAvgWidthFFT}
-\end{figure}
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-fft-size-dependency.png}}
-\caption{Execution-time breakdown for the FFT benchmark using the block size selection heuristic.}
-\label{fig:breakdownSizeFFT}
-\end{figure}
-
-The other two heuristics perform much worse than the hybrid heuristic.
-As indicated by figures ~\ref{fig:breakdownAvgWidthFFT} and ~\ref{fig:breakdownSizeFFT},
-the execution time spent on the MicroBlaze core is either reduced only very slightly (as with the size heuristic)
-or not at all (as with the average width heuristic). This hints that the hybrid heuristic is a good
-approach to finding the 'best' configuration, with regards to performance, and that when it does not
-perform well, the other approaches perform just as poorly. However, this cannot be stated categorically
-with such a small pool of test applications.
+As with the SHA256 benchmark, the hybrid selection heuristic performed worse than the overhead heuristic.
 
 \section{Trends in Generated Cores}
 
 Observe trends in generated cores across applications, e.g. input/output counts, IPC (instructions per cycle), state counts.
 
-\chapter{Conclusions and Further Work}
+\chapter{Discussion and Further Work}
 
 \section{Discussion of Results}
 
-Discussion of the implications of the results obtained, particularly the more in-depth results such as trends and heuristics.
+The performance increases observed are not as significant as was initially hoped. [Quote results of other investigations here,
+which generally performed better].
+
+As seen with the performance results, the best method for selecting accelerator cores for this system is by minimizing
+I/O overhead. This is because the overheads involved in transferring each input/output parameter over the AXI bus is an
+expensive operation, costing ~4 cycles per parameter.
 
 \section{Further Work}
 
-Proposals of further work to be performed to extend this research.
+This section is split into two categories. The first describes extensions to the architecture that could be implemented
+to offer better performance or energy efficiency. The second describes further work that could be done in evaluating this
+system and others like it.
+
+\subsection{Further Design Work}
+
+It is evident from the results observed with testing this system that the input/output overheads are too great to
+offer significant performance increases. Therefore, it makes sense that ways to decrease these overheads should be investigated.
+Of course, using a faster bus would definitely decrease these overheads, but such a bus is likely to be more complex, leading
+to increased architectural complexity and therefore lower energy efficiency. However, there are other ways to decrease
+I/O overheads.
+
+One such way is to try to avoid the transfer of registers between the MicroBlaze core and the hardware accelerators where
+possible, by allowing registers to be transferred between cores themselves. For example, consider two cores which
+execute back-to-back, with the MicroBlaze core only waking up to transfer registers from one to the other. In this scenario,
+the cores can be treated as a single unit; the MicroBlaze core will wake up to perform control flow (e.g. by executing a branch
+instruction), but will somehow signal to the cores that they are not to transfer register values to/from the MicroBlaze core,
+but between themselves. In such a case, the only AXI accesses required are those that acquire register values needed for the
+control-flow instruction, and those relating to controlling the cores. Such a system could dramatically reduce the amount
+of expensive I/O operations taking place, improving both performance and energy efficiency.
+
+\subsection{Further Evaluation Work}
 
 \section{Conclusion}
 
