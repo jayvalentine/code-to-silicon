@@ -707,6 +707,61 @@ time obtained by testing with the MicroBlaze core alone.
 
 This chapter outlines the results obtained from the various benchmarks used.
 
+\section{Application Analysis}
+
+Before looking at the results obtained from simulating the benchmark applications, it is important to consider their structure.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/block-inputs-sha256.png}}
+\caption{Histogram showing input registers for basic blocks in the SHA256 benchmark.}
+\label{fig:inputsSHA256}
+\end{figure}
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/block-outputs-sha256.png}}
+\caption{Histogram showing output registers for basic blocks in the SHA256 benchmark.}
+\label{fig:outputsSHA256}
+\end{figure}
+
+Figures ~\ref{fig:inputsSHA256} and ~\ref{fig:outputsSHA256} show the distribution of block inputs and outputs for the
+SHA256 application. Most blocks in this application have relatively few inputs and outputs.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/block-inputs-fft.png}}
+\caption{Histogram showing input registers for basic blocks in the FFT benchmark.}
+\label{fig:inputsFFT}
+\end{figure}
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/block-outputs-fft.png}}
+\caption{Histogram showing output registers for basic blocks in the FFT benchmark.}
+\label{fig:outputsFFT}
+\end{figure}
+
+The same is true of the FFT application (shown in figures ~\ref{fig:inputsFFT} and ~\ref{fig:outputsFFT}).
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/block-mem-densities-fft.png}}
+\caption{Histogram showing memory-access densities for basic blocks in the FFT benchmark.}
+\label{fig:memDensityFFT}
+\end{figure}
+
+Figure ~\ref{fig:memDensityFFT} shows the distribution memory-access densities of blocks in the FFT application.
+Most blocks have a relatively low memory-access density. Figure ~\ref{fig:memDensitySHA256} shows that the same is
+true of the SHA256 benchmark, albeit with the distribution slightly more even.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/block-mem-densities-sha256.png}}
+\caption{Histogram showing memory-access densities for basic blocks in the SHA256 benchmark.}
+\label{fig:memDensitySHA256}
+\end{figure}
+
 \section{Speedup and Energy Savings}
 
 Some of the benchmarks showed significant speedup when accelerator cores were added, while in others the addition of
