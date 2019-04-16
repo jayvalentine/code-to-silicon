@@ -57,6 +57,14 @@ The use of an FPGA allows the architecture to be very highly specialized, as the
 version. In this sense, the architecture itself becomes an extension of the application software, rather than a static
 platform as has traditionally been the case.
 
+\section{Statement of Ethics}
+
+Neither the undertaking of this project, nor its end result, are envisioned to cause any harm. The end result is
+a general-purpose computing platform, and while such a platform can certainly be used to cause harm, this is not an intrinsic
+property of the platform, and this platform is no more suited to such a pursuit than any other computing platform.
+All testing was automated and performed entirely using software tools; no personal data was collected nor were humans
+or animals participants in testing in any way.
+
 \chapter{Literature Review}
 
 \section{Moore's Law and Dennard Scaling}
@@ -237,7 +245,7 @@ embedded environments where power efficiency is a significant concern.
 
 The system used in this project consists of one MicroBlaze core, connected to local instruction and data block RAM (BRAM)
 via the local memory bus (LMB). The processor's AXI bus is used to connect to a hardware-accelerator control unit, which is
-in turn connected to one or more hardware accelerator cores, as well as to the BRAM via a standard Xilinx BRAM interface.
+in turn connected to one or more hardware accelerator cores, as well as to the BRAM via another LMB interface.
 All communication with memory and with the MicroBlaze core by hardware accelerators is managed by the control unit.
 
 \begin{figure}[H]
@@ -249,6 +257,8 @@ All communication with memory and with the MicroBlaze core by hardware accelerat
 
 This reduces the number of signals required, as the accelerators themselves can use a simplified memory interface to communicate
 with the memory and the MicroBlaze core, rather than each having to separately implement the LMB and AXI protocols.
+The complexity of the LMB and AXI protocols, which provide for arbitration between competing master cores, are not required,
+as it is guaranteed that only one core (either an accelerator or MicroBlaze) will be executing at any one time.
 
 The LMB is intended for connecting the MicroBlaze core to on-chip BRAM, for use as a local cache memory, with instructions
 and data being stored in off-chip flash or DRAM. The system topology described above allows for a tiled architecture,
@@ -257,11 +267,16 @@ with these memories being connected in turn (via some kind of cache interface) t
 this is beyond the scope of this project, which focuses on a single MicroBlaze core with associated accelerators,
 and a single BRAM, with no main flash or DRAM.
 
+To further simplify the design, the more advanced MicroBlaze features, such as the hardware multiplier, divider, and barrel
+shifter, are deactivated. This not only simplifies the generated HDL, speeding up synthesis and simulation times, but also
+reduces the pool of instructions that need to be translated (as hardware multiply etc. instructions no longer appear in
+application code).
+
 \section{Hardware Accelerator Architecture}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{ |p{2cm}|p{2cm}|p{9cm}| }
+\begin{tabular}{ |p{3cm}|p{2cm}|p{8cm}| }
 \textbf{Signal} & \textbf{Direction} & \multicolumn{1}{c}{\textbf{Description}} \\
 CLK             & I                  & Clock signal. \\[0.05cm]
 RST             & I                  & Reset signal. Active HIGH. \\[0.05cm]
@@ -281,7 +296,9 @@ OUT\_Rxx        & O                  & One or more output register lines. Output
 \end{table}
 
 Each hardware accelerator is modelled as a sequential state machine, with a sequence of states determined by the structure
-of the code that the hardware accelerator is intended to replace. Each state machine block has a similar interface, as defined in table ~\ref{table:acceleratorSignals}.
+of the code that the hardware accelerator is intended to replace. Each state machine block has a similar interface, as defined in
+table ~\ref{table:acceleratorSignals}. All transitions between states are synchronous, performed on the rising edge of the CLK
+signal.
 
 There are four kinds of states in the hardware accelerator model. The start state, which is the state the accelerator is in
 when activated, transfers inputs from the accelerator's register input ports into internal registers, for use during the
@@ -302,12 +319,12 @@ An example abstract state machine is shown in figure ~\ref{fig:abstractStateMach
 
   \draw (S_START) edge[above] node{CLK} (S_000);
   \draw (S_000) edge[loop right] node{CLK} (S_000);
-  \draw (S_000) edge[right] node{M\_RDY} (S_001);
+  \draw (S_000) edge[right] node{CLK \& M\_RDY} (S_001);
   \draw (S_001) edge[loop right] node{CLK} (S_001);
-  \draw (S_001) edge[above] node{M\_RDY} (S_002);
+  \draw (S_001) edge[above] node{CLK \& M\_RDY} (S_002);
   \draw (S_002) edge[above right] node{CLK} (S_003);
   \draw (S_003) edge[loop right] node{CLK} (S_003);
-  \draw (S_003) edge[above] node{M\_RDY} (S_004);
+  \draw (S_003) edge[above] node{CLK \& M\_RDY} (S_004);
   \draw (S_004) edge[right] node{CLK} (S_END);
 \end{tikzpicture}
 \caption{An example abstract state machine.}
@@ -315,10 +332,11 @@ An example abstract state machine is shown in figure ~\ref{fig:abstractStateMach
 \end{figure}
 
 In between the start and end states are a series of computation and wait states. A computation state is derived from a series of
-non-memory-access instructions (e.g. \texttt{addi} (add-immediate) or \texttt{mul} (integer multiply)). A circuit is constructed
-from the instructions which implements the same functionality, but in parallel, as shown in figure ~\ref{fig:computationState}.
-As such, while the instructions represented by a computation state might take several cycles to complete on a general-purpose
-processor, the hardware accelerator can always complete a computation state in a single cycle.
+non-memory-access instructions (e.g. \texttt{addi} (add-immediate) or \texttt{srl} (shift-right logical)).
+A circuit is constructed from the instructions which implements the same functionality, but in parallel,
+as shown in figure ~\ref{fig:computationState}. As such, while the instructions represented by a computation state might take
+several cycles to complete on a general-purpose processor, the hardware accelerator can always complete a computation state in a
+single cycle.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.75\textwidth]
@@ -330,7 +348,7 @@ processor, the hardware accelerator can always complete a computation state in a
 Each computation state is separated by one or more wait states, in which the accelerator either fetches data from or writes data
 to the local memory. Each wait state is associated with a single input/output instruction
 (e.g. \texttt{lwi} (load word immediate) or \texttt{sb} (store byte)). These states can typically be completed within two
-cycles, but may take more depending on memory latency (e.g. if other peripherals are using the data bus).
+cycles, but may take more depending on memory latency.
 
 \section{Accessing Cores}
 
@@ -347,11 +365,18 @@ Table ~\ref{table:controllerRegisters} shows the locations and purpose of these 
 HW\_ACCEL\_PORT            & Control register.         \\[0.05cm]
 HW\_ACCEL\_PORT + 4        & I/O for register R1.      \\[0.05cm]
 ...                        & ...                       \\[0.05cm]
-HW\_ACCEL\_PORT + 124      & I/O for register R31.
+HW\_ACCEL\_PORT + 120      & I/O for register R30.     \\[0.05cm]
+HW\_ACCEL\_PORT + 124      & I/O for MSR register.     \\[0.05cm]
 \end{tabular}
 \caption{Controller module memory-mapped registers. The symbol HW\_ACCEL\_PORT represents the memory location to which the controller is mapped.}
 \label{table:controllerRegisters}
 \end{table}
+
+There is no memory-mapped register for R31 because R31 is reserved by the compiler for storing the MSR system register when
+transferring it to and from the accelerator cores. This means that R31 will never be used by the application code, and so
+can be safely assumed to never be an input or output of a basic block (and by extension, an accelerator core). The transfer
+of MSR is necessary because this system register holds information required by some instructions, such as the carry flag,
+and so needs to be available to accelerator cores to modify.
 
 \subsection{Transaction Overview}
 
@@ -364,9 +389,9 @@ instruction) while the controller module activates the core. The controller then
 Once the core has finished its computation, it signals the controller, which goes into the DONE state, and transfers any outputs
 to the controller module. The controller then asserts the MicroBlaze core's wakeup signal, and the MicroBlaze core reads
 the appropriate outputs from the memory-mapped registers. Finally, it reads from the special control register to reset the
-controller and the accelerator core, and the controller again goes into the READY state. The result of this read is discarded,
-as it contains no useful information, and is merely a mechanism by which the MicroBlaze core can signal to the controller that
-it has read all required outputs.
+controller and the accelerator core, and the controller again goes into the READY state. The result of this read contains
+the MSR system register, the final output from the core. If necessary, the MicroBlaze core then writes the new value of MSR into
+the system register.
 
 \subsection{Using a Small-Data Pointer}
 
@@ -705,62 +730,7 @@ time obtained by testing with the MicroBlaze core alone.
 
 \chapter{Results}
 
-This chapter outlines the results obtained from the various benchmarks used.
-
-\section{Application Analysis}
-
-Before looking at the results obtained from simulating the benchmark applications, it is important to consider their structure.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/block-inputs-sha256.png}}
-\caption{Histogram showing input registers for basic blocks in the SHA256 benchmark.}
-\label{fig:inputsSHA256}
-\end{figure}
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/block-outputs-sha256.png}}
-\caption{Histogram showing output registers for basic blocks in the SHA256 benchmark.}
-\label{fig:outputsSHA256}
-\end{figure}
-
-Figures ~\ref{fig:inputsSHA256} and ~\ref{fig:outputsSHA256} show the distribution of block inputs and outputs for the
-SHA256 application. Most blocks in this application have relatively few inputs and outputs.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/block-inputs-fft.png}}
-\caption{Histogram showing input registers for basic blocks in the FFT benchmark.}
-\label{fig:inputsFFT}
-\end{figure}
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/block-outputs-fft.png}}
-\caption{Histogram showing output registers for basic blocks in the FFT benchmark.}
-\label{fig:outputsFFT}
-\end{figure}
-
-The same is true of the FFT application (shown in figures ~\ref{fig:inputsFFT} and ~\ref{fig:outputsFFT}).
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/block-mem-densities-fft.png}}
-\caption{Histogram showing memory-access densities for basic blocks in the FFT benchmark.}
-\label{fig:memDensityFFT}
-\end{figure}
-
-Figure ~\ref{fig:memDensityFFT} shows the distribution memory-access densities of blocks in the FFT application.
-Most blocks have a relatively low memory-access density. Figure ~\ref{fig:memDensitySHA256} shows that the same is
-true of the SHA256 benchmark, albeit with the distribution slightly more even.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/block-mem-densities-sha256.png}}
-\caption{Histogram showing memory-access densities for basic blocks in the SHA256 benchmark.}
-\label{fig:memDensitySHA256}
-\end{figure}
+This chapter outlines the results obtained from the benchmark applications used.
 
 \section{Speedup and Energy Savings}
 
@@ -905,7 +875,7 @@ expensive operation, costing ~4 cycles per parameter.
 
 \section{Further Work}
 
-This section is split into two categories. The first describes extensions to the architecture that could be implemented
+This section is split into two subsections. The first describes extensions to the architecture that could be implemented
 to offer better performance or energy efficiency. The second describes further work that could be done in evaluating this
 system and others like it.
 
@@ -924,11 +894,100 @@ the cores can be treated as a single unit; the MicroBlaze core will wake up to p
 instruction), but will somehow signal to the cores that they are not to transfer register values to/from the MicroBlaze core,
 but between themselves. In such a case, the only AXI accesses required are those that acquire register values needed for the
 control-flow instruction, and those relating to controlling the cores. Such a system could dramatically reduce the amount
-of expensive I/O operations taking place, improving both performance and energy efficiency.
+of expensive I/O operations taking place, improving both performance and energy efficiency.\\
+
+[Figure showing feature described above]\\
+
+There are also improvements that could be made to the cores themselves. One such improvement involves reducing the time
+that cores spend waiting on memory. It is possible that a significant portion of memory accesses are not prerequisites to
+immediately following computations, but are instead used several cycles later. This could be used to pipeline memory accesses
+in accelerator cores, with a memory access being made at the same time as a computation is taking place. Such an improvement
+would reduce the impact of memory accesses, which are relatively expensive operations, on the performance of accelerator cores.\\
+
+[Figure showing feature described above]\\
 
 \subsection{Further Evaluation Work}
 
+It is difficult to make any claims about the system outlined here because of the small pool of test applications used.
+For this reason, it is necessary to further investigate the performance of this system on a wide range of applications,
+including those used in the real world, as the GreenDroid project \cite{greendroid} did with the Android operating system.
+
+Furthermore, there are improvements that could be made to the way that cores are selected. The heuristics described provide
+a reasonable (and computationally inexpensive) way to select accelerator cores, but this selection is done statically, and
+therefore cannot incorporate any information about the runtime behaviour of the system into the selection process.
+A selection method that involves some form of profiling, again similar to that used in the GreenDroid project \cite{greendroid},
+could ensure that the blocks transformed into accelerator cores are those that are accessed frequently enough.
+
 \section{Conclusion}
+
+It is apparent from the measurements observed that the performance increase offered by the accelerator cores is not
+as high as was hoped. As outlined in the previous section, it is possible that with some improvements,
+both to the design of the system and to its evaluation, greater performance improvements could be gained.
+In addition, a greater pool of test applications could help to identify trends that make some applications
+well-suited to this approach, and make others not.
+
+However, this work does show that the application object code can be analysed, basic blocks for extraction
+identified, and hardware accelerators generated, all in an automated toolchain.
+
+\appendix
+
+\chapter{Instruction Translations}
+
+Described here are the translations of MicroBlaze instructions to VHDL statements, used to automatically
+generate computational circuits from sequences of computation instructions. Due to time constraints, not all
+instruction translations were implemented; only those found in the two benchmark applications are present.
+
+\section{ADD - Addition}
+
+\subsection{ADD}
+
+\subsection{ADDI}
+
+\subsection{ADDK}
+
+\subsection{ADDIK}
+
+\section{RSUB - Reverse Subtraction}
+
+\subsection{RSUB}
+
+\section{CMP - Compare}
+
+\subsection{CMP}
+
+\subsection{CMPU}
+
+\section{SEXT - Sign Extend}
+
+\subsection{SEXT8}
+
+\subsection{SEXT16}
+
+\section{AND - Logical AND}
+
+\subsection{AND}
+
+\subsection{ANDI}
+
+\section{OR - Logical OR}
+
+\subsection{OR}
+
+\subsection{ORI}
+
+\section{XOR - Logical XOR}
+
+\subsection{XOR}
+
+\subsection{XORI}
+
+\section{SR - Shift Right}
+
+\subsection{SRL}
+
+\subsection{SRA}
+
+\subsection{SRC}
 
 \printbibliography
 
