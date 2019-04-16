@@ -12,7 +12,7 @@
 
 \tikzset{
   ->, % makes the edges directed
-  node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
+  node distance=4cm, % specifies the minimum distance between two nodes. Change if necessary.
   every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
   initial text=$ $, % sets the text that appears on the start arrow
 }
@@ -66,6 +66,11 @@ a general-purpose computing platform, and while such a platform can certainly be
 property of the platform, and this platform is no more suited to such a pursuit than any other computing platform.
 All testing was automated and performed entirely using software tools; no personal data was collected nor were humans
 or animals participants in testing in any way.
+
+Some portions of code used as test applications in the evaluation of this system were sourced
+from authors who had released the code as open source. Great care was taken to ensure that all
+code used for this purpose was credited properly and that the licenses with which the code was
+provided permitted its use in this project.
 
 \chapter{Literature Review}
 
@@ -291,7 +296,9 @@ M\_ADDR         & O                  & Memory address. Address of word being acc
 M\_DATA\_OUT    & O                  & Data out. Data written to memory is placed on this line. \\[0.05cm]
 M\_DATA\_IN     & I                  & Data in. Data read from memory is placed on this line. \\[0.05cm]
 IN\_Rxx         & I                  & One or more input register lines. Inputs to the state machine are written to these lines from the MicroBlaze core. \\[0.05cm]
-OUT\_Rxx        & O                  & One or more output register lines. Outputs from the state machine are written to these lines from the state machine once it has finished computation.
+OUT\_Rxx        & O                  & One or more output register lines. Outputs from the state machine are written to these lines from the state machine once it has finished computation. \\[0.05cm]
+CARRY\_IN       & I                  & Carry signal input. Indicates the state of the carry flag at the start of the state machine's execution. \\[0.05cm]
+CARRY\_OUT      & O                  & Carry signal output. Indicates the state of the carry flag at the end of the state machine's execution.
 \end{tabular}
 \caption{Hardware accelerator input/output signals.}
 \label{table:acceleratorSignals}
@@ -338,7 +345,7 @@ non-memory-access instructions (e.g. \texttt{addi} (add-immediate) or \texttt{sr
 A circuit is constructed from the instructions which implements the same functionality, but in parallel,
 as shown in figure ~\ref{fig:computationState}. As such, while the instructions represented by a computation state might take
 several cycles to complete on a general-purpose processor, the hardware accelerator can always complete a computation state in a
-single cycle.
+single cycle. The translations of MicroBlaze instructions used in the generation of accelerator cores can be seen in Appendix A.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.75\textwidth]
@@ -959,6 +966,14 @@ a reasonable (and computationally inexpensive) way to select accelerator cores, 
 therefore cannot incorporate any information about the runtime behaviour of the system into the selection process.
 A selection method that involves some form of profiling, again similar to that used in the GreenDroid project \cite{greendroid},
 could ensure that the blocks transformed into accelerator cores are those that are accessed frequently enough.
+
+Finally, while the focus in this investigation has been increasing performance by performing more
+computation in a smaller number of cycles, at the same clock speed, it is possible to instead improve
+energy efficiency by running the accelerator cores at a slower clock speed. This would maintain the same
+performance as without the accelerators, but would reduce energy usage by reducing the rate at which
+transistors in the circuit are switching. It would be worthwhile to measure how much the clock speed
+of the accelerator cores could be reduced (while maintaining the same level of performance) and determine
+how much energy efficiency could be gained from this.
 
 \section{Conclusion}
 
