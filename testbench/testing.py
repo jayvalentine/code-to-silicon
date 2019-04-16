@@ -23,6 +23,8 @@ TRANSFER_CYCLES_FORMAT = re.compile("AXI TRANSFER:\s+(\d+)")
 CORE_CYCLES_FORMAT = re.compile("CORES:\s+(\d+)")
 SLEEP_CYCLES_FORMAT = re.compile("SLEEP OVERHEAD:\s+(\d+)")
 
+CORE_COMPLETE_FORMAT = re.compile("(\S+) EXECUTION COMPLETE: (\d+) CYCLES.")
+
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
@@ -105,9 +107,17 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       vivadoResults = {
         "passed": None,
         "cycles": None,
-        "cycleBreakdown": None
+        "cycleBreakdown": None,
+        "coreExecs": None
       }
       logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
+
+    ipc = {}
+
+    for sm in selected:
+      if sm.name() in vivadoResults["coreExecs"]:
+        c = vivadoResults["coreExecs"][sm.name()]
+        ipc[sm.name()] = len(sm.block()) / c
 
     # Move back to the root directory.
     os.chdir(origDir)
@@ -118,9 +128,12 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "result": vivadoResults["passed"],
       "cycles": vivadoResults["cycles"],
       "cycleBreakdown": vivadoResults["cycleBreakdown"],
+      "coreExecs": vivadoResults["coreExecs"],
+      "coreIPC": ipc,
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
       "coreOutputs": list(map(lambda sm: len(sm.outputRegisters()), selected)),
+      "coreStates": list(map(lambda sm: len(sm), selected)),
       "heuristicCost": list(map(lambda sm: sm.block().cost(), selected)),
       "actualCost": list(map(lambda sm: sm.cost(), selected)),
       "blockAvgWidths": avgWidths,
@@ -392,6 +405,8 @@ def runVivadoSimulation(logger):
   core_cycles = None
   sleep_cycles = None
 
+  core_execs = {}
+
   output_lines = output[1].splitlines()
   for l in output_lines:
     m = TESTBENCH_MSG_FORMAT.match(l)
@@ -423,6 +438,10 @@ def runVivadoSimulation(logger):
         if cm != None:
           sleep_cycles = int(cm.groups()[0])
 
+        cm = CORE_COMPLETE_FORMAT.match(m.groups()[0])
+        if cm != None:
+          core_execs[cm.groups()[0]] = int(cm.groups()[1])
+
 
     else:
       m = MEM_MSG_FORMAT.match(l)
@@ -443,7 +462,8 @@ def runVivadoSimulation(logger):
   results = {
     "passed": passed,
     "cycles": cycles,
-    "cycleBreakdown": (mb_cycles, axi_cycles, core_cycles, sleep_cycles)
+    "cycleBreakdown": (mb_cycles, axi_cycles, core_cycles, sleep_cycles),
+    "coreExecs": core_execs
   }
 
   return results

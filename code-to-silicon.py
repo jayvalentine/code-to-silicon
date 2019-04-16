@@ -162,6 +162,7 @@ def main(argv):
           coreCounts = []
           coreInputsAvg = []
           coreOutputsAvg = []
+          coreIPCAvg = []
           baseCycles = None
           cycleBreakdowns = []
 
@@ -204,6 +205,7 @@ def main(argv):
               baseCycles = metrics["cycles"]
               coreInputsAvg.append(0)
               coreOutputsAvg.append(0)
+              coreIPCAvg.append(0)
 
               inputs = metrics["blockInputs"]
               outputs = metrics["blockOutputs"]
@@ -249,16 +251,34 @@ def main(argv):
 
               coreCounts.append(metrics["coreCount"])
 
-              # Plot 'population scatter' of inputs vs outputs.
+              ipcFlat = []
+              for key in metrics["coreIPC"].keys():
+                ipcFlat.append(metrics["coreIPC"][key])
+
+              # Plot 'population distribution' of inputs and outputs.
               if fig:
-                plot.scatter(metrics["coreInputs"], metrics["coreOutputs"])
-                plot.xlim([0, 32])
-                plot.ylim([0, 32])
+                plot.hist(metrics["coreInputs"], 32)
 
                 plot.xlabel("# of input registers")
-                plot.ylabel("# of output registers")
+                plot.ylabel("# of cores")
 
-                plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+                plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-inputs-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+                plot.clf()
+
+                plot.hist(metrics["coreOutputs"], 32)
+
+                plot.xlabel("# of output registers")
+                plot.ylabel("# of cores")
+
+                plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-outputs-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+                plot.clf()
+
+                plot.hist(metrics["coreStates"], 15)
+
+                plot.xlabel("# of states")
+                plot.ylabel("# of cores")
+
+                plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-states-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
                 plot.clf()
 
                 # Plot regression of heuristic cost against actual cost.
@@ -270,9 +290,18 @@ def main(argv):
                 plot.savefig("figures/autogen/cost-{:s}-{:02d}-cores-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
                 plot.clf()
 
+                # Plot distribution of IPC of generated cores.
+                plot.hist(ipcFlat, 10)
+                plot.xlabel("Instructions per clock cycle (#instructions / #cycles)")
+                plot.ylabel("# of cores")
+
+                plot.savefig("figures/autogen/pop-{:s}-{:02d}-cores-ipc-{:s}.png".format(testName, metrics["coreCount"], selection + "-" + pruning))
+                plot.clf()
+
               # Store average inputs and outputs.
               coreInputsAvg.append(sum(metrics["coreInputs"])/len(metrics["coreInputs"]))
               coreOutputsAvg.append(sum(metrics["coreOutputs"])/len(metrics["coreOutputs"]))
+              coreIPCAvg.append(sum(ipcFlat)/len(ipcFlat))
 
             with open("results.csv", 'a') as results:
               results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4)), str(round(metrics["percentageConverted"], 4))]) + "\n")
@@ -291,6 +320,15 @@ def main(argv):
             plot.ylabel("Register count")
 
             plot.savefig("figures/autogen/avg-io-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
+            plot.clf()
+
+            plot.plot(coreCounts, coreIPCAvg)
+            plot.xlim([1, coreCounts[-1]])
+
+            plot.xlabel("Core count")
+            plot.ylabel("Average instructions per clock cycle")
+
+            plot.savefig("figures/autogen/avg-ipc-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
             plot.clf()
 
             # Display a plot of speedup against core count.
