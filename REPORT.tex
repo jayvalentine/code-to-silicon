@@ -863,9 +863,8 @@ As with the SHA256 benchmark, the hybrid selection heuristic performed worse tha
 \section{Trends in Generated Cores}
 
 This section describes trends observed in the generated hardware accelerator cores.
-As the FFT benchmark did not show much performance benefit from the addition of accelerators,
-it is not considered here. Only those cores generated for the SHA256 benchmark with
-the overhead selection heuristic are considered here.
+As the overhead selection heuristic performed better than the others at selecting blocks to be
+translated, only the cores selected by this heuristic are considered here.
 
 Figure ~\ref{fig:statesSHA256-28} shows that the state machines produced are generally smaller,
 with almost all of the cores having between 3 and 15 states. There is a heavy skew towards smaller
@@ -878,7 +877,7 @@ cores.
 \label{fig:statesSHA256-28}
 \end{figure}
 
-Figure ~\ref{fig:ipcSHA256} shows the average instruction-per-clock measurements as
+Figure ~\ref{fig:ipcSHA256} shows the average instruction-per-clock measurements for the SHA256 benchmark as
 the number of cores selected increase. The IPC of initially-selected cores
 is high, but the average drops to 1 as the number of cores increases. This indicates that
 there are cores being selected with an IPC <1. The most likely reason for this is that
@@ -890,6 +889,19 @@ MicroBlaze core.
 {figures/avg-ipc-sha256-overhead-dependency.png}}
 \caption{Average instruction-per-clock for the SHA256 benchmark application.}
 \label{fig:ipcSHA256}
+\end{figure}
+
+Figure ~\ref{fig:ipcFFT} shows the average IPC for the FFT benchmark.
+Here the average IPC with 45 cores is twice that of the SHA256 benchmark with 28.
+This indicates that the cores generated for the FFT application are more efficient
+than those generated for the SHA256 application, probably due to a decreased number of memory
+accesses.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/avg-ipc-fft-overhead-dependency.png}}
+\caption{Average instruction-per-clock for the FFT benchmark application.}
+\label{fig:ipcFFT}
 \end{figure}
 
 \chapter{Discussion and Further Work}
@@ -972,20 +984,16 @@ instruction translations were implemented; only those found in the two benchmark
 \subsection{ADD}
 
 \begin{lstlisting}
-temp := '0' & rA + rB;
-
+temp := ('0' & rA) + rB;
 carry := temp(32);
-
 rD := temp(31 downto 0);
 \end{lstlisting}
 
 \subsection{ADDI}
 
 \begin{lstlisting}
-temp := '0' & rA + unsigned(to_signed(imm, 32));
-
+temp := ('0' & rA) + unsigned(to_signed(imm, 32));
 carry := temp(32);
-
 rD := temp(31 downto 0);
 \end{lstlisting}
 
