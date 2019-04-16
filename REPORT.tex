@@ -8,6 +8,8 @@
 
 \usepackage{graphicx}
 
+\usepackage{listings}
+
 \tikzset{
   ->, % makes the edges directed
   node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
@@ -860,18 +862,46 @@ As with the SHA256 benchmark, the hybrid selection heuristic performed worse tha
 
 \section{Trends in Generated Cores}
 
-Observe trends in generated cores across applications, e.g. input/output counts, IPC (instructions per cycle), state counts.
+This section describes trends observed in the generated hardware accelerator cores.
+As the FFT benchmark did not show much performance benefit from the addition of accelerators,
+it is not considered here. Only those cores generated for the SHA256 benchmark with
+the overhead selection heuristic are considered here.
+
+Figure ~\ref{fig:statesSHA256-28} shows that the state machines produced are generally smaller,
+with almost all of the cores having between 3 and 15 states. There is a heavy skew towards smaller
+cores.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/pop-sha256-28-cores-states-overhead-dependency.png}}
+\caption{Distribution of states in hardware accelerator cores for the SHA256 benchmark application (28 cores).}
+\label{fig:statesSHA256-28}
+\end{figure}
+
+Figure ~\ref{fig:ipcSHA256} shows the average instruction-per-clock measurements as
+the number of cores selected increase. The IPC of initially-selected cores
+is high, but the average drops to 1 as the number of cores increases. This indicates that
+there are cores being selected with an IPC <1. The most likely reason for this is that
+memory accesses from cores to the local BRAM are more expensive than they are for the
+MicroBlaze core.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/avg-ipc-sha256-overhead-dependency.png}}
+\caption{Average instruction-per-clock for the SHA256 benchmark application.}
+\label{fig:ipcSHA256}
+\end{figure}
 
 \chapter{Discussion and Further Work}
 
 \section{Discussion of Results}
 
-The performance increases observed are not as significant as was initially hoped. [Quote results of other investigations here,
-which generally performed better].
-
+The performance increases observed are not as significant as was initially hoped.
 As seen with the performance results, the best method for selecting accelerator cores for this system is by minimizing
 I/O overhead. This is because the overheads involved in transferring each input/output parameter over the AXI bus is an
-expensive operation, costing ~4 cycles per parameter.
+expensive operation, costing ~4 cycles per parameter. In addition, expensive memory access operations
+due to the architecture of the system reduced the IPC of generated cores, also contributing to
+the poor performance observed.
 
 \section{Further Work}
 
@@ -941,53 +971,153 @@ instruction translations were implemented; only those found in the two benchmark
 
 \subsection{ADD}
 
+\begin{lstlisting}
+temp := '0' & rA + rB;
+
+carry := temp(32);
+
+rD := temp(31 downto 0);
+\end{lstlisting}
+
 \subsection{ADDI}
+
+\begin{lstlisting}
+temp := '0' & rA + unsigned(to_signed(imm, 32));
+
+carry := temp(32);
+
+rD := temp(31 downto 0);
+\end{lstlisting}
 
 \subsection{ADDK}
 
+\begin{lstlisting}
+rD := rA + rB;
+\end{lstlisting}
+
 \subsection{ADDIK}
+
+\begin{lstlisting}
+rD := rA + unsigned(to_signed(imm, 32));
+\end{lstlisting}
 
 \section{RSUB - Reverse Subtraction}
 
 \subsection{RSUB}
 
+\begin{lstlisting}
+rD := rB - rA;
+\end{lstlisting}
+
 \section{CMP - Compare}
 
 \subsection{CMP}
 
+\begin{lstlisting}
+rD := rB - rA;
+
+if signed(rA) > signed(rB) then
+    rD(31) := '1';
+else
+    rD(31) := '0';
+end if;
+\end{lstlisting}
+
 \subsection{CMPU}
+
+\begin{lstlisting}
+rD := rB - rA;
+
+if unsigned(rA) > unsigned(rB) then
+    rD(31) := '1';
+else
+    rD(31) := '0';
+end if;
+\end{lstlisting}
 
 \section{SEXT - Sign Extend}
 
 \subsection{SEXT8}
 
+\begin{lstlisting}
+rD(31 downto 7) := (others => rA(7));
+rD(6 downto 0) := rA(6 downto 0);
+\end{lstlisting}
+
 \subsection{SEXT16}
+
+\begin{lstlisting}
+rD(31 downto 15) := (others => rA(15));
+rD(14 downto 0) := rA(14 downto 0);
+\end{lstlisting}
 
 \section{AND - Logical AND}
 
 \subsection{AND}
 
+\begin{lstlisting}
+rD := rA AND rB;
+\end{lstlisting}
+
 \subsection{ANDI}
+
+\begin{lstlisting}
+rD := rA AND unsigned(to_signed(imm, 32));
+\end{lstlisting}
 
 \section{OR - Logical OR}
 
 \subsection{OR}
 
+\begin{lstlisting}
+rD := rA OR rB;
+\end{lstlisting}
+
 \subsection{ORI}
+
+\begin{lstlisting}
+rD := rA OR unsigned(to_signed(imm, 32));
+\end{lstlisting}
 
 \section{XOR - Logical XOR}
 
 \subsection{XOR}
 
+\begin{lstlisting}
+rD := rA XOR rB;
+\end{lstlisting}
+
 \subsection{XORI}
+
+\begin{lstlisting}
+rD := rA XOR unsigned(to_signed(imm, 32));
+\end{lstlisting}
 
 \section{SR - Shift Right}
 
 \subsection{SRL}
 
+\begin{lstlisting}
+temp := '0' & rA(31 downto 1);
+carry := rA(0);
+rD := temp;
+\end{lstlisting}
+
 \subsection{SRA}
 
+\begin{lstlisting}
+temp := rA(31) & rA(31 downto 1);
+carry := rA(0);
+rD := temp;
+\end{lstlisting}
+
 \subsection{SRC}
+
+\begin{lstlisting}
+temp := carry & rA(31 downto 1);
+carry := rA(0);
+rD := temp;
+\end{lstlisting}
 
 \printbibliography
 
