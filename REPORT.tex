@@ -30,6 +30,24 @@
 \maketitle
 
 \begin{abstract}
+With the increase in market share of embedded general-purpose computing platforms such as mobile phones
+and tablets, energy efficiency is of increasing concern. One obstacle to achieving energy efficiency
+at the transistor scales of todays devices is dark silicon, a phenomenon which limits the percentage
+of a chip that can be utilized at any one time.
+
+Coprocessor-dominated architectures are a solution to the dark silicon problem which have recently been
+gaining attention. However, traditional coprocessor models rely heavily on human-designed hardware accelerator
+cores, the design of which is expensive and time-consuming. In addition, once implemented these coprocessors
+are fixed, and so must be designed with a range of applications in mind. 
+
+This report outlines a coprocessor-dominated architecture that can be implemented on an FPGA, based on the Xilinx
+MicroBlaze soft processor. This allows for the architecture to be changed with the application demands.
+In addition, a method is described (and a toolchain implemented) for transforming a basic block in the software application into
+a specialized hardware accelerator core, custom-built for executing that specific basic block. This method can be completely
+automated, reducing design costs and time.
+
+Several architecture configurations generated with the tool were evaluated on two benchmark applications, intended to be
+representative of embedded workloads. This evaluation showed improvements in both application performance and energy efficiency.
 \end{abstract}
 
 \chapter{Introduction}
@@ -598,7 +616,7 @@ R17      & Dedicated    & Return address for exceptions. \\[0.05cm]
 R18      & Dedicated    & Reserved for assembler. \\[0.05cm]
 R19-R31  & Non-volatile & Must be saved across function calls (callee-save).
 \end{tabular}
-\caption{MicroBlaze ABI register descriptions.}
+\caption{MicroBlaze ABI register descriptions \cite{microblaze-ref}.}
 \label{table:abi}
 \end{table}
 
