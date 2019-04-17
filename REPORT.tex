@@ -998,6 +998,9 @@ instruction translations were implemented; only those found in the two benchmark
 
 \subsection{ADD}
 
+Computes the unsigned addition of rA and rB and stores the result in rD. The carry flag is set to 1 if the addition
+overflows, and 0 otherwise.
+
 \begin{lstlisting}
 temp := ('0' & rA) + rB;
 carry := temp(32);
@@ -1005,6 +1008,9 @@ rD := temp(31 downto 0);
 \end{lstlisting}
 
 \subsection{ADDI}
+
+Computes the unsigned addition of rA and an immediate value and stores the result in rD. The carry flag is set to 1 if the
+addition overflows, and 0 otherwise.
 
 \begin{lstlisting}
 temp := ('0' & rA) + unsigned(to_signed(imm, 32));
@@ -1014,11 +1020,17 @@ rD := temp(31 downto 0);
 
 \subsection{ADDK}
 
+Computes the unsigned addition of rA and rB and stores the result in rD. The carry flag is unaffected and retains its previous
+value.
+
 \begin{lstlisting}
 rD := rA + rB;
 \end{lstlisting}
 
 \subsection{ADDIK}
+
+Computes the unsigned addition of rA and an immediate value and stores the result in rD. The carry flag is unaffected and retains
+its previous value.
 
 \begin{lstlisting}
 rD := rA + unsigned(to_signed(imm, 32));
@@ -1026,7 +1038,10 @@ rD := rA + unsigned(to_signed(imm, 32));
 
 \section{RSUB - Reverse Subtraction}
 
-\subsection{RSUB}
+\subsection{RSUBK}
+
+Computes the unsigned subtraction of rA from rB and stores the result
+in rD. The carry flag is unaffected and retains its previous value.
 
 \begin{lstlisting}
 rD := rB - rA;
@@ -1035,6 +1050,9 @@ rD := rB - rA;
 \section{CMP - Compare}
 
 \subsection{CMP}
+
+Computes the unsigned subtraction of rA from rB and stores the result in rD. The MSB of rD
+is updated to show the actual relation of rA to rB as signed values.
 
 \begin{lstlisting}
 rD := rB - rA;
@@ -1047,6 +1065,9 @@ end if;
 \end{lstlisting}
 
 \subsection{CMPU}
+
+Computes the unsigned subtraction of rA from rB and stores the result in rD. The MSB of rD
+is updated to show the actual relation of rA to rB as unsigned values.
 
 \begin{lstlisting}
 rD := rB - rA;
@@ -1062,12 +1083,16 @@ end if;
 
 \subsection{SEXT8}
 
+Sign extends the 8-bit value in rA and stores it in rD, by copying bit 7 of rA into bits 31-7 of rD.
+
 \begin{lstlisting}
 rD(31 downto 7) := (others => rA(7));
 rD(6 downto 0) := rA(6 downto 0);
 \end{lstlisting}
 
 \subsection{SEXT16}
+
+Sign extends the 16-bit value in rA and stores it in rD, by copying bit 15 of rA into bits 31-15 of rD.
 
 \begin{lstlisting}
 rD(31 downto 15) := (others => rA(15));
@@ -1078,11 +1103,15 @@ rD(14 downto 0) := rA(14 downto 0);
 
 \subsection{AND}
 
+Performs the logical AND of the values in rA and rB and stores the result in rD.
+
 \begin{lstlisting}
 rD := rA AND rB;
 \end{lstlisting}
 
 \subsection{ANDI}
+
+Performs the logical AND of the value in rA and an immediate value and stores the result in rD.
 
 \begin{lstlisting}
 rD := rA AND unsigned(to_signed(imm, 32));
@@ -1092,11 +1121,15 @@ rD := rA AND unsigned(to_signed(imm, 32));
 
 \subsection{OR}
 
+Performs the logical OR of the values in rA and rB and stores the result in rD.
+
 \begin{lstlisting}
 rD := rA OR rB;
 \end{lstlisting}
 
 \subsection{ORI}
+
+Performs the logical OR of the value in rA and an immediate value and stores the result in rD.
 
 \begin{lstlisting}
 rD := rA OR unsigned(to_signed(imm, 32));
@@ -1106,11 +1139,15 @@ rD := rA OR unsigned(to_signed(imm, 32));
 
 \subsection{XOR}
 
+Performs the logical XOR of the values in rA and rB and stores the result in rD.
+
 \begin{lstlisting}
 rD := rA XOR rB;
 \end{lstlisting}
 
 \subsection{XORI}
+
+Performs the logical XOR of the value in rA and an immediate value and stores the result in rD.
 
 \begin{lstlisting}
 rD := rA XOR unsigned(to_signed(imm, 32));
@@ -1120,6 +1157,9 @@ rD := rA XOR unsigned(to_signed(imm, 32));
 
 \subsection{SRL}
 
+Shifts the value in rA right by one bit, with a 0 being shifted into the MSB. The result is stored in rD.
+The bit shifted out of rA is placed in the carry flag.
+
 \begin{lstlisting}
 temp := '0' & rA(31 downto 1);
 carry := rA(0);
@@ -1128,6 +1168,9 @@ rD := temp;
 
 \subsection{SRA}
 
+Shifts the value in rA right by one bit, with the MSB being duplicated (keeping the sign bit). The result is stored in rD.
+The bit shifted out of rA is placed in the carry flag.
+
 \begin{lstlisting}
 temp := rA(31) & rA(31 downto 1);
 carry := rA(0);
@@ -1135,6 +1178,9 @@ rD := temp;
 \end{lstlisting}
 
 \subsection{SRC}
+
+Shifts the value in rA right by one bit, with the carry flag being shifted into the MSB. The result is stored in rD.
+The bit shifted out of rA is placed in the carry flag.
 
 \begin{lstlisting}
 temp := carry & rA(31 downto 1);
