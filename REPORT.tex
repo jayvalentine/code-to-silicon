@@ -737,6 +737,23 @@ Speedup is a measure of the difference in execution time between two configurati
 For each configuration (number of cores, method of analysis, etc), the speedup was calculated relative to the baseline execution
 time obtained by testing with the MicroBlaze core alone.
 
+\subsection{Cycle Breakdowns}
+
+In addition to measuring the overall execution time of the application, the execution time spent performing
+specific tasks was also measured. The execution time spent on the MicroBlaze core was measured, as was the time spent
+on each of the accelerators in the evaluation. In addition, the time spent transferring values over the AXI bus was
+measured. This was subtracted from the MicroBlaze execution time measurement to give one value for the time spent not
+interacting with accelerator cores, and the time spent transferring values to and from them. Finally, the time
+between an accelerator core finishing its computation and the MicroBlaze core waking up was also measured.
+This resulted in four values providing a breakdown of the execution time of the application as below:
+
+\begin{itemize}
+  \item Execution time spent on the MicroBlaze core (not interacting with accelerator cores).
+  \item Execution time spent on accelerator cores.
+  \item Execution time spent transferring values over the AXI bus.
+  \item Execution time spent with the MicroBlaze core asleep after an accelerator core had finished executing.
+\end{itemize}
+
 \chapter{Results}
 
 This chapter outlines the results obtained from the benchmark applications used.
@@ -943,17 +960,28 @@ the cores can be treated as a single unit; the MicroBlaze core will wake up to p
 instruction), but will somehow signal to the cores that they are not to transfer register values to/from the MicroBlaze core,
 but between themselves. In such a case, the only AXI accesses required are those that acquire register values needed for the
 control-flow instruction, and those relating to controlling the cores. Such a system could dramatically reduce the amount
-of expensive I/O operations taking place, improving both performance and energy efficiency.\\
+of expensive I/O operations taking place, improving both performance and energy efficiency.
 
-[Figure showing feature described above]\\
+\begin{figure}[H]
+\center{\includegraphics[width=0.75\textwidth]
+{figures/direct-transfer.png}}
+\caption{The direct transfer mechanism.}
+\label{fig:directTransfer}
+\end{figure}
 
 There are also improvements that could be made to the cores themselves. One such improvement involves reducing the time
 that cores spend waiting on memory. It is possible that a significant portion of memory accesses are not prerequisites to
 immediately following computations, but are instead used several cycles later. This could be used to pipeline memory accesses
 in accelerator cores, with a memory access being made at the same time as a computation is taking place. Such an improvement
-would reduce the impact of memory accesses, which are relatively expensive operations, on the performance of accelerator cores.\\
+would reduce the impact of memory accesses, which are relatively expensive operations, on the performance of accelerator cores.
+Figure ~\ref{fig:pipeliningAccelerators} shows two possible scenarios in which this technique could be used.
 
-[Figure showing feature described above]\\
+\begin{figure}[H]
+\center{\includegraphics[width=0.75\textwidth]
+{figures/pipelining-accelerators.png}}
+\caption{Pipelining of independent states.}
+\label{fig:pipeliningAccelerators}
+\end{figure}
 
 \subsection{Further Evaluation Work}
 
