@@ -243,6 +243,7 @@ begin
                     if M_AXI_DP_0_wvalid = '1' and addr_latch_set = '1' then
                         case addr_latch is
 %%WRITE_REG_TO_ACCEL%%
+                        when others => null;
                         end case;
 
                         addr_latch_set <= '0';
@@ -267,6 +268,7 @@ begin
                     if M_AXI_DP_0_arvalid = '1' then
                         case M_AXI_DP_0_araddr is
 %%READ_REG_FROM_ACCEL%%
+                        when others => null;
                         end case;
 
                         M_AXI_DP_0_rvalid <= '1';

@@ -96,9 +96,6 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       if vivadoResults["passed"]:
           logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
 
-          # If the simulation directory exists, delete it.
-          if os.path.isdir(SIM_DIR):
-            shutil.rmtree(SIM_DIR, ignore_errors=True)
       else:
           logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
 
@@ -355,16 +352,20 @@ def generateTemplates(logger, testName, selectedStateMachines):
 
   # Generate testbench template.
   tbTemplate = os.path.join(TEMPLATE_DIR, "testbench.vhd")
+  synthTemplate = os.path.join(TEMPLATE_DIR, "testbench_synth.vhd")
   tclTemplate = os.path.join(TEMPLATE_DIR, "simulate.tcl")
-  memTemplate = os.path.join(TEMPLATE_DIR, "memory.vhd")
+  memTemplate = os.path.join(TEMPLATE_DIR, "memory_sim.vhd")
+  memSynthTemplate = os.path.join(TEMPLATE_DIR, "memory_synth.vhd")
   controllerTemplate = os.path.join(TEMPLATE_DIR, "hw_accel_controller.vhd")
 
   templating.processTemplate(tbTemplate, "testbench.vhd", vars_testbench)
+  templating.processTemplate(synthTemplate, "testbench_synth.vhd", vars_testbench)
 
   vars_tcl = {
     "ADD_STATEMACHINES": "\n".join(list(map(lambda sm: "add_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
     "REMOVE_STATEMACHINES": "\n".join(list(map(lambda sm: "remove_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
-    "TESTNAME": testName
+    "TESTNAME": testName,
+    "SAIF": os.path.abspath(testName + ".saif")
   }
 
   templating.processTemplate(tclTemplate, "simulate.tcl", vars_tcl)
@@ -373,7 +374,8 @@ def generateTemplates(logger, testName, selectedStateMachines):
     "MEMORYFILE": os.path.abspath("memory.txt")
   }
 
-  templating.processTemplate(memTemplate, "memory.vhd", vars_memory)
+  templating.processTemplate(memTemplate, "memory_sim.vhd", vars_memory)
+  templating.processTemplate(memSynthTemplate, "memory_synth.vhd", vars_memory)
 
   writesToRegisters = translator.getControllerWriteRegisters(selectedStateMachines)
   readsFromRegisters = translator.getControllerReadRegisters(selectedStateMachines)
