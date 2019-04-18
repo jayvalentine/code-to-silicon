@@ -30,6 +30,9 @@ REG_UTIL_FORMAT = re.compile("\| Slice Registers\s+\| \s*(\d+) \| .*")
 MEM_UTIL_FORMAT = re.compile("\| Block RAM Tile\s+\| \s*(\d+) \| .*")
 DSP_UTIL_FORMAT = re.compile("\| DSPs\s+\| \s*(\d+) \|.*")
 
+DYNAMIC_POWER_FORMAT = re.compile("\| Dynamic \(W\)\s+\| (\d+\.\d+)")
+STATIC_POWER_FORMAT = re.compile("\| Device Static \(W\)\s+\| (\d+\.\d+)")
+
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
@@ -97,7 +100,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
 
     # Run the Vivado simulation if we've been asked to.
     if runSimulation:
-      vivadoResults = runVivadoSimulation(logger)
+      vivadoResults = runVivadoSimulation(testName, logger)
       if vivadoResults["passed"]:
           logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
 
@@ -110,13 +113,15 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
 
       logger.info("Total cycles: {:d} (mb {:d}, cores {:d}, axi {:d}, sleep {:d})".format(vivadoResults["cycles"], vivadoResults["cycleBreakdown"][0], vivadoResults["cycleBreakdown"][2], vivadoResults["cycleBreakdown"][1], vivadoResults["cycleBreakdown"][3]))
       logger.info("Utilization: LUTs: {:d}, Registers: {:d}, BRAMs: {:d}, DSPs: {:d}".format(vivadoResults["util"][0], vivadoResults["util"][1], vivadoResults["util"][2], vivadoResults["util"][3]))
+      logger.info("Power Usage: Dynamic: {:2.4f} W, Static: {:2.4f} W".format(vivadoResults["power"][0], vivadoResults["power"][1]))
     else:
       vivadoResults = {
         "passed": None,
         "cycles": None,
         "cycleBreakdown": None,
         "coreExecs": None,
-        "util": None
+        "util": None,
+        "power": None
       }
       logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
 
@@ -408,7 +413,7 @@ def generateTemplates(logger, testName, selectedStateMachines):
 
   templating.processTemplate(controllerTemplate, "controller.vhd", vars_controller)
 
-def runVivadoSimulation(logger):
+def runVivadoSimulation(testName, logger):
   passed = None
   output = vivado.start_batch("simulate.tcl")
 
@@ -469,7 +474,7 @@ def runVivadoSimulation(logger):
   mem_util = None
   dsp_util = None
 
-  with open("sha256-util.txt", "r") as util:
+  with open(testName + "-util.txt", "r") as util:
     for line in util.readlines():
       m = LUT_UTIL_FORMAT.match(line)
       if m != None:
@@ -487,6 +492,19 @@ def runVivadoSimulation(logger):
             if m != None:
               dsp_util = int(m.groups()[0])
 
+  dynamic_power = None
+  static_power = None
+
+  with open(testName + "-power.txt", "r") as util:
+    for line in util.readlines():
+      m = DYNAMIC_POWER_FORMAT.match(line)
+      if m != None:
+        dynamic_power = float(m.groups()[0])
+      else:
+        m = STATIC_POWER_FORMAT.match(line)
+        if m != None:
+          static_power = float(m.groups()[0])
+
   """
   with open("memdump.txt", 'w') as memdump:
     for i in range(0, 2048):
@@ -502,7 +520,8 @@ def runVivadoSimulation(logger):
     "cycles": cycles,
     "cycleBreakdown": (mb_cycles, axi_cycles, core_cycles, sleep_cycles),
     "coreExecs": core_execs,
-    "util": (lut_util, reg_util, mem_util, dsp_util)
+    "util": (lut_util, reg_util, mem_util, dsp_util),
+    "power": (dynamic_power, static_power)
   }
 
   return results

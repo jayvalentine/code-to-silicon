@@ -65,9 +65,6 @@ class Logger:
     self._level = level
 
 def main(argv):
-  # Ensure the vivado project is clean when we start.
-  os.system("git checkout microblaze_system/microblaze_system.xpr")
-
   sim = True
   report = True
   fig = True
@@ -146,7 +143,7 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0]#, 1]#, 2, 3, 4, 6, 8, 10, 15, 21, 28, 36, 45]
+  cores = [0, 1, 2, 3, 4, 6, 8, 10, 15, 21, 28, 36, 45]
 
   outputLines = []
 
@@ -169,6 +166,9 @@ def main(argv):
           i = 0
           done = False
           while i < len(cores) and not done:
+            # Ensure the vivado project is clean when we start.
+            os.system("git checkout microblaze_system/microblaze_system.xpr")
+
             metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
 
             cycleBreakdowns.append(metrics["cycleBreakdown"])
