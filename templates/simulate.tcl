@@ -30,12 +30,11 @@ wait_on_run synth_%%TESTNAME%%
 open_run synth_%%TESTNAME%%
 
 read_saif %%SAIF%%
-report_power
+report_power -file %%POWER%%
+report_utilization -file %%UTIL%%
 close_saif
 
 remove_files -fileset sources_1 testbench_synth.vhd
 remove_files -fileset sources_1 memory_synth.vhd
 remove_files -fileset sources_1 controller.vhd
 %%REMOVE_STATEMACHINES%%
-
-delete_runs synth_%%TESTNAME%%

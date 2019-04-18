@@ -96,6 +96,10 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       if vivadoResults["passed"]:
           logger.info("Test " + testName + ": passed. (" + str(actualNum) + " state machines generated.)")
 
+          # Delete the synthesis run.
+          if os.path.isdir(os.path.join(origDir, "microblaze_system", "microblaze_system.runs", "synth_" + testName)):
+            shutil.rmtree(os.path.join(origDir, "microblaze_system", "microblaze_system.runs", "synth_" + testName))
+
       else:
           logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
 
@@ -365,7 +369,9 @@ def generateTemplates(logger, testName, selectedStateMachines):
     "ADD_STATEMACHINES": "\n".join(list(map(lambda sm: "add_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
     "REMOVE_STATEMACHINES": "\n".join(list(map(lambda sm: "remove_files -fileset sources_1 {:s}.vhd".format(sm.name()), selectedStateMachines))),
     "TESTNAME": testName,
-    "SAIF": os.path.abspath(testName + ".saif")
+    "SAIF": os.path.abspath(testName + ".saif"),
+    "POWER": os.path.abspath(testName + "-power.txt"),
+    "UTIL": os.path.abspath(testName + "-util.txt")
   }
 
   templating.processTemplate(tclTemplate, "simulate.tcl", vars_tcl)
