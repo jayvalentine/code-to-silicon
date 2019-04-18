@@ -25,6 +25,11 @@ SLEEP_CYCLES_FORMAT = re.compile("SLEEP OVERHEAD:\s+(\d+)")
 
 CORE_COMPLETE_FORMAT = re.compile("(\S+) EXECUTION COMPLETE: (\d+) CYCLES.")
 
+LUT_UTIL_FORMAT = re.compile("\| Slice LUTs\*\s+\| \s*(\d+) \|.*")
+REG_UTIL_FORMAT = re.compile("\| Slice Registers\s+\| \s*(\d+) \| .*")
+MEM_UTIL_FORMAT = re.compile("\| Block RAM Tile\s+\| \s*(\d+) \| .*")
+DSP_UTIL_FORMAT = re.compile("\| DSPs\s+\| \s*(\d+) \|.*")
+
 PASSED = "!!!PASSED!!!"
 FAILED = "!!!FAILED!!!"
 
@@ -104,12 +109,14 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
           logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
 
       logger.info("Total cycles: {:d} (mb {:d}, cores {:d}, axi {:d}, sleep {:d})".format(vivadoResults["cycles"], vivadoResults["cycleBreakdown"][0], vivadoResults["cycleBreakdown"][2], vivadoResults["cycleBreakdown"][1], vivadoResults["cycleBreakdown"][3]))
+      logger.info("Utilization: LUTs: {:d}, Registers: {:d}, BRAMs: {:d}, DSPs: {:d}".format(vivadoResults["util"][0], vivadoResults["util"][1], vivadoResults["util"][2], vivadoResults["util"][3]))
     else:
       vivadoResults = {
         "passed": None,
         "cycles": None,
         "cycleBreakdown": None,
-        "coreExecs": None
+        "coreExecs": None,
+        "util": None
       }
       logger.info("Test " + testName + ": SIMULATION SKIPPED. (" + str(actualNum) + " state machines generated.)")
 
@@ -457,6 +464,29 @@ def runVivadoSimulation(logger):
         logger.debug(l)
         mem[int(m.groups()[0], 16)] = m.groups()[1]
 
+  lut_util = None
+  reg_util = None
+  mem_util = None
+  dsp_util = None
+
+  with open("sha256-util.txt", "r") as util:
+    for line in util.readlines():
+      m = LUT_UTIL_FORMAT.match(line)
+      if m != None:
+        lut_util = int(m.groups()[0])
+      else:
+        m = REG_UTIL_FORMAT.match(line)
+        if m != None:
+          reg_util = int(m.groups()[0])
+        else:
+          m = MEM_UTIL_FORMAT.match(line)
+          if m != None:
+            mem_util = int(m.groups()[0])
+          else:
+            m = DSP_UTIL_FORMAT.match(line)
+            if m != None:
+              dsp_util = int(m.groups()[0])
+
   """
   with open("memdump.txt", 'w') as memdump:
     for i in range(0, 2048):
@@ -471,7 +501,8 @@ def runVivadoSimulation(logger):
     "passed": passed,
     "cycles": cycles,
     "cycleBreakdown": (mb_cycles, axi_cycles, core_cycles, sleep_cycles),
-    "coreExecs": core_execs
+    "coreExecs": core_execs,
+    "util": (lut_util, reg_util, mem_util, dsp_util)
   }
 
   return results
