@@ -143,7 +143,7 @@ def main(argv):
 
   os.makedirs("figures/autogen")
 
-  cores = [0, 1, 2, 3, 4, 6, 8, 10, 15, 21, 28, 36, 45]
+  cores = [0, 1, 2, 3]#, 4, 6, 8, 10, 15, 21, 28, 36, 45]
 
   outputLines = []
 
@@ -162,6 +162,8 @@ def main(argv):
           coreIPCAvg = []
           baseCycles = None
           cycleBreakdowns = []
+          dpower = []
+          spower = []
 
           i = 0
           done = False
@@ -172,6 +174,8 @@ def main(argv):
             metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
 
             cycleBreakdowns.append(metrics["cycleBreakdown"])
+            dpower.append(metrics["dpower"])
+            spower.append(metrics["spower"])
 
             # Set the 'done' flag if the system produces fewer cores than we told it to.
             # this indicates that we've reached saturation.
@@ -196,8 +200,6 @@ def main(argv):
 
             if pruning not in speedups[selection].keys():
               speedups[selection][pruning] = []
-
-            analysisTimes[selection][pruning].append(metrics["analysisTime"])
 
             if cores[i] == 0:
               speedups[selection][pruning].append(1.0)
@@ -363,6 +365,18 @@ def main(argv):
               plot.ylabel("Clock cycles")
 
               plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
+              plot.clf()
+
+              # Plot dynamic and static power.
+
+              plot.plot(coreCounts, dpower, label="dynamic power", color="red")
+              plot.plot(coreCounts, spower, label="static power", color="blue")
+              plot.legend(loc="upper left")
+
+              plot.xlabel("Core count")
+              plot.ylabel("Power (mW)")
+
+              plot.savefig("figures/autogen/power-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
               plot.clf()
 
       # Plot analysis times against core count.

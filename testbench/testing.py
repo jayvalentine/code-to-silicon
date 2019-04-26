@@ -142,6 +142,8 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "cycles": vivadoResults["cycles"],
       "cycleBreakdown": vivadoResults["cycleBreakdown"],
       "coreExecs": vivadoResults["coreExecs"],
+      "dpower": vivadoResults["power"][0],
+      "spower": vivadoResults["power"][1],
       "coreIPC": ipc,
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
