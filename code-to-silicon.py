@@ -164,6 +164,10 @@ def main(argv):
           cycleBreakdowns = []
           dpower = []
           spower = []
+          utilLUT = []
+          utilReg = []
+          utilBRAM = []
+          utilDSP = []
 
           i = 0
           done = False
@@ -176,6 +180,11 @@ def main(argv):
             cycleBreakdowns.append(metrics["cycleBreakdown"])
             dpower.append(metrics["dpower"])
             spower.append(metrics["spower"])
+
+            utilLUT.append(metrics["util"][0])
+            utilReg.append(metrics["util"][1])
+            utilBRAM.append(metrics["util"][2])
+            utilDSP.append(metrics["util"][3])
 
             # Set the 'done' flag if the system produces fewer cores than we told it to.
             # this indicates that we've reached saturation.
@@ -369,14 +378,28 @@ def main(argv):
 
               # Plot dynamic and static power.
 
-              plot.plot(coreCounts, dpower, label="dynamic power", color="red")
-              plot.plot(coreCounts, spower, label="static power", color="blue")
+              plot.plot(coreCounts, dpower, label="dynamic power")
+              plot.plot(coreCounts, spower, label="static power")
               plot.legend(loc="upper left")
 
               plot.xlabel("Core count")
               plot.ylabel("Power (mW)")
 
               plot.savefig("figures/autogen/power-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
+              plot.clf()
+
+              # Plot resource utilization.
+
+              plot.plot(coreCounts, utilLUT, label="LUTs")
+              plot.plot(coreCounts, utilReg, label="registers")
+              plot.plot(coreCounts, utilBRAM, label="BRAMs")
+              plot.plot(coreCounts, utilDSP, label="DSPs")
+              plot.legend(loc="upper left")
+
+              plot.xlabel("Core count")
+              plot.ylabel("Utilization")
+
+              plot.savefig("figures/autogen/util-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
               plot.clf()
 
       # Plot analysis times against core count.

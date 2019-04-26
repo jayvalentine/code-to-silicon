@@ -25,10 +25,10 @@ SLEEP_CYCLES_FORMAT = re.compile("SLEEP OVERHEAD:\s+(\d+)")
 
 CORE_COMPLETE_FORMAT = re.compile("(\S+) EXECUTION COMPLETE: (\d+) CYCLES.")
 
-LUT_UTIL_FORMAT = re.compile("\| Slice LUTs\*\s+\| \s*(\d+) \|.*")
-REG_UTIL_FORMAT = re.compile("\| Slice Registers\s+\| \s*(\d+) \| .*")
-MEM_UTIL_FORMAT = re.compile("\| Block RAM Tile\s+\| \s*(\d+) \| .*")
-DSP_UTIL_FORMAT = re.compile("\| DSPs\s+\| \s*(\d+) \|.*")
+LUT_UTIL_FORMAT = re.compile("\| Slice LUTs\*\s+\| \s*\d+ \| \s*\d+ \| \s*\d+ \| \s*(\d+\.\d+) \|.*")
+REG_UTIL_FORMAT = re.compile("\| Slice Registers\s+\| \s*\d+ \| \s*\d+ \| \s*\d+ \| \s*(\d+\.\d+) \|.*")
+MEM_UTIL_FORMAT = re.compile("\| Block RAM Tile\s+\| \s*\d+ \| \s*\d+ \| \s*\d+ \| \s*(\d+\.\d+) \|.*")
+DSP_UTIL_FORMAT = re.compile("\| DSPs\s+\| \s*\d+ \| \s*\d+ \| \s*\d+ \| \s*(\d+\.\d+) \|.*")
 
 DYNAMIC_POWER_FORMAT = re.compile("\| Dynamic \(W\)\s+\| (\d+\.\d+)")
 STATIC_POWER_FORMAT = re.compile("\| Device Static \(W\)\s+\| (\d+\.\d+)")
@@ -112,7 +112,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
           logger.warn("Test " + testName + ": FAILED. (" + str(actualNum) + " state machines generated.)")
 
       logger.info("Total cycles: {:d} (mb {:d}, cores {:d}, axi {:d}, sleep {:d})".format(vivadoResults["cycles"], vivadoResults["cycleBreakdown"][0], vivadoResults["cycleBreakdown"][2], vivadoResults["cycleBreakdown"][1], vivadoResults["cycleBreakdown"][3]))
-      logger.info("Utilization: LUTs: {:d}, Registers: {:d}, BRAMs: {:d}, DSPs: {:d}".format(vivadoResults["util"][0], vivadoResults["util"][1], vivadoResults["util"][2], vivadoResults["util"][3]))
+      logger.info("Utilization: LUTs: {:2.4f}%, Registers: {:2.4f}%, BRAMs: {:2.4f}%, DSPs: {:2.4f}%".format(vivadoResults["util"][0], vivadoResults["util"][1], vivadoResults["util"][2], vivadoResults["util"][3]))
       logger.info("Power Usage: Dynamic: {:2.4f} W, Static: {:2.4f} W".format(vivadoResults["power"][0], vivadoResults["power"][1]))
     else:
       vivadoResults = {
@@ -144,6 +144,7 @@ def runTest(logger, testName, numStateMachines, runSimulation, analysisType, mod
       "coreExecs": vivadoResults["coreExecs"],
       "dpower": vivadoResults["power"][0],
       "spower": vivadoResults["power"][1],
+      "util": vivadoResults["util"],
       "coreIPC": ipc,
       "coreCount": len(selected),
       "coreInputs": list(map(lambda sm: len(sm.inputRegisters()), selected)),
@@ -480,19 +481,19 @@ def runVivadoSimulation(testName, logger):
     for line in util.readlines():
       m = LUT_UTIL_FORMAT.match(line)
       if m != None:
-        lut_util = int(m.groups()[0])
+        lut_util = float(m.groups()[0])
       else:
         m = REG_UTIL_FORMAT.match(line)
         if m != None:
-          reg_util = int(m.groups()[0])
+          reg_util = float(m.groups()[0])
         else:
           m = MEM_UTIL_FORMAT.match(line)
           if m != None:
-            mem_util = int(m.groups()[0])
+            mem_util = float(m.groups()[0])
           else:
             m = DSP_UTIL_FORMAT.match(line)
             if m != None:
-              dsp_util = int(m.groups()[0])
+              dsp_util = float(m.groups()[0])
 
   dynamic_power = None
   static_power = None
