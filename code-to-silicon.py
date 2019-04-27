@@ -154,6 +154,8 @@ def main(argv):
     for testName in tests:
       analysisTimes = {}
       speedups = {}
+      dpower = {}
+      spower = {}
       for selection in selectionModes:
         for pruning in pruningModes:
           coreCounts = []
@@ -162,8 +164,6 @@ def main(argv):
           coreIPCAvg = []
           baseCycles = None
           cycleBreakdowns = []
-          dpower = []
-          spower = []
           utilLUT = []
           utilReg = []
           utilBRAM = []
@@ -178,8 +178,6 @@ def main(argv):
             metrics = testing.runTest(logger, testName, cores[i], sim, selection, pruning)
 
             cycleBreakdowns.append(metrics["cycleBreakdown"])
-            dpower.append(metrics["dpower"])
-            spower.append(metrics["spower"])
 
             utilLUT.append(metrics["util"][0])
             utilReg.append(metrics["util"][1])
@@ -209,6 +207,21 @@ def main(argv):
 
             if pruning not in speedups[selection].keys():
               speedups[selection][pruning] = []
+
+            if selection not in dpower.keys():
+              dpower[selection] = {}
+
+            if pruning not in dpower[selection].keys():
+              dpower[selection][pruning] = []
+
+            if selection not in spower.keys():
+              spower[selection] = {}
+
+            if pruning not in spower[selection].keys():
+              spower[selection][pruning] = []
+
+            dpower[selection][pruning].append(metrics["dpower"])
+            spower[selection][pruning].append(metrics["spower"])
 
             if cores[i] == 0:
               speedups[selection][pruning].append(1.0)
@@ -376,18 +389,6 @@ def main(argv):
               plot.savefig("figures/autogen/cycles-breakdown-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
               plot.clf()
 
-              # Plot dynamic and static power.
-
-              plot.plot(coreCounts, dpower, label="dynamic power")
-              plot.plot(coreCounts, spower, label="static power")
-              plot.legend(loc="upper left")
-
-              plot.xlabel("Core count")
-              plot.ylabel("Power (mW)")
-
-              plot.savefig("figures/autogen/power-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
-              plot.clf()
-
               # Plot resource utilization.
 
               plot.plot(coreCounts, utilLUT, label="LUTs")
@@ -430,6 +431,32 @@ def main(argv):
           plot.ylabel("Speedup")
 
           plot.savefig("figures/autogen/speedup-{:s}.png".format(testName))
+          plot.clf()
+
+          # Display a plot of dpower against core count.
+          for selection in selectionModes:
+            for pruning in pruningModes:
+              plot.plot(coreCounts, dpower[selection][pruning], label=selection)
+
+          plot.legend(loc="upper left")
+
+          plot.xlabel("Core count")
+          plot.ylabel("Dynamic Power (W)")
+
+          plot.savefig("figures/autogen/dpower-{:s}.png".format(testName))
+          plot.clf()
+
+          # Display a plot of spower against core count.
+          for selection in selectionModes:
+            for pruning in pruningModes:
+              plot.plot(coreCounts, spower[selection][pruning], label=selection)
+
+          plot.legend(loc="upper left")
+
+          plot.xlabel("Core count")
+          plot.ylabel("Static Power (W)")
+
+          plot.savefig("figures/autogen/spower-{:s}.png".format(testName))
           plot.clf()
 
   # Now build the report (unless we've been asked not to)!
