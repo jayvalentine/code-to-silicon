@@ -94,6 +94,10 @@ provided permitted its use in this project.
 
 \end{summary}
 
+\chapter{Introduction}
+
+
+
 \chapter{Literature Review}
 
 \section{Moore's Law and Dennard Scaling}
@@ -105,7 +109,7 @@ transistor-density increases, and this has been exploited to produce exponential
 microprocessors year on year.
 
 \begin{figure}[h]
-\center{\includegraphics[width=\textwidth]
+\center{\includegraphics[width=0.75\textwidth]
 {figures/moore.png}}
 \caption{Moore's 1965 prediction. \cite{moore}}
 \end{figure}
@@ -215,7 +219,7 @@ in the code. This state machine can then be implemented in a language such as VH
 can be synthesised.
 
 \begin{figure}[h]
-\center{\includegraphics[width=\textwidth]
+\center{\includegraphics[width=1.2\textwidth]
 {figures/c-cores.png}}
 \caption{Conservation core example. \cite{c-cores}}
 \end{figure}
@@ -230,7 +234,7 @@ while values loaded from memory are latched on fast-state boundaries as soon as 
 An example of this process is shown in figure 2.4.
 
 \begin{figure}[h]
-\center{\includegraphics[width=\textwidth]
+\center{\includegraphics[width=1.2\textwidth]
 {figures/sdp.png}}
 \caption{Selective de-pipelining example. \cite{eco-cores}}
 \end{figure}
@@ -970,9 +974,9 @@ accesses.
 \section{Discussion of Results}
 
 The performance increases observed are not as significant as was initially hoped.
-As seen with the performance results, the best method for selecting accelerator cores for this system is by minimizing
+As seen in the previous chapter, the best method for selecting accelerator cores for this system is by minimizing
 I/O overhead. This is because the overheads involved in transferring each input/output parameter over the AXI bus is an
-expensive operation, costing ~4 cycles per parameter. In addition, expensive memory access operations
+expensive operation, costing 4 cycles per parameter. In addition, expensive memory access operations
 due to the architecture of the system reduced the IPC of generated cores, also contributing to
 the poor performance observed.
 
@@ -980,10 +984,10 @@ The power consumption measurements observed are also disappointing, with the mea
 switching from a single MicroBlaze core to a MicroBlaze core with accelerators only increases power consumption.
 This is in contrast to Arnone's work in \cite{arnone-thesis} and the GreenDroid project \cite{greendroid},
 which both show clear improvements in energy efficiency in moving to a coprocessor-dominated architecture.
+
 While inaccuracies in the estimation of power consumption may be to blame for this gap, it could also be due to
 the difference between FPGA and VLSI technologies. While this kind of architecture may work well in a VLSI environment,
 it may be poorly-suited to implementation on an FPGA.
-
 In addition, it is clear from the execution-time breakdowns shown in the previous chapter that, even with high numbers
 of accelerator cores, a significant amount of execution time is still spent on the MicroBlaze core. This will also contribute
 to the poor power consumption.
@@ -1008,7 +1012,7 @@ execute back-to-back, with the MicroBlaze core only waking up to transfer regist
 the cores can be treated as a single unit; the MicroBlaze core will wake up to perform control flow (e.g. by executing a branch
 instruction), but will somehow signal to the cores that they are not to transfer register values to/from the MicroBlaze core,
 but between themselves. In such a case, the only AXI accesses required are those that acquire register values needed for the
-control-flow instruction, and those relating to controlling the cores. Such a system could dramatically reduce the amount
+control-flow instruction, and those relating to controlling the cores. Such a system could dramatically reduce the number
 of expensive I/O operations taking place, improving both performance and energy efficiency.
 
 \begin{figure}[H]
@@ -1036,7 +1040,9 @@ Figure ~\ref{fig:pipeliningAccelerators} shows two possible scenarios in which t
 
 It is difficult to make any broad claims about the system designed in this project because of the small pool of test
 applications used. For this reason, it is necessary to further investigate the performance of this system on a wide range of
-applications, including those used in the real world.
+applications, including those used in the real world. In addition, the limited evaluation possible in a simulation environment
+resulted in inaccurate estimations of power consumption. A real-world evaluation using a physical FPGA could provide a more
+accurate estimation of the energy efficiency of this system.
 
 Furthermore, there are improvements that could be made to the way that cores are selected. The heuristics described provide
 a reasonable (and computationally inexpensive) way to select accelerator cores, but this selection is done statically, and
