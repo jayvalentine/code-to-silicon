@@ -149,7 +149,7 @@ def main(argv):
 
   if test:
     with open("results.csv", 'w+') as results:
-      results.write("testname,analysistype,pruningmode,result,cores,cycles,analysistime,percentageconverted\n")
+      results.write("testname,analysistype,result,cores,cycles,(mb,axi,core,sleep),dpower,spower,(lut,reg,bram,dsp),ipcavg,percentageconverted\n")
 
     for testName in tests:
       analysisTimes = {}
@@ -328,7 +328,18 @@ def main(argv):
               coreIPCAvg.append(sum(ipcFlat)/len(ipcFlat))
 
             with open("results.csv", 'a') as results:
-              results.write(",".join([testName, selection, pruning, result, str(metrics["coreCount"]), str(metrics["cycles"]), str(round(metrics["analysisTime"], 4)), str(round(metrics["percentageConverted"], 4))]) + "\n")
+              results.write(",".join([testName,
+                                      selection,
+                                      result,
+                                      str(metrics["coreCount"]),
+                                      str(metrics["cycles"]),
+                                      str(metrics["cycleBreakdowns"]),
+                                      str(round(metrics["dpower"], 4)),
+                                      str(round(metrics["spower"], 4)),
+                                      str(round(metrics["util"])),
+                                      str(round(coreIPCAvg[i])),
+                                      str(round(metrics["percentageConverted"], 4)),
+                                      ]) + "\n")
 
             i += 1
 
