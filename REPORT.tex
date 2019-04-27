@@ -22,9 +22,6 @@
 \BEng
 \supervisor{Dr. Christopher Crispin-Bailey}
 
-\dedication{
-}
-
 \acknowledgements{
 I would like to thank my supervisor, Dr. Chris Crispin-Bailey, for his guidance throughout this project.
 }
@@ -795,6 +792,30 @@ switching rates of signals in the system during the course of the simulation. Th
 power estimation utility to provide a more accurate estimate of power consumption, taking into account the behaviour
 of the system. This estimate provided two measurements: one for dynamic power consumption, and one for static power consumption.
 
+\section{Measuring Trends in Generated Cores}
+
+To help gain a better insight into the characteristics of the generated accelerator cores, a wide range of metrics were
+extracted.
+
+\subsection{Parallism (Instructions-Per-Clock)}
+
+As one of the aims of this project is to extract parallel circuits from sequential code, it makes sense to measure
+the parallelism of the generated hardware accelerators. One such metric is instructions-per-clock (IPC). To measure
+IPC for each generated core, the number of cycles taken to execute the core was measured, as well as the number of
+instructions in the basic block from which the core was derived. IPC can then be calculated:
+
+\begin{equation}
+\scalebox{1.5}{$\frac{\#instructions}{\#cycles}$}
+\end{equation}
+
+This gives the average number of instructions executed per clock cycle. For comparison, a RISC processor like MicroBlaze
+will generally have an IPC of 1, indicating that a single instruction is executed every cycle.
+
+\subsection{States}
+
+Each state machine has a number of states, split into a start state, an end state, and a number of computation and memory-access
+states. These values were measured for each accelerator core to give overall trends for a particular configuration.
+
 \chapter{Results}
 
 This chapter outlines the results obtained from the benchmark applications used.
@@ -986,8 +1007,8 @@ This is in contrast to Arnone's work in \cite{arnone-thesis} and the GreenDroid 
 which both show clear improvements in energy efficiency in moving to a coprocessor-dominated architecture.
 
 While inaccuracies in the estimation of power consumption may be to blame for this gap, it could also be due to
-the difference between FPGA and VLSI technologies. While this kind of architecture may work well in a VLSI environment,
-it may be poorly-suited to implementation on an FPGA.
+the difference between FPGA and VLSI technologies. For example, circuits that must be implemented using lookup-tables in an FPGA
+may be optimized into more efficient implementations in a VLSI environment.
 In addition, it is clear from the execution-time breakdowns shown in the previous chapter that, even with high numbers
 of accelerator cores, a significant amount of execution time is still spent on the MicroBlaze core. This will also contribute
 to the poor power consumption.
