@@ -403,21 +403,7 @@ def main(argv):
               plot.savefig("figures/autogen/util-{:s}-{:s}.png".format(testName, selection + "-" + pruning))
               plot.clf()
 
-      # Plot analysis times against core count.
       if fig:
-        for selection in selectionModes:
-          for mode in pruningModes:
-            plot.plot(coreCounts, analysisTimes[selection][mode], label=selection)
-
-        plot.legend(loc="upper left")
-        plot.xlim([0, coreCounts[-1]])
-
-        plot.xlabel("Core count")
-        plot.ylabel("Analysis time (seconds)")
-
-        plot.savefig("figures/autogen/analysis-times-{:s}.png".format(testName))
-        plot.clf()
-
         # Display a plot of speedup against core count.
         if sim:
           for selection in selectionModes:
