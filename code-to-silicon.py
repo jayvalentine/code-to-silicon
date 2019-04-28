@@ -333,10 +333,10 @@ def main(argv):
                                       result,
                                       str(metrics["coreCount"]),
                                       str(metrics["cycles"]),
-                                      str(metrics["cycleBreakdowns"]),
+                                      str(metrics["cycleBreakdown"]),
                                       str(round(metrics["dpower"], 4)),
                                       str(round(metrics["spower"], 4)),
-                                      str(round(metrics["util"])),
+                                      str(metrics["util"]),
                                       str(round(coreIPCAvg[i])),
                                       str(round(metrics["percentageConverted"], 4)),
                                       ]) + "\n")
