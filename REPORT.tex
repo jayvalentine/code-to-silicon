@@ -79,8 +79,7 @@ investigation in this area of research.
 
 \section{Statement of Ethics}
 
-Neither the undertaking of this project, nor its end result, are envisioned to cause any harm. The end result is
-a general-purpose computing platform, no more likely to result in harm than any other computing platform.
+Neither the undertaking of this project, nor its end result, are envisioned to cause any harm.
 All testing was automated and performed entirely using software tools; no personal data was collected, nor were humans
 or animals participants in testing in any way.
 
@@ -90,10 +89,6 @@ code used for this purpose was credited properly and that the licenses with whic
 provided permitted its use in this project.
 
 \end{summary}
-
-\chapter{Introduction}
-
-
 
 \chapter{Literature Review}
 
@@ -249,7 +244,7 @@ and power improvements. Two architectures for generated cores are described: com
 Composite cores are simple state machines with instructions mapped to states. Composite cores attempt to
 optimise for logic area by reusing existing logic between states. Conversely, the wave-core
 architecture avoids the reuse of logic between states, reducing power density at the cost of increased
-logic area (due to potentially duplicated functionality). In both cases the resulting accelerator core is
+logic area (due to potentially duplicated circuits). In both cases the resulting accelerator core is
 more energy-efficient than the general-purpose processor is at the same task.
 
 Here each core is a finite state machine generated from a basic block in the stack architecure's
@@ -294,15 +289,8 @@ with the memory and the MicroBlaze core, rather than each having to separately i
 The complexity of the LMB and AXI protocols, which provide for arbitration between competing master cores, are not required,
 as it is guaranteed that only one core (either an accelerator or MicroBlaze) will be executing at any one time.
 
-The LMB is intended for connecting the MicroBlaze core to on-chip BRAM, for use as a local cache memory, with instructions
-and data being stored in off-chip flash or DRAM. The system topology described above allows for a tiled architecture,
-with each block containing a MicroBlaze core and several hardware accelerators. Each tile would have its own local memory,
-with these memories being connected in turn (via some kind of cache interface) to the system-wide main memory. However,
-this is beyond the scope of this project, which focuses on a single MicroBlaze core with associated accelerators,
-and a single BRAM, with no main flash or DRAM.
-
 To further simplify the design, the more advanced MicroBlaze features, such as the hardware multiplier, divider, and barrel
-shifter, are deactivated. This not only simplifies the generated cores, speeding up synthesis and simulation times, but also
+shifter, are deactivated. This not only simplifies the system architecture, speeding up synthesis and simulation times, but also
 reduces the pool of instructions that need to be translated (as hardware multiply etc. instructions no longer appear in
 application code).
 
@@ -314,18 +302,18 @@ application code).
 \textbf{Signal} & \textbf{Direction} & \multicolumn{1}{c}{\textbf{Description}} \\
 CLK             & I                  & Clock signal. \\[0.05cm]
 RST             & I                  & Reset signal. Active HIGH. \\[0.05cm]
-SEL             & I                  & Block-select signal. Block is active when this is HIGH, and inactive when this is LOW. \\[0.05cm]
-DONE            & O                  & Done signal. This goes HIGH once the state machine has finished its computation, and goes LOW when the state machine is reset. \\[0.05cm]
-M\_RDY          & I                  & Memory-ready signal. Signals to the state machine that a memory transaction has completed. \\[0.05cm]
-M\_RD           & O                  & Memory read strobe. Indicates that the state machine is reading a value from memory. \\[0.05cm]
-M\_WR           & O                  & Memory write strobe. Indicates that the state machine is writing a value to memory. \\[0.05cm]
+SEL             & I                  & Core-select signal. Core is active when this is HIGH, and inactive when this is LOW. \\[0.05cm]
+DONE            & O                  & Done signal. This goes HIGH once the core has finished its computation, and goes LOW when the core is reset. \\[0.05cm]
+M\_RDY          & I                  & Memory-ready signal. Signals to the core that a memory transaction has completed. \\[0.05cm]
+M\_RD           & O                  & Memory read strobe. Indicates that the core is reading a value from memory. \\[0.05cm]
+M\_WR           & O                  & Memory write strobe. Indicates that the core is writing a value to memory. \\[0.05cm]
 M\_ADDR         & O                  & Memory address. Address of word being accessed in memory. \\[0.05cm]
 M\_DATA\_OUT    & O                  & Data out. Data written to memory is placed on this line. \\[0.05cm]
 M\_DATA\_IN     & I                  & Data in. Data read from memory is placed on this line. \\[0.05cm]
-IN\_Rxx         & I                  & One or more input register lines. Inputs to the state machine are written to these lines from the MicroBlaze core. \\[0.05cm]
-OUT\_Rxx        & O                  & One or more output register lines. Outputs from the state machine are written to these lines from the state machine once it has finished computation. \\[0.05cm]
-CARRY\_IN       & I                  & Carry signal input. Indicates the state of the carry flag at the start of the state machine's execution. \\[0.05cm]
-CARRY\_OUT      & O                  & Carry signal output. Indicates the state of the carry flag at the end of the state machine's execution.
+IN\_Rxx         & I                  & One or more input register lines. Inputs to the accelerator core are written to these lines from the MicroBlaze core. \\[0.05cm]
+OUT\_Rxx        & O                  & One or more output register lines. Outputs from the core are written to these lines once it has finished computation. \\[0.05cm]
+CARRY\_IN       & I                  & Carry signal input. Indicates the state of the carry flag at the start of the core's execution. \\[0.05cm]
+CARRY\_OUT      & O                  & Carry signal output. Indicates the state of the carry flag at the end of the core's execution.
 \end{tabular}
 \caption{Hardware accelerator input/output signals.}
 \label{table:acceleratorSignals}
@@ -432,152 +420,14 @@ controller and the accelerator core, and the controller again goes into the READ
 the MSR system register, the final output from the core. If necessary, the MicroBlaze core then writes the new value of MSR into
 the system register.
 
-\subsection{Using a Small-Data Pointer}
-
-The MicroBlaze CPU has two dedicated small-data-area pointers, R2 and R13 \cite{microblaze-ref}.
-A small-data area is an area of memory to which a pointer is held for the duration of an application,
-allowing fast access to the region. Such a pointer can be used to hold the address of the controller module,
-speeding up access to accelerator cores.
-
-\begin{figure}[H]
-    \begin{minipage}[t]{0.5\textwidth}
-      \begin{monospace}
-      \# Save temporary registers.
-
-      swi    r12, r1, -4
-
-      swi    r11, r1, -8
-\\
-
-      \# Get pointer to controller.
-
-      addik  r12, r0, HW\_ACCEL\_PORT
-\\
-
-      \# Write registers.
-
-      swi    rX, r12, (X*4)
-
-      ...
-\\
-
-      \# Activate required core.
-
-      \# C\_id is the core's
-
-      \# numeric ID (0-indexed).
-
-      addik  r11, r0, C\_id
-
-      swi    r11, r12, 0
-\\
-
-      \# Sleep until woken.
-
-      mbar   16
-\\
-
-      \# Read registers.
-
-      lwi    rX, r12, (X*4)
-
-      ...
-\\
-
-      \# Read control register.
-
-      \# This resets the core.
-
-      \# The value is discarded.
-
-      lwi    r0, r12, 0
-\\
-
-      \# Restore registers.
-
-      lwi    r11, r1, -8
-
-      lwi    r12, r1, -4
-      \end{monospace}
-    \end{minipage}
-    \begin{minipage}[t]{0.5\textwidth}
-      \begin{monospace}
-      \# Save temporary register.
-
-      swi    r11, r1, -4
-\\
-
-      \# Pointer to controller
-
-      \# is in R13.
-\\
-
-      \# Write registers.
-
-      swi    rX, r13, (X*4)
-
-      ...
-\\
-
-      \# Activate required core.
-
-      \# C\_id is the core's
-
-      \# numeric ID (0-indexed).
-
-      addik  r11, r0, C\_id
-
-      swi    r11, r13, 0
-\\
-
-      \# Sleep until woken.
-
-      mbar   16
-\\
-
-      \# Read registers.
-
-      lwi    rX, r13, (X*4)
-
-      ...
-\\
-
-      \# Read control register.
-
-      \# This resets the core.
-
-      \# The value is discarded.
-
-      lwi    r0, r13, 0
-\\
-
-      \# Restore register.
-
-      lwi    r11, r1, -4
-      \end{monospace}
-    \end{minipage}
-
-  \caption{Activating a hardware accelerator core, with (right) and without (left) a small-data pointer.}
-  \label{fig:smallData}
-\end{figure}
-
-As demonstrated in figure ~\ref{fig:smallData}, no temporary register needs to be used to hold a
-pointer to the controller, as the pointer is already stored in the small-data register R13.
-This reduces the number of instructions required to control an accelerator core.
-
-Without the small data area, two extra instructions are required to save and restore a temporary register,
-and another is needed to set up the pointer to the controller. These three instructions are eliminated with the use of a small
-data pointer. This might seem insignificant, but if accelerators are used frequently, the eliminated cycles could provide
-savings in both time and energy.
-
 \section{Code Analysis}
 
-In order to identify the best candidates for extraction into hardware accelerators, some analysis needs to be performed.
+In order to identify the best candidates for extraction into hardware accelerators, analysis needs to be performed.
 The first step in this analysis is to break the instruction stream up into basic blocks. A basic block is a linear portion of
-code, bounded at both ends by flow control instructions (e.g. branch or call instructions), or a label (indicating that this
+code, bounded at both ends by flow control instructions (e.g. branch or call instructions), or labels (indicating that this
 portion of code is the target of a jump somewhere else in the program). These blocks can then be linked
 together into a program-flow graph, in which all nodes are basic blocks, and all edges links between those blocks.
-From this representation, some information about the individual blocks can be extracted.
+From this representation, information about the individual blocks can be extracted.
 
 \subsection{Inputs and Outputs}
 
@@ -743,8 +593,8 @@ A range of applications were selected for use as benchmarks in the evaluation of
 were selected with the intention of being representative of embedded workloads.
 
 \begin{itemize}
-  \item An implementation of the SHA256 algorithm.
-  \item A 64-sample FFT application.
+  \item An implementation of the SHA256 algorithm \cite{sha256}.
+  \item A 64-sample FFT application \cite{fft}.
 \end{itemize}
 
 It is worth noting that there is a very small number of benchmarks - nowhere near enough to understand how this system
@@ -792,6 +642,22 @@ switching rates of signals in the system during the course of the simulation. Th
 power estimation utility to provide a more accurate estimate of power consumption, taking into account the behaviour
 of the system. This estimate provided two measurements: one for dynamic power consumption, and one for static power consumption.
 
+\subsection{Dynamic Power}
+
+Dynamic power is the power consumed as capacitances are charged and discharged, when a transistor switches on or off
+\cite{power}. As such, it is expected that the dynamic power of a circuit be related to the overall activity of a system.
+A system with a high rate of transistor switching will consume more dynamic power than one in which transistor switching rates
+are low. It is expected that dynamic power consumption will decrease as accelerator cores are added (assuming the right blocks
+are selected for conversion), as the MicroBlaze core will be inactive while the cores are performing computations, reducing
+the overall amount of transistor switching occuring in the system.
+
+\subsection{Static Power}
+
+Static power, or leakage power, is power consumed by transistors even when they are in a steady state, due to the leakage
+of current through transistor gates or due to electron tunnelling \cite{power}. Because static power consumption is unrelated
+to the actual activity of the circuit, and only its size, it is expected that static power consumption will increase as more
+accelerator cores are added, as each core adds more components to the system.
+
 \section{Measuring Trends in Generated Cores}
 
 To help gain a better insight into the characteristics of the generated accelerator cores, a wide range of metrics were
@@ -818,15 +684,21 @@ states. These values were measured for each accelerator core to give overall tre
 
 \chapter{Results}
 
-This chapter outlines the results obtained from the benchmark applications used.
+This chapter outlines the results obtained from the benchmark applications used. Section ~\ref{section:resultsOverview} is a
+brief overview of the performance and power consumption measurements observed. Section ~\ref{section:resultsBreakdowns} then
+shows execution-time breakdowns for the SHA256 benchmark application across all four selection heuristics,
+as this was the benchmark on which the system performed the best.
+Finally, section ~\ref{section:resultsTrends} identifies trends in the attributes of generated accelerator cores.
 
-\section{Speedup and Energy Savings}
+\section{Speedup and Power Consumption}
+\label{section:resultsOverview}
 
-Some of the benchmarks showed significant speedup when accelerator cores were added, while in others the addition of
-accelerator cores either slowed down the system or provided no change. The SHA256 benchmark showed significant speedup,
-as can be seen from figure ~\ref{fig:speedupSHA256}.The highest speedup was obtained by both the hybrid and overhead heuristics,
-and was over 1.3x, however even with as many as 28 cores, the speedup gained using the overhead heuristic remained above the
-baseline, at 1.1x.
+The SHA256 benchmark showed significant speedup, as can be seen from figure ~\ref{fig:speedupSHA256}. The highest speedup was
+obtained by both the hybrid and overhead heuristics, and was over 1.3x, however even with as many as 28 cores, the speedup
+gained using the overhead heuristic remained above the baseline, at 1.1x, while the hybrid heuristic dropped below the baseline
+at 21 cores. This indicates that the overhead heuristic is the best of the four for producing a system with a large number
+of cores that maintains a speedup >1 (i.e. that actually speeds up the execution of the application, rather than slowing it
+down).
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -835,6 +707,7 @@ baseline, at 1.1x.
 \label{fig:speedupSHA256}
 \end{figure}
 
+In contrast, the addition of accelerator cores for the FFT benchmark either slowed down the system or provided no change.
 When using the overhead selection heuristic (which, as can be seen above, performed well with the SHA256 benchmark)
 with the FFT benchmark (as seen in figure ~\ref{fig:speedupFFT}), only a small speedup (1.1x) was observed at the highest
 point. The speedup then fell below the baseline with 10 cores. Both the hybrid and avgwidth heuristics offered similar results.
@@ -847,15 +720,62 @@ The memdensity heuristic performed much more poorly, not offering any speedup wh
 \label{fig:speedupFFT}
 \end{figure}
 
-Energy saving: Comparison of post-synthesis energy estimates for baseline (0 cores) and varying number of cores, across
-applications.
+The dynamic power consumption was not as expected. It was initially hoped that the addition of hardware accelerators
+to this system would reduce overall power consumption, but as can be seen in figure ~\ref{fig:dpowerSHA256}
+this was not the case. The dynamic power consumption of the standalone MicroBlaze system
+in the SHA256 benchmark was around 500mW, while the consumption of the configuration with the maximum number of cores
+(33) was 1900mW, regardless of selection heuristic used.
 
-\subsection{Effect of Selection Heuristics on Performance}
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/dpower-sha256.png}}
+\caption{Dynamic power consumption for the SHA256 benchmark, by selection heuristic.}
+\label{fig:dpowerSHA256}
+\end{figure}
 
-By measuring the number of cycles spent on the MicroBlaze core, on accelerator cores, and on overheads,
-a breakdown of execution time for each application and each selection heuristic was generated.
-Figures ~\ref{fig:breakdownAvgWidthSHA256} to ~\ref{fig:breakdownHybridSHA256} show the execution-time breakdowns
-for the SHA256 benchmark.
+Interestingly, while the four selection heuristics showed similar increases in dynamic power consumption with increasing
+numbers of cores for the SHA256 benchmark, there was a difference between the performance of the heuristics with the
+FFT benchmark. As can be seen in figure ~\ref{fig:dpowerFFT}, the overhead heuristic, which offered the best speedup,
+showed the worst increase in power consumption. Conversely, the memdensity heuristic offered the worst speedup,
+but the least increase in power consumption. This indicates that, for some applications at least, the core selection
+criteria are different depending on whether performance or energy efficiency is the primary concern.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/dpower-fft.png}}
+\caption{Dynamic power consumption for the FFT benchmark, by selection heuristic.}
+\label{fig:dpowerFFT}
+\end{figure}
+
+As expected, the static power consumed by the system increased as more cores were added, as a larger system was being
+constructed. Figure ~\ref{fig:spowerSHA256} shows that for the SHA256 benchmark, the static power estimates
+increased generally, regardless of selection heuristic. The static power estimations for the FFT benchmark
+(figure ~\ref{fig:spowerFFT}) showed a similar variance between selection heuristics as the dynamic power estimations,
+with the overhead heuristic again showing the worst increase in power consumption, and the memdensity heuristic showing the
+least increase. This indicates that the cores selected by the memdensity heuristic (preferring cores with fewer memory accesses)
+are more power-efficient.
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/spower-sha256.png}}
+\caption{Static power consumption for the SHA256 benchmark, by selection heuristic.}
+\label{fig:spowerSHA256}
+\end{figure}
+
+\begin{figure}[H]
+\center{\includegraphics[width=0.70\textwidth]
+{figures/spower-fft.png}}
+\caption{Static power consumption for the FFT benchmark, by selection heuristic.}
+\label{fig:spowerFFT}
+\end{figure}
+
+\section{Effect of Selection Heuristics on Performance}
+\label{section:resultsBreakdowns}
+
+While initially the avgwidth heuristic (figure ~\ref{fig:breakdownAvgWidthSHA256})
+halved the execution time spent on the MicroBlaze core
+with 2 to 8 cores, this performance improvement stopped once the 10-core mark was reached.
+This heuristic selects the initial cores well, but makes poor selections in the long run.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -864,9 +784,10 @@ for the SHA256 benchmark.
 \label{fig:breakdownAvgWidthSHA256}
 \end{figure}
 
-While initially the avgwidth heuristic performed well, halving the execution time spent on the MicroBlaze core
-with 2 to 8 cores, this performance improvement stopped once the 10-core mark was reached. This indicates
-that this heuristic selects the initial cores well, but makes poor selections after this point.
+Conversely, the memdensity heuristic (figure ~\ref{fig:breakdownMemDensitySHA256})
+did not show a performance improvement until the 8-core mark, with
+the cycle count sharply dropping at this point. This shows that, unlike the avgwidth heuristic, this heuristic
+does not initially select the cores that offer the best 
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -875,9 +796,11 @@ that this heuristic selects the initial cores well, but makes poor selections af
 \label{fig:breakdownMemDensitySHA256}
 \end{figure}
 
-Conversely, the memdensity heuristic did not show a performance improvement until the 8-core mark, with
-the cycle count sharply dropping at this point. This shows that, unlike the avgwidth heuristic, this heuristic
-does not select the initial cores well.
+Of the three individual heuristics, the overhead heuristic (figure ~\ref{fig:breakdownOverheadSHA256})
+performed the best, with a sharp drop in the cycle count
+with 2 cores, and speedup not dropping below the baseline until 33 cores. This indicates that I/O overhead is a significant
+limiting factor in the accelerator core performance, and that optimising core selection to reduce this overhead yields
+significant performance improvements.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -886,9 +809,11 @@ does not select the initial cores well.
 \label{fig:breakdownOverheadSHA256}
 \end{figure}
 
-Of the three individual heuristics, the overhead heuristic performed the best, with a sharp drop in the cycle count
-with 2 cores, and speedup not dropping below the baseline until 33 cores. This indicates that I/O overhead is a significant
-limiting factor in the accelerator core performance.
+As expected, the hybrid selection heuristic (figure ~\ref{fig:breakdownHybridSHA256}) generated
+a configuration which performed well initially, halving the number of cycles executed on the MicroBlaze core.
+However, unlike the overhead heuristic, speedup fell below the baseline at 21 cores, rather than 33.
+Interestingly, this indicates that the I/O overhead factor dwarfs all other factors in core selection, making
+it really the only factor determining the performance of a given system.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -897,56 +822,8 @@ limiting factor in the accelerator core performance.
 \label{fig:breakdownHybridSHA256}
 \end{figure}
 
-As expected, the hybrid selection heuristic, shown in figure ~\ref{fig:breakdownHybridSHA256}, generated
-a configuration which performed well initially, halving the number of cycles executed on the MicroBlaze core.
-However, unlike the overhead heuristic, speedup fell below the baseline at 21 cores, rather than 33.
-Interestingly, this indicates that the I/O overhead factor dwarfs all other factors in core selection, making
-it really the only factor determining the performance of a given system.
-
-As seen with the overall performance results, none of the heuristics offered particularly good performance
-with the FFT benchmark. The execution-time breakdowns for this application show some of the reasons for this poor performance.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-fft-avgwidth-dependency.png}}
-\caption{Execution-time breakdown for the FFT benchmark using the avgwidth selection heuristic.}
-\label{fig:breakdownAvgWidthFFT}
-\end{figure}
-
-As seen in the overall performance measurements, the avgwidth heuristic offered a small initial performance increase,
-however this was negated by the 10-core mark. The sleep overhead (the time wasted between a core finishing computation
-and MicroBlaze waking up to continue execution) is more significant here than with the SHA256 benchmark. This indicates that
-the cores selected are executing more frequently than those selected for the SHA256 benchmark.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-fft-memdensity-dependency.png}}
-\caption{Execution-time breakdown for the FFT benchmark using the memdensity selection heuristic.}
-\label{fig:breakdownMemDensityFFT}
-\end{figure}
-
-This is even more apparent with the breakdown for the memdensity heuristic. Here the sleep overhead was greater than the
-execution time spent on accelerator cores, indicating that the heuristic selected very small, frequently executed blocks of code.
-Unlike other heuristics, here the MicroBlaze execution time is increasing from the very start, showing that this heuristic
-is not even selecting cores that reduce the amount of work the MicroBlaze core does.
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-fft-overhead-dependency.png}}
-\caption{Execution-time breakdown for the FFT benchmark using the overhead selection heuristic.}
-\label{fig:breakdowOverheadFFT}
-\end{figure}
-
-\begin{figure}[H]
-\center{\includegraphics[width=0.70\textwidth]
-{figures/cycles-breakdown-fft-hybrid-dependency.png}}
-\caption{Execution-time breakdown for the FFT benchmark using the hybrid selection heuristic.}
-\label{fig:breakdownHybridFFT}
-\end{figure}
-
-As with the SHA256 benchmark, the hybrid selection heuristic performed worse than the overhead heuristic.
-
 \section{Trends in Generated Cores}
+\label{section:resultsTrends}
 
 This section describes trends observed in the generated hardware accelerator cores.
 As the overhead selection heuristic performed better than the others at selecting blocks to be
@@ -973,7 +850,7 @@ MicroBlaze core.
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
 {figures/avg-ipc-sha256-overhead-dependency.png}}
-\caption{Average instruction-per-clock for the SHA256 benchmark application.}
+\caption{Average instruction-per-clock for the SHA256 benchmark application, with the overhead selection heuristic.}
 \label{fig:ipcSHA256}
 \end{figure}
 
@@ -986,7 +863,7 @@ accesses.
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
 {figures/avg-ipc-fft-overhead-dependency.png}}
-\caption{Average instruction-per-clock for the FFT benchmark application.}
+\caption{Average instruction-per-clock for the FFT benchmark application, with the overhead selection heuristic.}
 \label{fig:ipcFFT}
 \end{figure}
 
@@ -999,7 +876,8 @@ As seen in the previous chapter, the best method for selecting accelerator cores
 I/O overhead. This is because the overheads involved in transferring each input/output parameter over the AXI bus is an
 expensive operation, costing 4 cycles per parameter. In addition, expensive memory access operations
 due to the architecture of the system reduced the IPC of generated cores, also contributing to
-the poor performance observed.
+the poor performance observed. This is demonstrated by the poor performance gains of the memdensity heuristic in
+both applications.
 
 The power consumption measurements observed are also disappointing, with the measurements making it clear that
 switching from a single MicroBlaze core to a MicroBlaze core with accelerators only increases power consumption.
@@ -1007,11 +885,20 @@ This is in contrast to Arnone's work in \cite{arnone-thesis} and the GreenDroid 
 which both show clear improvements in energy efficiency in moving to a coprocessor-dominated architecture.
 
 While inaccuracies in the estimation of power consumption may be to blame for this gap, it could also be due to
-the difference between FPGA and VLSI technologies. For example, circuits that must be implemented using lookup-tables in an FPGA
-may be optimized into more efficient implementations in a VLSI environment.
+the difference between FPGA and VLSI technologies. For example, circuits that must be implemented using standard
+logic components such as lookup-tables in an FPGA may be optimized into more efficient implementations in a VLSI environment.
+However, the FPGA has the benefit of reprogrammability, so a small amount of inefficiency may be acceptable as a trade-off for
+being able to reprogram the architecture whenever a change is made to the software, avoiding the need for 'patching' accelerator
+cores as with \cite{greendroid}.
+
 In addition, it is clear from the execution-time breakdowns shown in the previous chapter that, even with high numbers
-of accelerator cores, a significant amount of execution time is still spent on the MicroBlaze core. This will also contribute
-to the poor power consumption.
+of accelerator cores, a significant amount of execution time is still spent on the MicroBlaze core. In a coprocessor-dominated
+architecture there is always the risk that the processor will spend as much time managing hardware accelerators as it would
+executing the application code in a homogenous architecture. For this reason, methods of reducing the reliance of the
+accelerator cores on a general-purpose processor for management should be explored. Otherwise, a CoDA is unlikely to reduce
+power consumption.
+
+
 
 \section{Further Work}
 
@@ -1019,13 +906,10 @@ This section is split into two subsections. The first describes extensions to th
 to offer better performance or energy efficiency. The second describes further work that could be done in evaluating this
 system and others like it.
 
-\subsection{Further Design Work}
+\subsection{System Architecture Improvements}
 
 It is evident from the results observed with testing this system that the input/output overheads are too great to
 offer significant performance increases. Therefore, it makes sense that ways to decrease these overheads should be investigated.
-Of course, using a faster bus would definitely decrease these overheads, but such a bus is likely to be more complex, leading
-to increased architectural complexity and therefore lower energy efficiency. However, there are other ways to decrease
-I/O overheads.
 
 One such way is to try to avoid the transfer of registers between the MicroBlaze core and the hardware accelerators where
 possible, by allowing registers to be transferred between cores themselves. For example, consider two cores which
@@ -1034,7 +918,8 @@ the cores can be treated as a single unit; the MicroBlaze core will wake up to p
 instruction), but will somehow signal to the cores that they are not to transfer register values to/from the MicroBlaze core,
 but between themselves. In such a case, the only AXI accesses required are those that acquire register values needed for the
 control-flow instruction, and those relating to controlling the cores. Such a system could dramatically reduce the number
-of expensive I/O operations taking place, improving both performance and energy efficiency.
+of expensive I/O operations taking place, as well as decrease the time that the MicroBlaze core spends active,
+improving both performance and energy efficiency.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.75\textwidth]
@@ -1071,6 +956,11 @@ therefore cannot incorporate any information about the runtime behaviour of the 
 A selection method that involves some form of profiling, similar to that used in the GreenDroid project \cite{greendroid},
 could ensure that the blocks transformed into accelerator cores are those that are accessed frequently enough
 for the conversion to provide benefit.
+
+Alternatively, a less conventional approach to core selection could be taken, for example using a genetic algorithm.
+While this could identify configurations with better performance and power consumption characteristics than could be
+found with the simple heuristics outlined in this work, it would require a change in the way that the system is evaluated;
+FPGA simulation and synthesis is far too time-consuming a process to be amenable to such an approach.
 
 Finally, while the focus in this investigation has been increasing performance by performing more
 computation in a smaller number of cycles, at the same clock speed, it is possible to instead improve
