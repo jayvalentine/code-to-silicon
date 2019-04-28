@@ -13,7 +13,7 @@
 \tikzset{
   ->, % makes the edges directed
   node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
-  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+  every state/.style={thick, fill=gray!10, minimum size=0pt}, % sets the properties for each ’state’ node
   initial text=$ $, % sets the text that appears on the start arrow
 }
 
@@ -291,14 +291,8 @@ application code).
 
 Each hardware accelerator is modelled as a sequential state machine, with a sequence of states determined by the structure
 of the code that the hardware accelerator is intended to replace. Each state machine block has a similar interface, which is
-shown in detail in appendix ~\ref{appendix:interface}. All transitions between states are synchronous, performed on the rising edge of the CLK
-signal.
-
-There are four kinds of states in the hardware accelerator model. The start state, which is the state the accelerator is in
-when activated, transfers inputs from the accelerator's register input ports into internal registers, for use during the
-computation. The end state is the state the accelerator moves to when the computation is complete. In this state, output values
-are transferred from the accelerator's internal registers to the register output ports, to be read by the MicroBlaze core.
-An example abstract state machine is shown in figure ~\ref{fig:abstractStateMachine}.
+shown in detail in appendix ~\ref{appendix:interface}. All transitions between states are performed on the rising
+edge of the CLK signal.
 
 \begin{figure}[H]
 \centering
@@ -306,10 +300,10 @@ An example abstract state machine is shown in figure ~\ref{fig:abstractStateMach
   \node[state, initial] (S_START) {S\_START};
   \node[state, right of=S_START] (S_000) {S\_000};
   \node[state, below of=S_000] (S_001) {S\_001};
-  \node[state, left=3.5cm of S_001] (S_002) {S\_002};
-  \node[state, below=1cm of S_001] (S_003) {S\_003};
-  \node[state, left=3.5cm of S_003] (S_004) {S\_004};
-  \node[state, below=1cm of S_003] (S_END) {S\_END};
+  \node[state, left=3.3cm of S_001] (S_002) {S\_002};
+  \node[state, below=0.8cm of S_001] (S_003) {S\_003};
+  \node[state, left=3.3cm of S_003] (S_004) {S\_004};
+  \node[state, below=0.8cm of S_003] (S_END) {S\_END};
 
   \draw (S_START) edge[above] node{CLK} (S_000);
   \draw (S_000) edge[loop right] node{CLK} (S_000);
@@ -324,6 +318,12 @@ An example abstract state machine is shown in figure ~\ref{fig:abstractStateMach
 \caption{An example abstract state machine.}
 \label{fig:abstractStateMachine}
 \end{figure}
+
+There are four kinds of states in the hardware accelerator model. The start state, which is the state the accelerator is in
+when activated, transfers inputs from the accelerator's register input ports into internal registers, for use during the
+computation. The end state is the state the accelerator moves to when the computation is complete. In this state, output values
+are transferred from the accelerator's internal registers to the register output ports, to be read by the MicroBlaze core.
+An example abstract state machine is shown in figure ~\ref{fig:abstractStateMachine}.
 
 In between the start and end states are a series of computation and wait states. A computation state is derived from a series of
 non-memory-access instructions (e.g. \texttt{addi} (add-immediate) or \texttt{srl} (shift-right logical)).
