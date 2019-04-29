@@ -21,6 +21,7 @@ CONTENTS:
   Where benchmark software was obtained from third-party sources, the relevant licenses are included in a LICENSE file in the benchmark
   folder.
 * link.map - This is a linker script used when compiling programs for the MicroBlaze processor.
+* microblaze_system/ - This contains the Vivado project with the MicroBlaze processor and associated peripherals.
 
 RUNNING THE TOOL:
 
