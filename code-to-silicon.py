@@ -462,5 +462,39 @@ def main(argv):
     os.system("biber REPORT > texbuild.log")
     os.system("pdflatex REPORT > texbuild.log")
 
+  makezip = True
+
+  # Make a zip file if we've been told to.
+  if makezip:
+    os.system("mkdir project")
+    os.system("mkdir project/figures")
+    os.system("mkdir project/analysis")
+    os.system("mkdir project/microblaze_system")
+    os.system("mkdir project/parsing")
+    os.system("mkdir project/templates")
+    os.system("mkdir project/testbench")
+    os.system("mkdir project/toolchain")
+
+    os.system("cp figures/* project/figures")
+    os.system("cp analysis/* project/analysis")
+    os.system("cp microblaze_system/* project/microblaze_system --recursive")
+    os.system("cp parsing/* project/parsing")
+    os.system("cp READMEFIRST.txt project/")
+    os.system("cp REFERENCES.bib project/")
+    os.system("cp REPORT.tex project/")
+    os.system("cp REPORT.pdf project/")
+    os.system("cp RESULTS.ods project/")
+    os.system("cp templates/* project/templates")
+    os.system("cp templating.py project/")
+    os.system("cp testbench/* project/testbench --recursive")
+    os.system("cp text.py project/")
+    os.system("cp toolchain/* project/toolchain")
+    os.system("cp UoYCSproject.cls project/")
+    os.system("cp UOY-Logo-Stacked-shield-Black.png project/")
+
+    os.system("7z a project.zip \"project/*.*\" -r")
+
+    os.system("rm -rf project/")
+
 if __name__ == "__main__":
   main(sys.argv[1:])
