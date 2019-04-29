@@ -11,7 +11,7 @@
 % 2004Apr27  Initial version
 % 2004May10  Generation of list of tables and figures removed
 % 2004Dec08  Minor fixes to error messages
-% 2005Feb02  Package pdfcprot replaced by microtype 
+% 2005Feb02  Package pdfcprot replaced by microtype
 % 2005Apr12  dedication and acknowledgements now come after abstract
 % 2005Jul27  added option `sc' to `mathpazo' package & `textcomp' package
 % 2005Aug31  added packages for Helvetica and Courier fonts
@@ -32,7 +32,7 @@
 % 2009Jun26  changed to IEEE trans style; removed options.
 % 2010Nov02  replaced obsolete KOMA-script options
 % 2014Oct22  added ACS declaration
-% 
+%
 % Version 3, backwards compatible
 %
 % 2015Apr24 Converted from BibTeX to BibLaTeX
@@ -59,7 +59,7 @@
 \RequirePackage{ifthen}
 
 \usepackage[scaled]{helvet}
-\renewcommand\familydefault{\sfdefault} 
+\renewcommand\familydefault{\sfdefault}
 \usepackage[T1]{fontenc}
 
 \pagestyle{headings}
@@ -100,7 +100,7 @@
     {\addchap{Executive Summary}
     \label{cha:exesummary}
     }
-    { 
+    {
     \clearpage
 	\pagenumbering{arabic}
     }
@@ -109,7 +109,7 @@
 \setlength{\parindent}{8pt}
 \setlength{\parskip}{8pt}
 
-\date{\fbox{\Huge DRAFT PROCESSED \today}}
+\date{\fbox{\large \today}}
 
 \titlehead{ \hfill Department of Computer Science\\\vspace{32pt}
 \begin{center}
@@ -133,7 +133,7 @@
   \ifx\UoYCSP@supervisor\undefined%
     \ClassError{UoYCSproject}%
                {supervisor not set}
-               {Declare the supervisor in the preamble using \protect\supervisor{Name}}  
+               {Declare the supervisor in the preamble using \protect\supervisor{Name}}
   \else%
     Supervisor: \UoYCSP@supervisor%
   \fi%
@@ -207,7 +207,7 @@
   }%
   \cleardoublepage%
   \microtypesetup{protrusion=false}%
-  \tableofcontents%  
+  \tableofcontents%
   \microtypesetup{protrusion=true}%
 }
 
