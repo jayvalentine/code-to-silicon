@@ -33,6 +33,9 @@ I would like to thank my supervisor, Dr. Chris Crispin-Bailey, for his guidance 
 
 \maketitle
 
+\listoffigures
+\listoftables
+
 \begin{summary}
 
 \section{Motivation}
@@ -325,25 +328,23 @@ computation. The end state is the state the accelerator moves to when the comput
 are transferred from the accelerator's internal registers to the register output ports, to be read by the MicroBlaze core.
 An example abstract state machine is shown in figure ~\ref{fig:abstractStateMachine}.
 
-In between the start and end states are a series of computation and wait states. A computation state is derived from a series of
+Between the start and end states are a series of computation and wait states. A computation state is derived from a series of
 non-memory-access instructions (e.g. \texttt{addi} (add-immediate) or \texttt{srl} (shift-right logical)).
-These instructions have one-to-one translations in VHDL, allowing a circuit to be synthesised which implements the same
+These instructions have translations in VHDL, allowing a circuit to be synthesised which implements the same
 functionality, but in parallel, as shown in figure ~\ref{fig:computationState}. As such, while the instructions represented by a
 computation state might take several cycles to complete on a general-purpose processor, the hardware accelerator can always
 complete a computation state in a single cycle. The translations of MicroBlaze instructions used in the generation of
 accelerator cores can be seen in appendix ~\ref{appendix:translations}.
 
 \begin{figure}[H]
-\center{\includegraphics[width=0.75\textwidth]
+\center{\includegraphics[width=0.95\textwidth]
 {figures/computation-state.png}}
 \caption{Comparison of original program instructions, VHDL translations, and final parallel circuit.}
 \label{fig:computationState}
 \end{figure}
 
 Each computation state is separated by one or more wait states, in which the accelerator either fetches data from or writes data
-to the local memory. Each wait state is associated with a single input/output instruction
-(e.g. \texttt{lwi} (load word immediate) or \texttt{sb} (store byte)). These states can typically be completed within two
-cycles, but may take more depending on memory latency. On entering a wait state, the accelerator sets up the necessary control
+to the local memory. Each wait state is associated with a single input/output instruction. On entering a wait state, the accelerator sets up the necessary control
 signals for the memory access. Once the memory access is complete, the M\_RDY signal is asserted and the accelerator continues
 into the next state.
 
@@ -390,37 +391,18 @@ controller and the accelerator core, and the controller again goes into the READ
 the MSR system register, the final output from the core. If necessary, the MicroBlaze core then writes the new value of MSR into
 the system register.
 
-\section{Code Analysis}
+\section{False Output Pruning}
 
-In order to identify the best candidates for extraction into hardware accelerators, analysis needs to be performed.
-The first step in this analysis is to break the instruction stream up into basic blocks. A basic block is a linear portion of
-code, bounded at both ends by flow control instructions (e.g. branch or call instructions), or labels (indicating that this
-portion of code is the target of a jump somewhere else in the program). These blocks can then be linked
-together into a program-flow graph, in which all nodes are basic blocks, and all edges links between those blocks.
-From this representation, information about the individual blocks can be extracted.
+In order to ensure that register coherency is maintained when an accelerator core is activated,
+the registers that form the inputs and outputs of the basic block from which the core is derived must
+be known.
 
-\subsection{Inputs and Outputs}
-
-It is possible to know what the inputs and outputs from a block are in isolation (with an input being any register that is read
-before being written to in the block, and an output being any register written to at any point in the block). However, this leads
-to very conservative results, as highlighted by figure ~\ref{fig:analysisNaiveApproach}. In the example, \texttt{r6} is used as a
-temporary register, and according to the MicroBlaze ABI \cite{microblaze-ref} is discarded on returning from the function. If we
-take the naive approach to identifying a block's outputs, this information is ignored and it is assumed that because \texttt{r6}
-is written to, it must be an output of the block. In a real application, there may be many more temporary registers used,
-resulting in the analysis reporting a large number of 'false outputs'.
-
-\begin{figure}[H]
-  \begin{center}
-    \begin{minipage}{0.5\linewidth}
-      \begin{monospace}
-      \input{figures/inputs-outputs-conservative.tex}
-      \end{monospace}
-    \end{minipage}
-  \end{center}
-
-  \caption{A naive approach to basic block analysis.}
-  \label{fig:analysisNaiveApproach}
-\end{figure}
+The naive approach to identifying the inputs and outputs of a block is to assume that
+any register that is written to is an output, and any register read before it is written to is an input.
+However, this leads to very conservative results, as temporary registers used in the basic block
+are assumed to be outputs, even when they are not used in subsequent blocks.
+This creates a large amount of unnecessary overhead, as temporary registers are transferred from a core
+when doing so is unnecessary.
 
 In order to solve this problem, the analysis needs to take into account both how the registers are used (as defined by the
 ABI) and the context in which the block exists (i.e. what blocks come before and after it).
@@ -716,17 +698,17 @@ This heuristic selects the initial cores well, but makes poor selections in the 
 \label{fig:breakdownAvgWidthSHA256}
 \end{figure}
 
-Conversely, the memdensity heuristic (figure ~\ref{fig:breakdownMemDensitySHA256})
-did not show a performance improvement until the 8-core mark, with
-the cycle count sharply dropping at this point. This shows that, unlike the avgwidth heuristic, this heuristic
-does not initially select the cores that offer the best 
-
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
 {figures/cycles-breakdown-sha256-memdensity-dependency.png}}
 \caption{Execution-time breakdown for the SHA256 benchmark using the memdensity selection heuristic.}
 \label{fig:breakdownMemDensitySHA256}
 \end{figure}
+
+Conversely, the memdensity heuristic (figure ~\ref{fig:breakdownMemDensitySHA256})
+did not show a performance improvement until the 8-core mark, with
+the cycle count sharply dropping at this point. This shows that, unlike the avgwidth heuristic, this heuristic
+does not initially select the cores that offer the best
 
 Of the three individual heuristics, the overhead heuristic (figure ~\ref{fig:breakdownOverheadSHA256})
 performed the best, with a sharp drop in the cycle count
@@ -761,10 +743,6 @@ This section describes trends observed in the generated hardware accelerator cor
 As the overhead selection heuristic performed better than the others at selecting blocks to be
 translated, only the cores selected by this heuristic are considered here.
 
-Figure ~\ref{fig:statesSHA256-28} shows that the state machines produced are generally smaller,
-with almost all of the cores having between 3 and 15 states. There is a heavy skew towards smaller
-cores.
-
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
 {figures/pop-sha256-28-cores-states-overhead-dependency.png}}
@@ -772,12 +750,13 @@ cores.
 \label{fig:statesSHA256-28}
 \end{figure}
 
+Figure ~\ref{fig:statesSHA256-28} shows that the state machines produced are generally smaller,
+with almost all of the cores having between 3 and 15 states.
+
 Figure ~\ref{fig:ipcSHA256} shows the average instruction-per-clock measurements for the SHA256 benchmark as
 the number of cores selected increase. The IPC of initially-selected cores
 is high, but the average drops to 1 as the number of cores increases. This indicates that
-there are cores being selected with an IPC <1. The most likely reason for this is that
-memory accesses from cores to the local BRAM are more expensive than they are for the
-MicroBlaze core.
+there are cores being selected with an IPC <1.
 
 \begin{figure}[H]
 \center{\includegraphics[width=0.70\textwidth]
@@ -803,13 +782,10 @@ accesses.
 
 \section{Discussion of Results}
 
-The performance increases observed are not as significant as was initially hoped.
+The performance increases observed were not as significant as was initially hoped.
 As seen in the previous chapter, the best method for selecting accelerator cores for this system is by minimizing
 I/O overhead. This is because the overheads involved in transferring each input/output parameter over the AXI bus is an
-expensive operation, costing 4 cycles per parameter. In addition, expensive memory access operations
-due to the architecture of the system reduced the IPC of generated cores, also contributing to
-the poor performance observed. This is demonstrated by the poor performance gains of the memdensity heuristic in
-both applications.
+expensive operation, costing 4 cycles per parameter.
 
 The power consumption measurements observed are also disappointing, with the measurements making it clear that
 switching from a single MicroBlaze core to a MicroBlaze core with accelerators only increases power consumption.
@@ -829,8 +805,6 @@ architecture there is always the risk that the processor will spend as much time
 executing the application code in a homogenous architecture. For this reason, methods of reducing the reliance of the
 accelerator cores on a general-purpose processor for management should be explored. Otherwise, a CoDA is unlikely to reduce
 power consumption.
-
-
 
 \section{Further Work}
 
@@ -912,13 +886,23 @@ could help to identify trends that make some applications well-suited to this ap
 
 However, this work does show that the application object code can be analysed, basic blocks for extraction
 identified, and hardware accelerators generated, all in an automated toolchain.
+This ability to automate the generation of the architecture, coupled with the re-programmability
+of the FPGA, means that the design space for a system such as this can be explored with greater
+ease than if designs had to be made by hand and tested in a VLSI environment.
+
+In addition, a range of methods of selecting accelerator cores have been outlined, and the
+various traits of systems generated from these different heuristics have been measured.
+It seems that the desired attributes of accelerator cores can be different depending on whether
+performance or energy efficiency are the primary concerns, and this tool provides an opportunity
+to explore this further with real-world evaluation.
+
+Overall, while the observed performance and energy efficiency of this system was not as initially hoped,
+this work makes a strong case for further exploration of this architectural model in an FPGA environment.
 
 \appendix
 
 \chapter{Hardware Accelerator Interface}
 \label{appendix:interface}
-
-This appendix item shows the signals that form the interface between each accelerator core and the control unit.
 
 \begin{table}[H]
 \centering

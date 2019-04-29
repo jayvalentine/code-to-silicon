@@ -70,6 +70,8 @@ def main(argv):
   fig = True
   test = True
 
+  makezip = False
+
   pruningModes = ["naive", "volatile", "dependency"]
   selectionModes = ["hybrid", "avgwidth", "memdensity", "overhead"]
 
@@ -83,7 +85,7 @@ def main(argv):
 
   # Parse command line arguments.
   try:
-    opts, args = getopt.getopt(argv, "h", ["nosim", "nosynth", "noreport", "nofig", "notest", "verbosity=", "selection=", "pruning=", "tests=", "help"])
+    opts, args = getopt.getopt(argv, "h", ["makezip", "nosim", "nosynth", "noreport", "nofig", "notest", "verbosity=", "selection=", "pruning=", "tests=", "help"])
   except getopt.GetoptError:
     print(HELP)
     sys.exit(2)
@@ -134,6 +136,9 @@ def main(argv):
           sys.exit(2)
 
       tests = testsNew
+
+    elif opt == "--makezip":
+      makezip = True
 
   # Set the logger's actual level now that we've parsed the options.
   logger.setLevel(verbosity)
@@ -461,8 +466,6 @@ def main(argv):
     os.system("pdflatex REPORT > texbuild.log")
     os.system("biber REPORT > texbuild.log")
     os.system("pdflatex REPORT > texbuild.log")
-
-  makezip = True
 
   # Make a zip file if we've been told to.
   if makezip:
